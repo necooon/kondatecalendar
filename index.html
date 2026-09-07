@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <!-- iPhoneノッチ・Dynamic Island・ホームバー対応のセーフエリア設定 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>KitchenGit for iPhone</title>
+
+  <!-- iOS PWAメタタグ（ホーム画面追加でネイティブアプリ化） -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="KitchenGit">
+  <meta name="theme-color" content="#F2F2F7">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Inter & Noto Sans JP -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Noto Sans JP', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+            display: ['Plus Jakarta Sans', 'sans-serif']
+          },
+          colors: {
+            iosBg: '#F2F2F7',
+            iosCard: '#FFFFFF',
+            iosBorder: '#E5E5EA',
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* iOS風タップ感・オーバースクロール・セーフエリア制御 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    input, textarea {
+      user-select: auto;
+      -webkit-user-select: auto;
+    }
+    body {
+      padding-top: env(safe-area-inset-top, 0px);
+      background-color: #F2F2F7;
+      overscroll-behavior-y: none;
+    }
+    /* iOS Glassmorphismブラー効果 */
+    .ios-glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .ios-glass-dark {
+      background: rgba(24, 24, 27, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    /* スムーズスクロールバー非表示（iOSライク） */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* アクティブ時の触感タップアニメーション */
+    .active-scale:active {
+      transform: scale(0.96);
+      transition: transform 0.1s ease;
+    }
+    .pb-safe {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    }
+    .pt-safe {
+      padding-top: max(1.25rem, env(safe-area-inset-top, 0px));
+    }
+  </style>
+</head>
+
+<body class="text-slate-900 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- ==================== iOS ナビゲーションバー (Sticky Top) ==================== -->
+  <header class="sticky top-0 z-30 ios-glass border-b border-slate-200/80 transition-all">
+    <div class="max-w-md mx-auto px-4 pt-2 pb-2.5 flex items-center justify-between">
+      <!-- アプリロゴ ＆ バージョン標語 -->
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/25">
+          <i class="fa-solid fa-code-branch text-sm"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-black tracking-tight font-display text-slate-900">KitchenGit</span>
+            <span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.2 rounded-full font-mono">iOS</span>
+          </div>
+          <p id="top-bar-sub" class="text-[10px] text-slate-500 font-medium">9月第2週 • 2人/1人切替対応</p>
+        </div>
+      </div>
+
+      <!-- 右上クイックアクション（筋トレPFCインジケーター） -->
+      <div class="flex items-center gap-1.5">
+        <div class="bg-slate-100/90 border border-slate-200/70 rounded-full px-2.5 py-1 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="header-protein" class="text-[11px] font-bold font-mono text-slate-700">P: 94g</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== メインコンテンツ領域（iPhoneスクロール対応） ==================== -->
+  <main class="flex-1 max-w-md mx-auto w-full px-3.5 pt-3 pb-28 space-y-4">
+
+    <!-- ==================== VIEW 1: カレンダー画面 ==================== -->
+    <section id="view-calendar" class="space-y-3.5">
+      <!-- 週間カードヘッダー -->
+      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <span class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">Weekly Plan</span>
+            <h2 class="text-lg font-bold text-slate-900 tracking-tight">今週の献立＆人数管理</h2>
+          </div>
+          <button type="button" onclick="aiSuggestRemaining()" class="active-scale inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm shadow-emerald-600/30">
+            <i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i>
+            <span>AI提案</span>
+          </button>
+        </div>
+
+        <!-- 水平日付ピッカー（iOSライクな横スクロールカレンダー） -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 pt-1" id="week-strip">
+          <!-- JSでレンダリング -->
+        </div>
+      </div>
+
+      <!-- 選択中の日の詳細カード（出張・人数トグル付き） -->
+      <div id="day-detail-card" class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
+        <!-- JSで選択日の詳細を動的更新 -->
+      </div>
+
+      <!-- 週末作り置き（日曜日の高タンパクストック） -->
+      <div class="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-amber-500/15 rounded-3xl p-4 border border-amber-200/70 shadow-sm">
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs shadow-xs">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </span>
+            <h3 class="text-xs font-bold text-slate-800">日曜まとめて作り置き（平日時短）</h3>
+          </div>
+          <span class="text-[10px] font-bold font-mono bg-white/80 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+            3品ストック
+          </span>
+        </div>
+
+        <div class="space-y-1.5 text-xs">
+          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between border border-amber-100 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
+              <div>
+                <p class="font-bold text-slate-800">自家製ハーブサラダチキン <span class="font-mono text-emerald-600 text-[11px]">v2.1</span></p>
+                <p class="text-[10px] text-slate-400">P: 42g / 低脂質 / 水曜と金曜に消費</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono font-bold text-slate-500">2食分</span>
+          </div>
+
+          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between border border-amber-100 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
+              <div>
+                <p class="font-bold text-slate-800">ほうれん草と人参のナムル</p>
+                <p class="text-[10px] text-slate-400">βカロテン・鉄分補給常備菜</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono font-bold text-slate-500">3食分</span>
+          </div>
+
+          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between border border-amber-100 shadow-2xs">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
+              <div>
+                <p class="font-bold text-slate-800">鶏むねそぼろ（冷凍ストック）</p>
+                <p class="text-[10px] text-slate-400">P: 28g / 木曜弁当のタンパク源</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono font-bold text-slate-500">4食分</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: 買い物リスト画面 ==================== -->
+    <section id="view-shopping" class="space-y-3.5 hidden">
+      <!-- 買い物サマリー ＆ ストック除外ガイド -->
+      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono border border-indigo-200/70">STOCK SYNC</span>
+            </div>
+            <h2 class="text-lg font-bold text-slate-900 mt-0.5">まとめ買い出しリスト</h2>
+          </div>
+          <!-- スーパー買い物モード起動ボタン -->
+          <button type="button" onclick="toggleShoppingMode()" id="shop-mode-toggle-btn" class="active-scale bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-2xl flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-basket-shopping text-xs"></i>
+            <span id="shop-mode-label">スーパーモード</span>
+          </button>
+        </div>
+
+        <!-- 別アプリストック確認ヒント -->
+        <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200/60 flex items-start gap-2.5">
+          <i class="fa-solid fa-lightbulb text-amber-500 text-sm mt-0.5"></i>
+          <p class="text-[11px] text-slate-600 leading-relaxed">
+            別アプリでストックを確認しながら、<strong class="text-slate-900">「家にある食材」をタップ</strong>してください。自動で打ち消し線が引かれ購入品から除外されます。
+          </p>
+        </div>
+      </div>
+
+      <!-- 売り場カテゴリ別アコーディオンリスト -->
+      <div class="space-y-3" id="shopping-categories-container">
+        <!-- JSでレンダリング -->
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: レシピ＆バージョンDiff画面 ==================== -->
+    <section id="view-recipe" class="space-y-3.5 hidden">
+      <!-- レシピタイトル ＆ 人数ステッパー -->
+      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3.5">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">定番 #02</span>
+              <span class="bg-purple-100 text-purple-700 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full" id="recipe-active-badge">v1.2 (最新)</span>
+            </div>
+            <h2 class="text-lg font-bold text-slate-900 leading-snug">鶏むね肉と秋茄子のさっぱり炒め</h2>
+          </div>
+
+          <!-- iOS風 人数ステッパー -->
+          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shrink-0">
+            <button type="button" onclick="changeRecipeServings(-1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">−</button>
+            <span id="recipe-servings-text" class="w-12 text-center text-xs font-bold font-mono text-emerald-700">2人分</span>
+            <button type="button" onclick="changeRecipeServings(1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">＋</button>
+          </div>
+        </div>
+
+        <!-- バージョンセレクター（Gitコミットピッカー） -->
+        <div>
+          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+            <i class="fa-solid fa-code-commit text-emerald-600 mr-1"></i>味のバージョン履歴（コミット）
+          </label>
+          <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5" id="recipe-version-tabs">
+            <!-- JSで動的生成 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 材料と差分（Diff） -->
+      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-code-compare text-emerald-600 text-sm"></i>
+            <h3 class="text-xs font-bold text-slate-800">材料と前回との差分 (Diff)</h3>
+          </div>
+          <span id="diff-version-tag" class="text-[10px] font-mono text-slate-400">v1.1 との比較</span>
+        </div>
+
+        <!-- 材料アイテムリスト -->
+        <div id="recipe-ingredients-box" class="space-y-2">
+          <!-- JSでレンダリング -->
+        </div>
+
+        <!-- PFCバランスサマリー（iPhone用コンパクト表示） -->
+        <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200/60 mt-2">
+          <div class="flex items-center justify-between text-[11px] font-bold mb-1.5">
+            <span class="text-slate-600">1食あたりのPFCマクロ</span>
+            <span class="font-mono text-slate-800">392 kcal</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+            <div class="bg-rose-50 border border-rose-100 p-1.5 rounded-xl">
+              <span class="text-[9px] font-sans font-bold text-rose-600 block">タンパク質</span>
+              <span class="font-bold text-rose-700">38.4g</span>
+            </div>
+            <div class="bg-amber-50 border border-amber-100 p-1.5 rounded-xl">
+              <span class="text-[9px] font-sans font-bold text-amber-600 block">脂質</span>
+              <span class="font-bold text-amber-700">7.8g</span>
+            </div>
+            <div class="bg-sky-50 border border-sky-100 p-1.5 rounded-xl">
+              <span class="text-[9px] font-sans font-bold text-sky-600 block">炭水化物</span>
+              <span class="font-bold text-sky-700">42.0g</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 下部アクションバー（調理開始 ＆ 味コミット） -->
+        <div class="pt-2 grid grid-cols-2 gap-2">
+          <button type="button" onclick="openCommitModal()" class="active-scale bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-3 px-3 rounded-2xl flex items-center justify-center gap-1.5 border border-slate-200/80">
+            <i class="fa-solid fa-pen-to-square text-emerald-600"></i>
+            <span>味を更新 (コミット)</span>
+          </button>
+          <button type="button" onclick="openCookingMode()" class="active-scale bg-emerald-600 text-white text-xs font-bold py-3 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/30">
+            <i class="fa-solid fa-fire-burner"></i>
+            <span>調理モード起動</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== iOS ボトムタブバー (Bottom Tab Bar) ==================== -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 ios-glass border-t border-slate-200/80 pb-safe">
+    <div class="max-w-md mx-auto px-6 py-2 flex items-center justify-between">
+      <!-- タブ1: カレンダー -->
+      <button type="button" onclick="switchTab('calendar')" id="tab-btn-calendar" class="active-scale flex flex-col items-center gap-1 text-emerald-600">
+        <i class="fa-regular fa-calendar-days text-lg"></i>
+        <span class="text-[10px] font-bold">献立</span>
+      </button>
+
+      <!-- タブ2: 買い物リスト -->
+      <button type="button" onclick="switchTab('shopping')" id="tab-btn-shopping" class="active-scale flex flex-col items-center gap-1 text-slate-400">
+        <div class="relative">
+          <i class="fa-solid fa-cart-shopping text-lg"></i>
+          <span id="tab-shopping-badge" class="absolute -top-1 -right-2 bg-rose-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">8</span>
+        </div>
+        <span class="text-[10px] font-medium">買い物</span>
+      </button>
+
+      <!-- タブ3: レシピ＆バージョン -->
+      <button type="button" onclick="switchTab('recipe')" id="tab-btn-recipe" class="active-scale flex flex-col items-center gap-1 text-slate-400">
+        <i class="fa-solid fa-book-bookmark text-lg"></i>
+        <span class="text-[10px] font-medium">レシピ管理</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ==================== 調理中モード (全画面・大文字・常時点灯) ==================== -->
+  <div id="cooking-modal" class="fixed inset-0 z-50 bg-zinc-950 text-white hidden flex flex-col justify-between p-5 pb-safe pt-safe select-none">
+    <!-- ヘッダー -->
+    <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wide">Cooking Mode</span>
+      </div>
+      <button type="button" onclick="closeCookingMode()" class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 active:bg-zinc-700">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- 工程カード（片手で見やすい特大フォント） -->
+    <div class="my-auto py-6 space-y-6">
+      <div class="flex items-center justify-between text-zinc-400 font-mono text-xs">
+        <span id="step-badge" class="bg-zinc-800 px-3 py-1 rounded-full text-emerald-400 font-bold text-sm">STEP 2 / 4</span>
+        <span>画面常時点灯中</span>
+      </div>
+
+      <p id="step-text" class="text-2xl font-bold leading-relaxed text-zinc-100">
+        フライパンにごま油小さじ1を熱し、鶏むね肉を中火で両面に焼き色がつくまで約3分焼きます。
+      </p>
+
+      <!-- キッチンタイマー -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-stopwatch text-2xl text-emerald-400"></i>
+          <div>
+            <span class="text-[10px] text-zinc-400 uppercase block font-mono">Timer</span>
+            <span id="cooking-timer-display" class="text-3xl font-mono font-bold text-white tracking-wider">03:00</span>
+          </div>
+        </div>
+        <button type="button" onclick="toggleCookingTimer()" id="cooking-timer-btn" class="active-scale bg-emerald-500 text-zinc-950 font-bold px-5 py-2.5 rounded-2xl text-sm flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid fa-play"></i>
+          <span>スタート</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ステップナビゲーションボタン（親指が届く下部） -->
+    <div class="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800">
+      <button type="button" onclick="stepMove(-1)" class="active-scale bg-zinc-900 text-zinc-300 font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-1.5 border border-zinc-800">
+        <i class="fa-solid fa-arrow-left"></i>前の工程
+      </button>
+      <button type="button" onclick="stepMove(1)" class="active-scale bg-emerald-500 text-zinc-950 font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-1.5">
+        次の工程<i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== 味コミット（iOS ハーフモーダルシート） ==================== -->
+  <div id="commit-modal-backdrop" onclick="closeCommitModal()" class="fixed inset-0 z-50 bg-black/50 hidden transition-opacity"></div>
+  <div id="commit-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden transform transition-transform duration-200">
+    <!-- ドラッグハンドル風バー -->
+    <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
+
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+      <div class="flex items-center gap-2">
+        <span id="commit-next-badge" class="bg-purple-100 text-purple-700 font-mono text-xs font-bold px-2 py-0.5 rounded-md">v1.3</span>
+        <h3 class="text-base font-bold text-slate-900">味をアップデート (コミット)</h3>
+      </div>
+      <button type="button" onclick="closeCommitModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="font-bold text-slate-600 block mb-1">実食した満足度</label>
+        <div id="commit-stars" class="flex gap-2 text-2xl text-amber-400">
+          <button type="button" onclick="setCommitRating(1)" aria-label="1"><i class="fa-solid fa-star"></i></button>
+          <button type="button" onclick="setCommitRating(2)" aria-label="2"><i class="fa-solid fa-star"></i></button>
+          <button type="button" onclick="setCommitRating(3)" aria-label="3"><i class="fa-solid fa-star"></i></button>
+          <button type="button" onclick="setCommitRating(4)" aria-label="4"><i class="fa-solid fa-star"></i></button>
+          <button type="button" onclick="setCommitRating(5)" aria-label="5"><i class="fa-regular fa-star"></i></button>
+        </div>
+      </div>
+
+      <div>
+        <label class="font-bold text-slate-700 block mb-1">変更点（コミットメッセージ）</label>
+        <input type="text" id="commit-input-title" value="生姜を千切りにして増量、仕上げに大葉" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      </div>
+
+      <div>
+        <label class="font-bold text-slate-700 block mb-1">次回へのメモ（味・改善案）</label>
+        <textarea id="commit-input-note" rows="2" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="例: パートナー絶賛。生姜はすりおろすより千切りの方が風味が際立つ。"></textarea>
+      </div>
+
+      <div class="pt-2 flex gap-2">
+        <button type="button" onclick="closeCommitModal()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl text-xs active-scale">キャンセル</button>
+        <button type="button" onclick="saveCommitVersion()" id="commit-save-btn" class="w-2/3 bg-emerald-600 text-white font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm active-scale">
+          <i class="fa-solid fa-check"></i>
+          <span>v1.3 として保存</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== アプリ状態とJavaScriptロジック ==================== -->
+  <script>
+    const appState = {
+      activeTab: 'calendar',
+      selectedDate: '9/8',
+      servings: 2,
+      activeVersion: 'v1.2',
+      isShoppingMode: false,
+      cookingStep: 1,
+      timerSeconds: 180,
+      timerInterval: null,
+      wakeLock: null,
+      commitRating: 4,
+
+      calendarDays: [
+        { date: '9/7', day: '月', meal: '焼き鮭とキノコのホイル焼き', tag: '定番ルーティン', tagColor: 'blue', servings: 2, isBusinessTrip: false, pfc: { p: 34, f: 12, c: 40 } },
+        { date: '9/8', day: '火', meal: '鶏むね肉と秋茄子のさっぱり炒め', tag: '最新 v1.2', tagColor: 'purple', servings: 2, isBusinessTrip: false, pfc: { p: 38, f: 8, c: 42 } },
+        { date: '9/9', day: '水', meal: '豚ヒレと豆腐のスタミナ炒め', tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 32, f: 9, c: 35 } },
+        { date: '9/10', day: '木', meal: '秋刀魚の塩焼き ＆ 具だくさん豚汁', tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 29, f: 14, c: 30 } },
+        { date: '9/11', day: '金', meal: '特製スパイスキーマカレー', tag: '2週に1回', tagColor: 'emerald', servings: 2, isBusinessTrip: false, pfc: { p: 36, f: 11, c: 65 } },
+        { date: '9/12', day: '土', meal: '（未設定 - AI提案枠）', tag: '空き枠', tagColor: 'slate', servings: 2, isBusinessTrip: false, pfc: null },
+        { date: '9/13', day: '日', meal: '週末作り置き ＆ 軽食', tag: '作り置き', tagColor: 'rose', servings: 2, isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 } }
+      ],
+
+      shoppingItems: [
+        { id: 1, category: '野菜・きのこ', name: '秋茄子', amount: '3本', usage: '火曜炒め物', excluded: false },
+        { id: 2, category: '野菜・きのこ', name: '大葉', amount: '10枚', usage: '火曜・金曜', excluded: false },
+        { id: 3, category: '野菜・きのこ', name: '玉ねぎ', amount: '2個', usage: '金曜カレー', excluded: true },
+        { id: 4, category: '野菜・きのこ', name: '生姜', amount: '1かけ', usage: '火曜炒め物 (v1.2)', excluded: false },
+        { id: 5, category: '精肉・鮮魚', name: '鶏むね肉 (皮なし)', amount: '600g', usage: '火曜炒め・日曜チキン', excluded: false },
+        { id: 6, category: '精肉・鮮魚', name: '生鮭 切り身', amount: '2切れ', usage: '月曜ホイル焼き', excluded: false },
+        { id: 7, category: '精肉・鮮魚', name: '豚ヒレ肉', amount: '150g', usage: '水曜 (1人分)', excluded: false },
+        { id: 8, category: '精肉・鮮魚', name: '合挽き肉', amount: '300g', usage: '金曜カレー', excluded: true },
+        { id: 9, category: '調味料・その他', name: 'ポン酢しょうゆ', amount: '1本', usage: '在庫切れ補充', excluded: false },
+        { id: 10, category: '調味料・その他', name: '木綿豆腐', amount: '1丁', usage: '水曜 (1人分)', excluded: false }
+      ],
+
+      versions: {
+        'v1.2': {
+          title: 'v1.2 (最新: 生姜増量・大葉)',
+          compareTag: 'v1.1 との比較',
+          rating: '★4.9',
+          ingredients: [
+            { name: '鶏むね肉 (皮なし)', baseAmount: 300, unit: 'g', diff: 'none', note: '削ぎ切り' },
+            { name: '秋茄子', baseAmount: 2, unit: '本', diff: 'none', note: '乱切り' },
+            { name: '生姜 (千切り)', baseAmount: 15, unit: 'g', diff: 'mod', diffNote: '5g→15gへ増量。香りが抜群' },
+            { name: '大葉', baseAmount: 5, unit: '枚', diff: 'add', diffNote: '仕上げにトッピング' },
+            { name: 'ポン酢しょうゆ', baseAmount: 3, unit: '大さじ', diff: 'mod', diffNote: '大さじ2→3へ。コク出し' },
+            { name: 'ごま油', baseAmount: 1, unit: '小さじ', diff: 'none', note: '炒め油' }
+          ]
+        },
+        'v1.1': {
+          title: 'v1.1 (大葉追加)',
+          compareTag: 'v1.0 との比較',
+          rating: '★4.5',
+          ingredients: [
+            { name: '鶏むね肉 (皮なし)', baseAmount: 300, unit: 'g', diff: 'none', note: '' },
+            { name: '秋茄子', baseAmount: 2, unit: '本', diff: 'none', note: '' },
+            { name: '生姜 (すりおろし)', baseAmount: 5, unit: 'g', diff: 'none', note: '' },
+            { name: '大葉', baseAmount: 5, unit: '枚', diff: 'add', diffNote: 'さっぱり感をプラス' },
+            { name: 'ポン酢しょうゆ', baseAmount: 2, unit: '大さじ', diff: 'none', note: '' },
+            { name: 'ごま油', baseAmount: 1, unit: '小さじ', diff: 'none', note: '' }
+          ]
+        },
+        'v1.0': {
+          title: 'v1.0 (初回作成)',
+          compareTag: '初回バージョン',
+          rating: '★4.0',
+          ingredients: [
+            { name: '鶏むね肉 (皮なし)', baseAmount: 300, unit: 'g', diff: 'none', note: '' },
+            { name: '秋茄子', baseAmount: 2, unit: '本', diff: 'none', note: '' },
+            { name: '生姜 (すりおろし)', baseAmount: 5, unit: 'g', diff: 'none', note: '' },
+            { name: 'ポン酢しょうゆ', baseAmount: 2, unit: '大さじ', diff: 'none', note: '' },
+            { name: 'ごま油', baseAmount: 1, unit: '小さじ', diff: 'none', note: '' }
+          ]
+        }
+      },
+
+      cookingSteps: [
+        { instruction: '鶏むね肉は一口大の削ぎ切りにし、酒小さじ1・片栗粉小さじ1を揉み込んでおきます。', timer: null },
+        { instruction: 'フライパンにごま油小さじ1を中火で熱し、鶏むね肉を焼き色がつくまで約3分焼きます。', timer: 180 },
+        { instruction: '乱切りにした秋茄子と千切り生姜を加え、茄子がしんなりするまで約2分炒め合わせます。', timer: 120 },
+        { instruction: '火を止める直前にポン酢を回し入れ、強火でサッと絡めます。器に盛り千切り大葉を散らして完成！', timer: null }
+      ]
+    };
+
+    const TAG_CLASSES = {
+      purple: 'bg-purple-100 text-purple-800',
+      amber: 'bg-amber-100 text-amber-800',
+      blue: 'bg-blue-100 text-blue-800',
+      rose: 'bg-rose-100 text-rose-800',
+      emerald: 'bg-emerald-100 text-emerald-800',
+      slate: 'bg-slate-100 text-slate-600'
+    };
+
+    function switchTab(tab) {
+      appState.activeTab = tab;
+
+      document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
+      document.getElementById('view-shopping').classList.toggle('hidden', tab !== 'shopping');
+      document.getElementById('view-recipe').classList.toggle('hidden', tab !== 'recipe');
+
+      ['calendar', 'shopping', 'recipe'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const isActive = t === tab;
+        if (isActive) {
+          btn.className = 'active-scale flex flex-col items-center gap-1 text-emerald-600';
+          btn.querySelector('span:last-child').className = 'text-[10px] font-bold';
+        } else {
+          btn.className = 'active-scale flex flex-col items-center gap-1 text-slate-400';
+          btn.querySelector('span:last-child').className = 'text-[10px] font-medium';
+        }
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function weeklyProteinTotal() {
+      return appState.calendarDays.reduce((sum, day) => sum + (day.pfc ? day.pfc.p : 0), 0);
+    }
+
+    function updateHeaderProtein() {
+      const el = document.getElementById('header-protein');
+      if (!el) return;
+      const day = appState.calendarDays.find(d => d.date === appState.selectedDate);
+      if (day && day.pfc) {
+        el.textContent = `P: ${day.pfc.p}g`;
+      } else {
+        el.textContent = `P: ${weeklyProteinTotal()}g`;
+      }
+    }
+
+    function renderCalendar() {
+      const strip = document.getElementById('week-strip');
+      if (strip) {
+        strip.innerHTML = '';
+        appState.calendarDays.forEach(item => {
+          const isSelected = item.date === appState.selectedDate;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.onclick = () => selectDay(item.date);
+          btn.className = `shrink-0 w-12 py-2 rounded-2xl flex flex-col items-center transition-all active-scale ${
+            isSelected
+              ? 'bg-slate-900 text-white shadow-md'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`;
+
+          const dayColor = item.day === '日'
+            ? (isSelected ? 'text-rose-300' : 'text-rose-500')
+            : item.day === '土'
+              ? (isSelected ? 'text-sky-300' : 'text-sky-500')
+              : 'opacity-80';
+
+          btn.innerHTML = `
+            <span class="text-[10px] font-bold ${dayColor}">${item.day}</span>
+            <span class="text-sm font-bold font-mono">${item.date.split('/')[1]}</span>
+            <span class="mt-1 w-1.5 h-1.5 rounded-full ${item.isBusinessTrip ? 'bg-amber-400' : item.pfc ? 'bg-emerald-400' : 'bg-slate-300'}"></span>
+          `;
+          strip.appendChild(btn);
+        });
+      }
+
+      renderDayDetail();
+      updateHeaderProtein();
+    }
+
+    function selectDay(dateStr) {
+      appState.selectedDate = dateStr;
+      renderCalendar();
+    }
+
+    function renderDayDetail() {
+      const card = document.getElementById('day-detail-card');
+      if (!card) return;
+
+      const dayData = appState.calendarDays.find(d => d.date === appState.selectedDate) || appState.calendarDays[1];
+      const tagClass = TAG_CLASSES[dayData.tagColor] || TAG_CLASSES.emerald;
+      const isRecipeMeal = (dayData.meal || '').includes('鶏むね肉と秋茄子');
+      const isEmpty = !dayData.pfc;
+
+      const mealBlock = isEmpty
+        ? `
+          <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-bold text-emerald-800">${dayData.meal}</p>
+              <p class="text-[10px] text-emerald-700 mt-0.5"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>空き枠です</p>
+            </div>
+            <button type="button" onclick="aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full">AIで決める</button>
+          </div>
+        `
+        : `
+          <div ${isRecipeMeal ? 'onclick="jumpToRecipe()"' : ''} class="bg-slate-50 border border-slate-200/70 rounded-2xl p-2.5 flex items-center justify-between ${isRecipeMeal ? 'cursor-pointer active:bg-slate-100' : ''}">
+            <p class="text-xs font-bold text-slate-900 leading-snug pr-2">${dayData.meal}</p>
+            ${isRecipeMeal ? '<i class="fa-solid fa-chevron-right text-[11px] text-slate-400 shrink-0"></i>' : ''}
+          </div>
+        `;
+
+      const pfcBlock = dayData.pfc
+        ? `
+          <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1">
+            <span>P: <strong class="text-rose-600 font-bold">${dayData.pfc.p}g</strong></span>
+            <span>F: <strong class="text-amber-600 font-bold">${dayData.pfc.f}g</strong></span>
+            <span>C: <strong class="text-sky-600 font-bold">${dayData.pfc.c}g</strong></span>
+          </div>
+        `
+        : '';
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-sm font-bold text-slate-900">${dayData.date} (${dayData.day})</span>
+            ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${tagClass}">${dayData.tag}</span>
+          </div>
+          <button type="button" onclick="toggleDayServings()" class="active-scale text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 shrink-0 ${
+            dayData.servings === 1
+              ? 'bg-amber-500 text-white border-amber-500'
+              : 'bg-slate-100 text-slate-700 border-slate-200'
+          }">
+            <i class="fa-solid ${dayData.servings === 1 ? 'fa-user' : 'fa-user-group'} text-[9px]"></i>
+            <span>${dayData.servings}人分</span>
+          </button>
+        </div>
+        ${mealBlock}
+        ${pfcBlock}
+      `;
+    }
+
+    function toggleDayServings() {
+      const dayData = appState.calendarDays.find(d => d.date === appState.selectedDate);
+      if (!dayData) return;
+      dayData.servings = dayData.servings === 2 ? 1 : 2;
+      if (dayData.isBusinessTrip) {
+        dayData.tag = dayData.servings === 1 ? '出張 1人分' : '出張解除 2人分';
+        dayData.tagColor = dayData.servings === 1 ? 'amber' : 'blue';
+      } else if (dayData.tag === '空き枠' || dayData.tag.startsWith('AI提案')) {
+        // keep tag
+      } else if (dayData.tag === '出張解除 2人分' || dayData.tag === '出張 1人分') {
+        dayData.tag = dayData.servings === 1 ? '1人分' : '2人分';
+      }
+      if ((dayData.meal || '').includes('鶏むね肉と秋茄子')) {
+        appState.servings = dayData.servings;
+        const servingsText = document.getElementById('recipe-servings-text');
+        if (servingsText) servingsText.innerText = `${appState.servings}人分`;
+        renderRecipeView();
+      }
+      renderCalendar();
+    }
+
+    function jumpToRecipe() {
+      switchTab('recipe');
+    }
+
+    function aiSuggestRemaining() {
+      const target = appState.calendarDays.find(d => d.date === '9/12');
+      if (target) {
+        target.meal = '秋鯖の竜田揚げ ＆ キノコポン酢和え';
+        target.tag = 'AI提案 (旬食材)';
+        target.tagColor = 'emerald';
+        target.pfc = { p: 35, f: 15, c: 38 };
+        appState.selectedDate = '9/12';
+        renderCalendar();
+      }
+    }
+
+    function renderShoppingList() {
+      const container = document.getElementById('shopping-categories-container');
+      container.innerHTML = '';
+
+      const large = appState.isShoppingMode;
+      const categories = [...new Set(appState.shoppingItems.map(i => i.category))];
+
+      categories.forEach(cat => {
+        const catItems = appState.shoppingItems.filter(i => i.category === cat);
+        const activeCount = catItems.filter(i => !i.excluded).length;
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-3xl p-4 border border-slate-200/60 shadow-sm';
+
+        let itemsHtml = '';
+        catItems.forEach(item => {
+          itemsHtml += `
+            <div onclick="toggleExcludeItem(${item.id})" class="flex items-center justify-between p-2 rounded-xl transition-all cursor-pointer ${
+              item.excluded ? 'opacity-40 line-through text-slate-400 bg-slate-50' : 'active:bg-slate-50 text-slate-800'
+            }">
+              <div class="flex items-center gap-2.5">
+                <div class="w-5 h-5 rounded-full border flex items-center justify-center text-[10px] ${
+                  item.excluded ? 'bg-slate-300 border-slate-300 text-white' : 'border-slate-300 text-transparent'
+                }">
+                  <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                  <span class="${large ? 'text-sm' : 'text-xs'} font-bold">${item.name}</span>
+                  <span class="text-[10px] text-slate-400 block">${item.usage}</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="${large ? 'text-sm' : 'text-xs'} font-mono font-bold">${item.amount}</span>
+                ${item.excluded ? '<span class="text-[9px] text-indigo-500 block font-bold">ストック有</span>' : ''}
+              </div>
+            </div>
+          `;
+        });
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+            <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-tag text-emerald-600 text-xs"></i> ${cat}
+            </h3>
+            <span class="text-[11px] font-mono text-slate-400">${activeCount} / ${catItems.length}品</span>
+          </div>
+          <div class="space-y-1">
+            ${itemsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      const remainingTotal = appState.shoppingItems.filter(i => !i.excluded).length;
+      const badge = document.getElementById('tab-shopping-badge');
+      badge.innerText = remainingTotal;
+      badge.classList.toggle('hidden', remainingTotal === 0);
+    }
+
+    function toggleExcludeItem(id) {
+      const it = appState.shoppingItems.find(i => i.id === id);
+      if (it) {
+        it.excluded = !it.excluded;
+        renderShoppingList();
+      }
+    }
+
+    function toggleShoppingMode() {
+      appState.isShoppingMode = !appState.isShoppingMode;
+      const btn = document.getElementById('shop-mode-toggle-btn');
+      const label = document.getElementById('shop-mode-label');
+      if (appState.isShoppingMode) {
+        btn.className = 'active-scale bg-emerald-600 text-white text-xs font-bold px-3 py-2 rounded-2xl flex items-center gap-1.5 shadow-sm';
+        label.innerText = '買い物中 (ON)';
+      } else {
+        btn.className = 'active-scale bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-2xl flex items-center gap-1.5 shadow-sm';
+        label.innerText = 'スーパーモード';
+      }
+      renderShoppingList();
+    }
+
+    function nextVersionKey() {
+      const nums = Object.keys(appState.versions).map(k => parseFloat(k.replace('v', ''))).filter(n => !Number.isNaN(n));
+      const max = nums.length ? Math.max(...nums) : 1.2;
+      return `v${(Math.round((max + 0.1) * 10) / 10).toFixed(1)}`;
+    }
+
+    function renderRecipeView() {
+      const v = appState.versions[appState.activeVersion];
+      if (!v) return;
+      document.getElementById('diff-version-tag').innerText = v.compareTag;
+      document.getElementById('recipe-active-badge').innerText = `${appState.activeVersion} (${v.rating})`;
+
+      const tabs = document.getElementById('recipe-version-tabs');
+      tabs.innerHTML = '';
+      Object.keys(appState.versions).forEach(vKey => {
+        const item = appState.versions[vKey];
+        const isActive = vKey === appState.activeVersion;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.onclick = () => selectRecipeVersion(vKey);
+        b.className = `active-scale shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+          isActive
+            ? 'bg-slate-900 text-white shadow-xs'
+            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+        }`;
+        b.innerHTML = `<span>${vKey}</span> <span class="text-[10px] opacity-75">${item.rating}</span>`;
+        tabs.appendChild(b);
+      });
+
+      const container = document.getElementById('recipe-ingredients-box');
+      container.innerHTML = '';
+      const scale = appState.servings / 2;
+
+      v.ingredients.forEach(ing => {
+        const scaled = Math.round(ing.baseAmount * scale * 10) / 10;
+        const row = document.createElement('div');
+
+        let diffBadge = '';
+        let rowBg = 'bg-slate-50 border-slate-200/70';
+
+        if (ing.diff === 'add') {
+          diffBadge = '<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold font-mono px-1.5 py-0.5 rounded mr-1.5">+ ADD</span>';
+          rowBg = 'bg-emerald-50/70 border-emerald-200';
+        } else if (ing.diff === 'mod') {
+          diffBadge = '<span class="bg-amber-100 text-amber-800 text-[9px] font-bold font-mono px-1.5 py-0.5 rounded mr-1.5">Δ MOD</span>';
+          rowBg = 'bg-amber-50/70 border-amber-200';
+        }
+
+        row.className = `p-2.5 rounded-2xl border flex items-center justify-between text-xs ${rowBg}`;
+        row.innerHTML = `
+          <div class="flex items-center">
+            ${diffBadge}
+            <div>
+              <span class="font-bold text-slate-800">${ing.name}</span>
+              ${ing.diffNote ? `<p class="text-[10px] text-amber-700 font-medium">${ing.diffNote}</p>` : ''}
+              ${ing.note ? `<p class="text-[10px] text-slate-400">${ing.note}</p>` : ''}
+            </div>
+          </div>
+          <span class="font-mono font-bold text-slate-900 whitespace-nowrap ml-2">${scaled} ${ing.unit}</span>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function selectRecipeVersion(vKey) {
+      appState.activeVersion = vKey;
+      renderRecipeView();
+    }
+
+    function changeRecipeServings(delta) {
+      const next = appState.servings + delta;
+      if (next >= 1 && next <= 6) {
+        appState.servings = next;
+        document.getElementById('recipe-servings-text').innerText = `${next}人分`;
+        const tue = appState.calendarDays.find(d => d.date === '9/8');
+        if (tue) tue.servings = next;
+        renderRecipeView();
+      }
+    }
+
+    async function openCookingMode() {
+      document.getElementById('cooking-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      appState.cookingStep = 1;
+      updateCookingStepUI();
+
+      try {
+        if ('wakeLock' in navigator) {
+          appState.wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (e) {
+        console.log('Wake lock unsupported or rejected');
+      }
+    }
+
+    function closeCookingMode() {
+      document.getElementById('cooking-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+      if (appState.wakeLock) {
+        appState.wakeLock.release();
+        appState.wakeLock = null;
+      }
+      clearInterval(appState.timerInterval);
+      appState.timerInterval = null;
+    }
+
+    function updateCookingStepUI() {
+      const step = appState.cookingSteps[appState.cookingStep - 1];
+      document.getElementById('step-badge').innerText = `STEP ${appState.cookingStep} / ${appState.cookingSteps.length}`;
+      document.getElementById('step-text').innerText = step.instruction;
+
+      clearInterval(appState.timerInterval);
+      appState.timerInterval = null;
+      appState.timerSeconds = step.timer || 180;
+      updateCookingTimerDisplay();
+      document.getElementById('cooking-timer-btn').innerHTML = '<i class="fa-solid fa-play"></i><span>スタート</span>';
+    }
+
+    function stepMove(delta) {
+      const next = appState.cookingStep + delta;
+      if (next >= 1 && next <= appState.cookingSteps.length) {
+        appState.cookingStep = next;
+        updateCookingStepUI();
+      } else if (next > appState.cookingSteps.length) {
+        closeCookingMode();
+        openCommitModal();
+      }
+    }
+
+    function updateCookingTimerDisplay() {
+      const m = String(Math.floor(appState.timerSeconds / 60)).padStart(2, '0');
+      const s = String(appState.timerSeconds % 60).padStart(2, '0');
+      document.getElementById('cooking-timer-display').innerText = `${m}:${s}`;
+    }
+
+    function toggleCookingTimer() {
+      const btn = document.getElementById('cooking-timer-btn');
+      if (appState.timerInterval) {
+        clearInterval(appState.timerInterval);
+        appState.timerInterval = null;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i><span>再開</span>';
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i><span>一時停止</span>';
+        appState.timerInterval = setInterval(() => {
+          if (appState.timerSeconds > 0) {
+            appState.timerSeconds--;
+            updateCookingTimerDisplay();
+          } else {
+            clearInterval(appState.timerInterval);
+            appState.timerInterval = null;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i><span>完了！</span>';
+          }
+        }, 1000);
+      }
+    }
+
+    function setCommitRating(n) {
+      appState.commitRating = n;
+      const wrap = document.getElementById('commit-stars');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('aria-label', String(i));
+        btn.onclick = () => setCommitRating(i);
+        btn.innerHTML = `<i class="fa-${i <= n ? 'solid' : 'regular'} fa-star"></i>`;
+        wrap.appendChild(btn);
+      }
+    }
+
+    function openCommitModal() {
+      const nextKey = nextVersionKey();
+      document.getElementById('commit-next-badge').innerText = nextKey;
+      document.getElementById('commit-save-btn').querySelector('span').innerText = `${nextKey} として保存`;
+      document.getElementById('commit-modal-backdrop').classList.remove('hidden');
+      document.getElementById('commit-modal').classList.remove('hidden');
+      setCommitRating(appState.commitRating);
+    }
+
+    function closeCommitModal() {
+      document.getElementById('commit-modal-backdrop').classList.add('hidden');
+      document.getElementById('commit-modal').classList.add('hidden');
+    }
+
+    function saveCommitVersion() {
+      const title = document.getElementById('commit-input-title').value.trim() || '味アップデート';
+      const note = document.getElementById('commit-input-note').value.trim();
+      const nextKey = nextVersionKey();
+      const previousKey = appState.activeVersion;
+      const base = appState.versions[previousKey] || appState.versions['v1.2'];
+      const rating = `★${appState.commitRating.toFixed(1)}`;
+
+      const next = {
+        title: `${nextKey} (最新: ${title})`,
+        compareTag: `${previousKey} との比較`,
+        rating,
+        ingredients: JSON.parse(JSON.stringify(base.ingredients)).map(ing => ({
+          ...ing,
+          diff: 'none',
+          diffNote: ''
+        }))
+      };
+      if (note) {
+        const first = next.ingredients[0];
+        if (first) first.note = note;
+      }
+
+      const reordered = { [nextKey]: next };
+      Object.keys(appState.versions).forEach(k => {
+        const item = appState.versions[k];
+        item.title = item.title.replace('最新: ', '').replace('最新', '');
+        reordered[k] = item;
+      });
+      appState.versions = reordered;
+      appState.activeVersion = nextKey;
+
+      const tue = appState.calendarDays.find(d => d.date === '9/8');
+      if (tue) tue.tag = `最新 ${nextKey}`;
+
+      closeCommitModal();
+      switchTab('recipe');
+      renderRecipeView();
+      renderCalendar();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCalendar();
+      renderShoppingList();
+      renderRecipeView();
+    });
+  </script>
+</body>
+</html>
