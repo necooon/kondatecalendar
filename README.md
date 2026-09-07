@@ -2,7 +2,9 @@
 
 iPhone向けの献立・買い物・レシピ管理アプリです。レシピの味変を Git のコミットのように残し、人数（1人/2人）や作り置き、買い物リストを1画面で扱います。
 
-ビルドは不要です。`index.html` をブラウザで開くか、GitHub Pages で配信してください。
+公開 URL: https://necooon.github.io/kondatecalendar/
+
+ビルドは不要です。`index.html` をブラウザで開くか、上の GitHub Pages を使ってください。
 
 ## 画面
 
@@ -20,7 +22,7 @@ iPhone向けの献立・買い物・レシピ管理アプリです。レシピ�
 2. 共有 → **ホーム画面に追加**
 3. スタンドアロンの PWA として起動する（ノッチ／ホームバーはセーフエリア対応）
 
-GitHub Pages を有効にする場合は、リポジトリ Settings → Pages で `main` のルートを公開してください。
+GitHub Pages は `main` への push で自動デプロイされます。
 
 ## 技術
 
