@@ -996,7 +996,11 @@
         title: `${nextKey} (最新: ${title})`,
         compareTag: `${previousKey} との比較`,
         rating,
-        ingredients: JSON.parse(JSON.stringify(base.ingredients))
+        ingredients: JSON.parse(JSON.stringify(base.ingredients)).map(ing => ({
+          ...ing,
+          diff: 'none',
+          diffNote: ''
+        }))
       };
       if (note) {
         const first = next.ingredients[0];
