@@ -13,7 +13,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
       name: '鶏むね肉と秋茄子のさっぱり炒め',
       tag: '定番 #02',
       servingsBase: 2,
-      pfc: { p: 38.4, f: 7.8, c: 42.0, kcal: 392 },
+      pfc: { p: 36.4, f: 5.0, c: 6.8, kcal: 217 },
       versions: {
         'v1.2': {
           title: 'v1.2 (最新: 生姜増量・大葉)',

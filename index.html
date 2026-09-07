@@ -315,23 +315,24 @@
         <!-- PFCバランスサマリー（iPhone用コンパクト表示） -->
         <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200/60 mt-2">
           <div class="flex items-center justify-between text-[11px] font-bold mb-1.5">
-            <span class="text-slate-600">1食あたりのPFCマクロ</span>
-            <span id="recipe-kcal" class="font-mono text-slate-800">392 kcal</span>
+            <span class="text-slate-600">1食あたりのPFC（材料から自動計算）</span>
+            <span id="recipe-kcal" class="font-mono text-slate-800">—</span>
           </div>
           <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
             <div class="bg-rose-50 border border-rose-100 p-1.5 rounded-xl">
               <span class="text-[9px] font-sans font-bold text-rose-600 block">タンパク質</span>
-              <span id="recipe-p" class="font-bold text-rose-700">38.4g</span>
+              <span id="recipe-p" class="font-bold text-rose-700">—</span>
             </div>
             <div class="bg-amber-50 border border-amber-100 p-1.5 rounded-xl">
               <span class="text-[9px] font-sans font-bold text-amber-600 block">脂質</span>
-              <span id="recipe-f" class="font-bold text-amber-700">7.8g</span>
+              <span id="recipe-f" class="font-bold text-amber-700">—</span>
             </div>
             <div class="bg-sky-50 border border-sky-100 p-1.5 rounded-xl">
               <span class="text-[9px] font-sans font-bold text-sky-600 block">炭水化物</span>
-              <span id="recipe-c" class="font-bold text-sky-700">42.0g</span>
+              <span id="recipe-c" class="font-bold text-sky-700">—</span>
             </div>
           </div>
+          <p id="recipe-pfc-note" class="hidden text-[10px] text-amber-700 mt-1.5"></p>
         </div>
 
         <!-- 下部アクションバー（調理開始 ＆ 味コミット） -->
@@ -496,13 +497,8 @@
         <input type="text" id="reg-tag" placeholder="例: 定番 #03" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
       <div>
-        <p class="font-bold text-slate-700 mb-1">PFC（任意・1食）</p>
-        <div class="grid grid-cols-4 gap-1.5">
-          <input type="number" step="0.1" id="reg-p" placeholder="P g" class="bg-slate-100 border border-slate-200 rounded-xl p-2 text-center font-mono">
-          <input type="number" step="0.1" id="reg-f" placeholder="F g" class="bg-slate-100 border border-slate-200 rounded-xl p-2 text-center font-mono">
-          <input type="number" step="0.1" id="reg-c" placeholder="C g" class="bg-slate-100 border border-slate-200 rounded-xl p-2 text-center font-mono">
-          <input type="number" step="1" id="reg-kcal" placeholder="kcal" class="bg-slate-100 border border-slate-200 rounded-xl p-2 text-center font-mono">
-        </div>
+        <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
+        <input required type="number" min="1" step="1" id="reg-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
       <div>
         <div class="flex items-center justify-between mb-1">
@@ -510,6 +506,11 @@
           <button type="button" onclick="addRegisterIngredientRow()" class="text-emerald-700 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-ingredients" class="space-y-1.5"></div>
+        <div id="reg-pfc-preview" class="bg-slate-50 rounded-2xl p-3 border border-slate-200/60 mt-2">
+          <p class="font-bold text-slate-600 mb-1">1食あたり（材料から自動計算）</p>
+          <p id="reg-pfc-text" class="font-mono text-slate-800">P: —  F: —  C: —  / — kcal</p>
+          <p id="reg-pfc-note" class="hidden text-[10px] text-amber-700 mt-1"></p>
+        </div>
       </div>
       <div>
         <div class="flex items-center justify-between mb-1">
@@ -532,6 +533,7 @@
   <!-- ==================== アプリ状態とJavaScriptロジック ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/nutrition.js"></script>
   <script src="js/recipes-db.js"></script>
   <script>
     const appState = {
@@ -970,11 +972,17 @@
       document.getElementById('recipe-active-badge').innerText = `${appState.activeVersion} (${v.rating})`;
       document.getElementById('recipe-servings-text').innerText = `${appState.servings}人分`;
 
-      const pfc = recipe.pfc;
-      document.getElementById('recipe-kcal').innerText = pfc && pfc.kcal != null ? `${pfc.kcal} kcal` : '—';
-      document.getElementById('recipe-p').innerText = pfc && pfc.p != null ? `${pfc.p}g` : '—';
-      document.getElementById('recipe-f').innerText = pfc && pfc.f != null ? `${pfc.f}g` : '—';
-      document.getElementById('recipe-c').innerText = pfc && pfc.c != null ? `${pfc.c}g` : '—';
+      const pfc = recipePfcFromIngredients(recipe, v);
+      document.getElementById('recipe-kcal').innerText = pfc.kcal != null ? `${pfc.kcal} kcal` : '—';
+      document.getElementById('recipe-p').innerText = pfc.p != null ? `${pfc.p}g` : '—';
+      document.getElementById('recipe-f').innerText = pfc.f != null ? `${pfc.f}g` : '—';
+      document.getElementById('recipe-c').innerText = pfc.c != null ? `${pfc.c}g` : '—';
+      const pfcNote = document.getElementById('recipe-pfc-note');
+      const unmatchedText = formatUnmatchedNote(pfc.unmatched);
+      if (pfcNote) {
+        pfcNote.textContent = unmatchedText;
+        pfcNote.classList.toggle('hidden', !unmatchedText);
+      }
 
       const tabs = document.getElementById('recipe-version-tabs');
       tabs.innerHTML = '';
@@ -1189,6 +1197,56 @@
       }
     }
 
+    function recipePfcFromIngredients(recipe, version) {
+      const n = window.KitchenGit && KitchenGit.Nutrition;
+      const servingsBase = Number(recipe && recipe.servingsBase) || 2;
+      if (!n) {
+        const fallback = (recipe && recipe.pfc) || {};
+        return { p: fallback.p, f: fallback.f, c: fallback.c, kcal: fallback.kcal, unmatched: [] };
+      }
+      return n.computePerServing(version && version.ingredients, servingsBase);
+    }
+
+    function formatUnmatchedNote(unmatched) {
+      if (!unmatched || !unmatched.length) return '';
+      return '未照合: ' + unmatched.join('、') + '（栄養素マスタにないため加算していません）';
+    }
+
+    function collectRegisterIngredients() {
+      return [...document.getElementById('reg-ingredients').children].map(row => {
+        const inputs = row.querySelectorAll('input');
+        return {
+          name: inputs[0].value.trim(),
+          baseAmount: Number(inputs[1].value) || 0,
+          unit: inputs[2].value.trim() || 'g',
+          note: ''
+        };
+      }).filter(ing => ing.name);
+    }
+
+    function updateRegisterPfcPreview() {
+      const n = window.KitchenGit && KitchenGit.Nutrition;
+      const textEl = document.getElementById('reg-pfc-text');
+      const noteEl = document.getElementById('reg-pfc-note');
+      if (!textEl) return;
+      if (!n) {
+        textEl.textContent = 'P: —  F: —  C: —  / — kcal';
+        if (noteEl) {
+          noteEl.textContent = '';
+          noteEl.classList.add('hidden');
+        }
+        return;
+      }
+      const servingsBase = Number(document.getElementById('reg-servings').value) || 2;
+      const computed = n.computePerServing(collectRegisterIngredients(), servingsBase);
+      textEl.textContent = `P: ${computed.p}g  F: ${computed.f}g  C: ${computed.c}g  / ${computed.kcal} kcal`;
+      const unmatchedText = formatUnmatchedNote(computed.unmatched);
+      if (noteEl) {
+        noteEl.textContent = unmatchedText;
+        noteEl.classList.toggle('hidden', !unmatchedText);
+      }
+    }
+
     function addRegisterIngredientRow(name, amount, unit) {
       const wrap = document.getElementById('reg-ingredients');
       const row = document.createElement('div');
@@ -1197,9 +1255,17 @@
         <input type="text" value="${name || ''}" placeholder="材料名" class="col-span-3 bg-slate-100 border border-slate-200 rounded-xl p-2">
         <input type="number" step="0.1" value="${amount || ''}" placeholder="量" class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2 font-mono">
         <input type="text" value="${unit || 'g'}" placeholder="単位" class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2">
-        <button type="button" class="col-span-1 text-slate-400" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="col-span-1 text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       `;
+      row.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateRegisterPfcPreview);
+      });
+      row.querySelector('button').addEventListener('click', () => {
+        row.remove();
+        updateRegisterPfcPreview();
+      });
       wrap.appendChild(row);
+      updateRegisterPfcPreview();
     }
 
     function addRegisterStepRow(instruction, minutes) {
@@ -1222,14 +1288,12 @@
       document.getElementById('register-error').classList.add('hidden');
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-tag').value = '';
-      document.getElementById('reg-p').value = '';
-      document.getElementById('reg-f').value = '';
-      document.getElementById('reg-c').value = '';
-      document.getElementById('reg-kcal').value = '';
+      document.getElementById('reg-servings').value = '2';
       document.getElementById('reg-ingredients').innerHTML = '';
       document.getElementById('reg-steps').innerHTML = '';
       addRegisterIngredientRow();
       addRegisterStepRow();
+      updateRegisterPfcPreview();
       document.getElementById('register-modal-backdrop').classList.remove('hidden');
       document.getElementById('register-modal').classList.remove('hidden');
     }
@@ -1243,28 +1307,13 @@
       const name = document.getElementById('reg-name').value.trim();
       if (!name) throw new Error('料理名を入力してください');
       const tag = document.getElementById('reg-tag').value.trim();
-      const p = document.getElementById('reg-p').value;
-      const f = document.getElementById('reg-f').value;
-      const c = document.getElementById('reg-c').value;
-      const kcal = document.getElementById('reg-kcal').value;
-      let pfc = null;
-      if (p || f || c || kcal) {
-        pfc = {
-          p: p === '' ? null : Number(p),
-          f: f === '' ? null : Number(f),
-          c: c === '' ? null : Number(c),
-          kcal: kcal === '' ? null : Number(kcal)
-        };
-      }
-      const ingredients = [...document.getElementById('reg-ingredients').children].map(row => {
-        const inputs = row.querySelectorAll('input');
-        return {
-          name: inputs[0].value.trim(),
-          baseAmount: Number(inputs[1].value) || 0,
-          unit: inputs[2].value.trim() || 'g',
-          note: ''
-        };
-      }).filter(ing => ing.name);
+      const servingsBase = Number(document.getElementById('reg-servings').value) || 2;
+      const ingredients = collectRegisterIngredients();
+      const n = window.KitchenGit && KitchenGit.Nutrition;
+      const computed = n
+        ? n.computePerServing(ingredients, servingsBase)
+        : { p: 0, f: 0, c: 0, kcal: 0 };
+      const pfc = { p: computed.p, f: computed.f, c: computed.c, kcal: computed.kcal };
       const steps = [...document.getElementById('reg-steps').children].map(row => {
         const instruction = row.querySelector('textarea').value.trim();
         const min = row.querySelector('input[type="number"]').value;
@@ -1276,7 +1325,7 @@
       return {
         name,
         tag,
-        servingsBase: 2,
+        servingsBase,
         pfc,
         versions: {
           'v1.0': {
@@ -1362,6 +1411,12 @@
       renderCalendar();
       renderShoppingList();
       loadRecipes();
+      document.getElementById('reg-servings').addEventListener('change', function () {
+        const n = Number(this.value);
+        if (!n || n < 1) this.value = 1;
+        updateRegisterPfcPreview();
+      });
+      document.getElementById('reg-servings').addEventListener('input', updateRegisterPfcPreview);
     });
   </script>
 </body>
