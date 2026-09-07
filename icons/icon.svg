@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="KitchenGit">
+  <rect width="512" height="512" rx="112" fill="#10b981"/>
+  <g fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round">
+    <path d="M210 140 v232"/>
+    <path d="M210 250 L340 190"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="210" cy="140" r="42"/>
+    <circle cx="210" cy="372" r="42"/>
+    <circle cx="340" cy="190" r="42"/>
+  </g>
+</svg>
