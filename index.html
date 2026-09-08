@@ -493,10 +493,6 @@
         <input required type="text" id="reg-name" placeholder="例: 豚ヒレと豆腐のスタミナ炒め" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
       <div>
-        <label class="font-bold text-slate-700 block mb-1">タグ（任意）</label>
-        <input type="text" id="reg-tag" placeholder="例: 定番 #03" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-      </div>
-      <div>
         <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
         <input required type="number" min="1" step="1" id="reg-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
@@ -506,11 +502,6 @@
           <button type="button" onclick="addRegisterIngredientRow()" class="text-emerald-700 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-ingredients" class="space-y-1.5"></div>
-        <div id="reg-pfc-preview" class="bg-slate-50 rounded-2xl p-3 border border-slate-200/60 mt-2">
-          <p class="font-bold text-slate-600 mb-1">1食あたり（材料から自動計算）</p>
-          <p id="reg-pfc-text" class="font-mono text-slate-800">P: —  F: —  C: —  / — kcal</p>
-          <p id="reg-pfc-note" class="hidden text-[10px] text-amber-700 mt-1"></p>
-        </div>
       </div>
       <div>
         <div class="flex items-center justify-between mb-1">
@@ -518,6 +509,10 @@
           <button type="button" onclick="addRegisterStepRow()" class="text-emerald-700 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-steps" class="space-y-1.5"></div>
+      </div>
+      <div>
+        <label class="font-bold text-slate-700 block mb-1">タグ（任意）</label>
+        <input type="text" id="reg-tag" placeholder="例: 定番 #03" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
       <p id="register-error" class="hidden text-rose-600 font-bold"></p>
       <div class="pt-1 flex gap-2">
@@ -1318,76 +1313,75 @@
       return '未照合: ' + unmatched.join('、') + '（栄養素マスタにないため加算していません）';
     }
 
+    const REGISTER_UNIT_OPTIONS = [
+      'g', 'ml', 'kg',
+      '大さじ', '小さじ',
+      '本', '個', '枚', '切れ', '丁', '束', '尾', '片', 'かけ',
+      '適量', '少々'
+    ];
+
     function collectRegisterIngredients() {
       return [...document.getElementById('reg-ingredients').children].map(row => {
         const inputs = row.querySelectorAll('input');
+        const unitSelect = row.querySelector('select');
         return {
           name: inputs[0].value.trim(),
           baseAmount: Number(inputs[1].value) || 0,
-          unit: inputs[2].value.trim() || 'g',
+          unit: (unitSelect && unitSelect.value) || 'g',
           note: ''
         };
       }).filter(ing => ing.name);
-    }
-
-    function updateRegisterPfcPreview() {
-      const n = window.KitchenGit && KitchenGit.Nutrition;
-      const textEl = document.getElementById('reg-pfc-text');
-      const noteEl = document.getElementById('reg-pfc-note');
-      if (!textEl) return;
-      if (!n) {
-        textEl.textContent = 'P: —  F: —  C: —  / — kcal';
-        if (noteEl) {
-          noteEl.textContent = '';
-          noteEl.classList.add('hidden');
-        }
-        return;
-      }
-      const servingsBase = Number(document.getElementById('reg-servings').value) || 2;
-      const computed = n.computePerServing(collectRegisterIngredients(), servingsBase);
-      textEl.textContent = `P: ${computed.p}g  F: ${computed.f}g  C: ${computed.c}g  / ${computed.kcal} kcal`;
-      const unmatchedText = formatUnmatchedNote(computed.unmatched);
-      if (noteEl) {
-        noteEl.textContent = unmatchedText;
-        noteEl.classList.toggle('hidden', !unmatchedText);
-      }
     }
 
     function addRegisterIngredientRow(name, amount, unit) {
       const wrap = document.getElementById('reg-ingredients');
       const row = document.createElement('div');
       row.className = 'grid grid-cols-6 gap-1.5 items-center';
+      const unitValue = unit || 'g';
+      const optionsHtml = REGISTER_UNIT_OPTIONS.map(u =>
+        `<option value="${u}"${u === unitValue ? ' selected' : ''}>${u}</option>`
+      ).join('');
       row.innerHTML = `
         <input type="text" value="${name || ''}" placeholder="材料名" class="col-span-3 bg-slate-100 border border-slate-200 rounded-xl p-2">
         <input type="number" step="0.1" value="${amount || ''}" placeholder="量" class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2 font-mono">
-        <input type="text" value="${unit || 'g'}" placeholder="単位" class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2">
+        <select class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2">${optionsHtml}</select>
         <button type="button" class="col-span-1 text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       `;
-      row.querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', updateRegisterPfcPreview);
-      });
       row.querySelector('button').addEventListener('click', () => {
         row.remove();
-        updateRegisterPfcPreview();
       });
       wrap.appendChild(row);
-      updateRegisterPfcPreview();
+    }
+
+    function renumberRegisterSteps() {
+      [...document.getElementById('reg-steps').children].forEach((row, index) => {
+        const numEl = row.querySelector('.step-num');
+        if (numEl) numEl.textContent = String(index + 1);
+      });
     }
 
     function addRegisterStepRow(instruction, minutes) {
       const wrap = document.getElementById('reg-steps');
       const row = document.createElement('div');
-      row.className = 'space-y-1 bg-slate-50 rounded-2xl p-2 border border-slate-200/70';
+      row.className = 'reg-step-row space-y-1 bg-slate-50 rounded-2xl p-2 border border-slate-200/70';
       row.innerHTML = `
-        <textarea rows="2" placeholder="工程の説明" class="w-full bg-white border border-slate-200 rounded-xl p-2">${instruction || ''}</textarea>
-        <div class="flex items-center justify-between gap-2">
+        <div class="flex items-start gap-2">
+          <span class="step-num font-mono font-bold text-emerald-700 shrink-0 pt-2">1</span>
+          <textarea rows="2" placeholder="工程の説明" class="w-full bg-white border border-slate-200 rounded-xl p-2">${instruction || ''}</textarea>
+        </div>
+        <div class="flex items-center justify-between gap-2 pl-6">
           <label class="text-slate-500 flex items-center gap-1">タイマー（分）
             <input type="number" min="0" step="1" value="${minutes || ''}" class="w-16 bg-white border border-slate-200 rounded-lg p-1 font-mono">
           </label>
-          <button type="button" class="text-slate-400" onclick="this.closest('div.space-y-1').remove()"><i class="fa-solid fa-xmark"></i></button>
+          <button type="button" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
         </div>
       `;
+      row.querySelector('button').addEventListener('click', () => {
+        row.remove();
+        renumberRegisterSteps();
+      });
       wrap.appendChild(row);
+      renumberRegisterSteps();
     }
 
     function openRegisterModal() {
@@ -1399,7 +1393,6 @@
       document.getElementById('reg-steps').innerHTML = '';
       addRegisterIngredientRow();
       addRegisterStepRow();
-      updateRegisterPfcPreview();
       document.getElementById('register-modal-backdrop').classList.remove('hidden');
       document.getElementById('register-modal').classList.remove('hidden');
     }
@@ -1520,9 +1513,7 @@
       document.getElementById('reg-servings').addEventListener('change', function () {
         const n = Number(this.value);
         if (!n || n < 1) this.value = 1;
-        updateRegisterPfcPreview();
       });
-      document.getElementById('reg-servings').addEventListener('input', updateRegisterPfcPreview);
     });
   </script>
 </body>
