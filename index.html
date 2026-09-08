@@ -377,7 +377,7 @@
       </button>
     </div>
 
-    <!-- 工程カード（片手で見やすい特大フォント） -->
+    <!-- 手順カード（片手で見やすい特大フォント） -->
     <div class="my-auto py-6 space-y-6">
       <div class="flex items-center justify-between text-zinc-400 font-mono text-xs">
         <span id="step-badge" class="bg-zinc-800 px-3 py-1 rounded-full text-emerald-400 font-bold text-sm">STEP 2 / 4</span>
@@ -407,10 +407,10 @@
     <!-- ステップナビゲーションボタン（親指が届く下部） -->
     <div class="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800">
       <button type="button" onclick="stepMove(-1)" class="active-scale bg-zinc-900 text-zinc-300 font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-1.5 border border-zinc-800">
-        <i class="fa-solid fa-arrow-left"></i>前の工程
+        <i class="fa-solid fa-arrow-left"></i>前の手順
       </button>
       <button type="button" onclick="stepMove(1)" class="active-scale bg-emerald-500 text-zinc-950 font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-1.5">
-        次の工程<i class="fa-solid fa-arrow-right"></i>
+        次の手順<i class="fa-solid fa-arrow-right"></i>
       </button>
     </div>
   </div>
@@ -491,7 +491,7 @@
       </div>
       <div>
         <div class="flex items-center justify-between mb-1">
-          <label class="font-bold text-slate-700">工程</label>
+          <label class="font-bold text-slate-700">手順</label>
           <button type="button" onclick="addRegisterStepRow()" class="text-emerald-700 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-steps" class="space-y-1.5"></div>
@@ -1123,7 +1123,7 @@
     function activeCookingSteps() {
       const recipe = selectedRecipe();
       const v = recipe && recipe.versions[appState.activeVersion];
-      return (v && v.steps && v.steps.length) ? v.steps : [{ instruction: '工程がまだありません。', timer: null }];
+      return (v && v.steps && v.steps.length) ? v.steps : [{ instruction: '手順がまだありません。', timer: null }];
     }
 
     async function openCookingMode() {
@@ -1337,7 +1337,7 @@
       row.innerHTML = `
         <div class="flex items-start gap-2">
           <span class="step-num font-mono font-bold text-emerald-700 shrink-0 pt-2">1</span>
-          <textarea rows="2" placeholder="工程の説明" class="w-full bg-white border border-slate-200 rounded-xl p-2">${instruction || ''}</textarea>
+          <textarea rows="2" placeholder="手順の説明" class="w-full bg-white border border-slate-200 rounded-xl p-2">${instruction || ''}</textarea>
         </div>
         <div class="flex items-center justify-between gap-2 pl-6">
           <label class="text-slate-500 flex items-center gap-1">タイマー（分）
