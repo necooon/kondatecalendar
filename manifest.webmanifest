@@ -1,6 +1,6 @@
 {
-  "name": "KitchenGit",
-  "short_name": "KitchenGit",
+  "name": "RecipeOps",
+  "short_name": "RecipeOps",
   "description": "献立・買い物・レシピのバージョン管理",
   "lang": "ja",
   "start_url": "./",

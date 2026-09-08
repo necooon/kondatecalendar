@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <!-- iPhoneノッチ・Dynamic Island・ホームバー対応のセーフエリア設定 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>KitchenGit for iPhone</title>
+  <title>RecipeOps</title>
 
   <!-- iOS PWAメタタグ（ホーム画面追加でネイティブアプリ化） -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="KitchenGit">
+  <meta name="apple-mobile-web-app-title" content="RecipeOps">
   <meta name="theme-color" content="#F2F2F7">
   <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="manifest.webmanifest">
@@ -104,30 +104,16 @@
 
 <body class="text-slate-900 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
-  <!-- ==================== iOS ナビゲーションバー (Sticky Top) ==================== -->
+  <!-- ==================== アプリヘッダー (ブランド左 / ツール右) ==================== -->
   <header class="sticky top-0 z-30 ios-glass border-b border-slate-200/80 transition-all">
-    <div class="max-w-md mx-auto px-4 pt-2 pb-2.5 flex items-center justify-between">
-      <!-- アプリロゴ ＆ バージョン標語 -->
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/25">
+    <div class="max-w-md mx-auto px-4 pt-2 pb-2.5 flex items-center justify-between flex-nowrap gap-2">
+      <div id="app-header-brand" class="flex items-center gap-2 min-w-0">
+        <div class="w-8 h-8 shrink-0 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/25">
           <i class="fa-solid fa-code-branch text-sm"></i>
         </div>
-        <div>
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs font-black tracking-tight font-display text-slate-900">KitchenGit</span>
-            <span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.2 rounded-full font-mono">iOS</span>
-          </div>
-          <p id="top-bar-sub" class="text-[10px] text-slate-500 font-medium">9月第2週 • 2人/1人切替対応</p>
-        </div>
+        <span class="text-sm font-black tracking-tight font-display text-slate-900 whitespace-nowrap">RecipeOps</span>
       </div>
-
-      <!-- 右上クイックアクション（筋トレPFCインジケーター） -->
-      <div class="flex items-center gap-1.5">
-        <div class="bg-slate-100/90 border border-slate-200/70 rounded-full px-2.5 py-1 flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span id="header-protein" class="text-[11px] font-bold font-mono text-slate-700">P: 94g</span>
-        </div>
-      </div>
+      <div id="app-header-tools" class="flex items-center gap-1.5 shrink-0"></div>
     </div>
   </header>
 
@@ -689,21 +675,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function weeklyProteinTotal() {
-      return appState.calendarDays.reduce((sum, day) => sum + (day.pfc ? day.pfc.p : 0), 0);
-    }
-
-    function updateHeaderProtein() {
-      const el = document.getElementById('header-protein');
-      if (!el) return;
-      const day = appState.calendarDays.find(d => d.date === appState.selectedDate);
-      if (day && day.pfc) {
-        el.textContent = `P: ${day.pfc.p}g`;
-      } else {
-        el.textContent = `P: ${weeklyProteinTotal()}g`;
-      }
-    }
-
     function renderCalendar() {
       const strip = document.getElementById('week-strip');
       if (strip) {
@@ -741,7 +712,6 @@
       }
 
       renderDayDetail();
-      updateHeaderProtein();
     }
 
     function selectDay(dateStr) {
