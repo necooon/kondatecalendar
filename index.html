@@ -583,7 +583,9 @@
   <script src="js/config.js"></script>
   <script src="js/nutrition.js"></script>
   <script src="js/recipes-db.js"></script>
+  <script src="js/meals.js"></script>
   <script src="js/week.js"></script>
+  <script src="js/meal-editor.js"></script>
   <script src="js/calendar.js"></script>
   <script>
     const appState = {
@@ -645,9 +647,9 @@
         applySelectedRecipe(r.id);
       },
       onOpenRecipe(recipe, title) {
-        const Cal = KitchenGit.Calendar;
+        const Meals = KitchenGit.Meals;
         const fallback = recipe
-          || Cal.findRecipeForTitle(appState.recipes, title)
+          || Meals.findRecipeForTitle(appState.recipes, title)
           || appState.recipes.find(x => (x.name || '').includes('鶏むね肉と秋茄子'))
           || appState.recipes[0];
         if (fallback) showRecipeDetail(fallback.id);
@@ -1051,7 +1053,7 @@
         document.getElementById('recipe-servings-text').innerText = `${next}人分`;
         const recipe = selectedRecipe();
         if (recipe && (recipe.name || '').includes('鶏むね肉と秋茄子')) {
-          const chickenDay = appState.calendarDays.find(d => KitchenGit.Calendar.isChickenDinner(d));
+          const chickenDay = appState.calendarDays.find(d => KitchenGit.Meals.isChickenDinner(d));
           if (chickenDay) chickenDay.servings = next;
         }
         renderRecipeView();
@@ -1563,7 +1565,7 @@
       renderRecipeList();
       const mealSheet = document.getElementById('meal-edit-sheet');
       if (mealSheet && !mealSheet.classList.contains('hidden')) {
-        KitchenGit.Calendar.renderMealEditorRecipes(appState);
+        KitchenGit.MealEditor.renderRecipes(appState);
       }
     }
 

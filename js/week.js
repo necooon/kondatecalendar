@@ -93,12 +93,8 @@ KitchenGit.Week = (function () {
     return `week-day-${String(dateStr).replace(/\//g, '-')}`;
   }
 
-  function emptyMealSlot() {
-    return { items: [] };
-  }
-
   function emptyMeals() {
-    return { breakfast: emptyMealSlot(), lunch: emptyMealSlot(), dinner: emptyMealSlot() };
+    return KitchenGit.Meals.emptyMeals();
   }
 
   function stampDay(weekStartIso, index, extra) {
@@ -143,7 +139,6 @@ KitchenGit.Week = (function () {
     relativeWeekBadge,
     relativeWeekTitle,
     dayDomId,
-    emptyMealSlot,
     emptyMeals,
     buildEmptyWeekDays,
     applyTemplateToWeek
