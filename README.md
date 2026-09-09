@@ -18,12 +18,14 @@ iPhone向けの献立・買い物・レシピ管理アプリです。レシピ�
 
 ## クラウド（レシピ）
 
-Check＆Stock と同じ Supabase プロジェクトにレシピを保存します。初回だけ SQL Editor で増分スキーマを実行してください（在庫側の `setup.sql` は再実行しない）。
+専用の Supabase プロジェクト（kondatecalendar）にレシピを保存します。`public.recipes` は材料・手順を JSONB で持つ1テーブルです。初回だけ SQL Editor でスキーマを実行してください。
 
-1. [Supabase SQL Editor](https://supabase.com/dashboard/project/dmvznvxczrpbqrzfcqcc/sql) を開く
+1. [Supabase SQL Editor](https://supabase.com/dashboard/project/aqrlponulqzjmfisvhlu/sql) を開く
 2. [`supabase/recipes.sql`](supabase/recipes.sql) の内容を実行する
 
-空のときはデモの「鶏むね肉と秋茄子のさっぱり炒め」をシードします。テーブルがまだ無い場合はオフラインのデモ一覧になり、登録内容はこの画面にだけ残ります。
+空のときはデモの「鶏むね肉と秋茄子のさっぱり炒め」をシードします。テーブルがまだ無い場合はオフラインのデモ一覧になり、登録内容はこの画面にだけ残ります。味バージョン（v1.1 以降）のクラウド保存は未対応です。
+
+TypeScript の Database 型は [`types/supabase.ts`](types/supabase.ts) です（ランタイムはバニラ JS）。
 
 ## iPhone で使う
 

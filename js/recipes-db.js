@@ -1,5 +1,48 @@
 window.KitchenGit = window.KitchenGit || {};
 
+/**
+ * DB JSONB の正（types/supabase.ts の recipes.Row と対応）:
+ * - ingredients: { name: string, base_amount: number, unit: string, note?: string }[]
+ * - steps: { instruction: string, timer_seconds: number | null }[]
+ * - pfc: { p: number, f: number, c: number, kcal: number } | null
+ *
+ * UI は camelCase（baseAmount / timer / servingsBase）と versions マップを使う。
+ * クラウドは材料・手順の最新スナップショットのみ保持する（味バージョン履歴は後続）。
+ *
+ * @typedef {object} RecipeIngredient
+ * @property {string} name
+ * @property {number} baseAmount
+ * @property {string} unit
+ * @property {string} [note]
+ *
+ * @typedef {object} RecipeStep
+ * @property {string} instruction
+ * @property {number | null} timer
+ *
+ * @typedef {object} RecipePfc
+ * @property {number} p
+ * @property {number} f
+ * @property {number} c
+ * @property {number} kcal
+ *
+ * @typedef {object} RecipeVersion
+ * @property {string} title
+ * @property {string} rating
+ * @property {string} message
+ * @property {string} note
+ * @property {number} sortOrder
+ * @property {RecipeIngredient[]} ingredients
+ * @property {RecipeStep[]} steps
+ *
+ * @typedef {object} Recipe
+ * @property {string} id
+ * @property {string} name
+ * @property {string} tag
+ * @property {number} servingsBase
+ * @property {RecipePfc | null} pfc
+ * @property {Object<string, RecipeVersion>} versions
+ */
+
 KitchenGit.demoRecipes = function demoRecipes() {
   const chickenSteps = [
     { instruction: '鶏むね肉は一口大の削ぎ切りにし、酒小さじ1・片栗粉小さじ1を揉み込んでおきます。', timer: null },
@@ -94,38 +137,60 @@ KitchenGit.RecipesDB = (function () {
     return !!client;
   }
 
+  function pickPersistedVersion(recipe) {
+    const versions = recipe.versions || {};
+    const entries = Object.keys(versions).map((key) => ({ key, v: versions[key] }));
+    if (!entries.length) {
+      return { ingredients: [], steps: [] };
+    }
+    entries.sort((a, b) => (b.v.sortOrder || 0) - (a.v.sortOrder || 0));
+    return entries[0].v;
+  }
+
+  function ingredientsToDb(ingredients) {
+    return (ingredients || []).map((ing) => ({
+      name: ing.name,
+      base_amount: ing.baseAmount,
+      unit: ing.unit,
+      note: ing.note || ''
+    }));
+  }
+
+  function stepsToDb(steps) {
+    return (steps || []).map((step) => ({
+      instruction: step.instruction,
+      timer_seconds: step.timer == null ? null : step.timer
+    }));
+  }
+
   function mapRow(row) {
-    const versions = {};
-    const versionRows = (row.recipe_versions || []).slice().sort((a, b) => (b.sort_order || 0) - (a.sort_order || 0));
-    versionRows.forEach((v) => {
-      const ings = (v.recipe_ingredients || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-      const steps = (v.recipe_steps || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-      versions[v.version_key] = {
-        id: v.id,
-        title: v.title,
-        rating: v.rating,
-        message: v.message || '',
-        note: v.note || '',
-        sortOrder: v.sort_order || 0,
-        ingredients: ings.map((i) => ({
-          name: i.name,
-          baseAmount: Number(i.base_amount),
-          unit: i.unit,
-          note: i.note || ''
-        })),
-        steps: steps.map((s) => ({
-          instruction: s.instruction,
-          timer: s.timer_seconds == null ? null : Number(s.timer_seconds)
-        }))
-      };
-    });
+    const ingredients = (Array.isArray(row.ingredients) ? row.ingredients : []).map((i) => ({
+      name: i.name,
+      baseAmount: Number(i.base_amount),
+      unit: i.unit,
+      note: i.note || ''
+    }));
+    const steps = (Array.isArray(row.steps) ? row.steps : []).map((s) => ({
+      instruction: s.instruction,
+      timer: s.timer_seconds == null ? null : Number(s.timer_seconds)
+    }));
     return {
       id: row.id,
       name: row.name,
       tag: row.tag || '',
       servingsBase: row.servings_base || 2,
       pfc: row.pfc || null,
-      versions
+      versions: {
+        'v1.0': {
+          title: 'v1.0 (初回作成)',
+          rating: '★4.0',
+          message: '初回作成',
+          note: '',
+          sortOrder: 0,
+          ingredients,
+          steps
+        }
+      }
     };
   }
 
@@ -133,108 +198,34 @@ KitchenGit.RecipesDB = (function () {
     if (!client) throw new Error('cloud-not-ready');
     const { data, error } = await client
       .from('recipes')
-      .select('*, recipe_versions(*, recipe_ingredients(*), recipe_steps(*))')
+      .select('*')
       .order('created_at', { ascending: false });
     throwIfError(error);
     return (data || []).map(mapRow);
   }
 
-  async function insertIngredientsAndSteps(versionId, version) {
-    const ings = (version.ingredients || []).map((ing, idx) => ({
-      version_id: versionId,
-      name: ing.name,
-      base_amount: ing.baseAmount,
-      unit: ing.unit,
-      note: ing.note || '',
-      sort_order: idx
-    }));
-    if (ings.length) {
-      const { error } = await client.from('recipe_ingredients').insert(ings);
-      throwIfError(error);
-    }
-    const steps = (version.steps || []).map((step, idx) => ({
-      version_id: versionId,
-      instruction: step.instruction,
-      timer_seconds: step.timer == null ? null : step.timer,
-      sort_order: idx
-    }));
-    if (steps.length) {
-      const { error } = await client.from('recipe_steps').insert(steps);
-      throwIfError(error);
-    }
-  }
-
   async function insertRecipe(recipe) {
     if (!client) throw new Error('cloud-not-ready');
+    const persisted = pickPersistedVersion(recipe);
     const { data: recipeRow, error: recipeErr } = await client
       .from('recipes')
       .insert({
         name: recipe.name,
         tag: recipe.tag || '',
         servings_base: recipe.servingsBase || 2,
-        pfc: recipe.pfc || null
+        pfc: recipe.pfc || null,
+        ingredients: ingredientsToDb(persisted.ingredients),
+        steps: stepsToDb(persisted.steps)
       })
       .select()
       .single();
     throwIfError(recipeErr);
-
-    const versionEntries = Object.keys(recipe.versions || {}).map((key) => ({ key, v: recipe.versions[key] }));
-    versionEntries.sort((a, b) => (a.v.sortOrder || 0) - (b.v.sortOrder || 0));
-    if (!versionEntries.length) {
-      versionEntries.push({
-        key: 'v1.0',
-        v: {
-          title: 'v1.0 (初回作成)',
-          rating: '★4.0',
-          message: '初回作成',
-          note: '',
-          sortOrder: 0,
-          ingredients: [],
-          steps: []
-        }
-      });
-    }
-
-    for (const { key, v } of versionEntries) {
-      const { data: verRow, error: verErr } = await client
-        .from('recipe_versions')
-        .insert({
-          recipe_id: recipeRow.id,
-          version_key: key,
-          title: v.title || key,
-          rating: v.rating || '★4.0',
-          message: v.message || '',
-          note: v.note || '',
-          sort_order: v.sortOrder || 0
-        })
-        .select()
-        .single();
-      throwIfError(verErr);
-      await insertIngredientsAndSteps(verRow.id, v);
-    }
-
-    const all = await fetchAll();
-    return all.find((r) => r.id === recipeRow.id) || mapRow({ ...recipeRow, recipe_versions: [] });
+    return mapRow(recipeRow);
   }
 
-  async function insertVersion(recipeId, versionKey, version) {
-    if (!client) throw new Error('cloud-not-ready');
-    const { data: verRow, error: verErr } = await client
-      .from('recipe_versions')
-      .insert({
-        recipe_id: recipeId,
-        version_key: versionKey,
-        title: version.title || versionKey,
-        rating: version.rating || '★4.0',
-        message: version.message || '',
-        note: version.note || '',
-        sort_order: version.sortOrder || 0
-      })
-      .select()
-      .single();
-    throwIfError(verErr);
-    await insertIngredientsAndSteps(verRow.id, version);
-    return verRow.id;
+  async function insertVersion(_recipeId, _versionKey, _version) {
+    // 味バージョン履歴は未永続化（材料・手順 JSONB のみ）。メモリ上のコミットは呼び出し側で残る。
+    return null;
   }
 
   async function seedIfEmpty() {
