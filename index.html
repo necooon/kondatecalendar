@@ -135,6 +135,11 @@
           </button>
         </div>
 
+        <div class="flex p-1 bg-slate-100 rounded-2xl mb-3" role="tablist" aria-label="献立の表示切替">
+          <button type="button" id="cal-view-day" onclick="setCalendarView('day')" class="flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale bg-slate-900 text-white shadow-sm">1日表示</button>
+          <button type="button" id="cal-view-week" onclick="setCalendarView('week')" class="flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale text-slate-600">1週間まとめ</button>
+        </div>
+
         <!-- 水平日付ピッカー（iOSライクな横スクロールカレンダー） -->
         <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 pt-1" id="week-strip">
           <!-- JSでレンダリング -->
@@ -144,6 +149,11 @@
       <!-- 選択中の日の詳細カード（出張・人数トグル付き） -->
       <div id="day-detail-card" class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
         <!-- JSで選択日の詳細を動的更新 -->
+      </div>
+
+      <!-- 1週間まとめ（月〜日の縦スクロール） -->
+      <div id="week-overview" class="hidden space-y-3">
+        <!-- JSで7日分をレンダリング -->
       </div>
 
       <!-- 週末作り置き（日曜日の高タンパクストック） -->
@@ -161,37 +171,40 @@
         </div>
 
         <div class="space-y-1.5 text-xs">
-          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between border border-amber-100 shadow-2xs">
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
-              <div>
+          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
+              <div class="min-w-0">
                 <p class="font-bold text-slate-800">自家製ハーブサラダチキン <span class="font-mono text-emerald-600 text-[11px]">v2.1</span></p>
                 <p class="text-[10px] text-slate-400">P: 42g / 低脂質 / 水曜と金曜に消費</p>
+                <div id="prep-pills-chicken" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
               </div>
             </div>
-            <span class="text-[10px] font-mono font-bold text-slate-500">2食分</span>
+            <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">2食分</span>
           </div>
 
-          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between border border-amber-100 shadow-2xs">
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
-              <div>
+          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
+              <div class="min-w-0">
                 <p class="font-bold text-slate-800">ほうれん草と人参のナムル</p>
                 <p class="text-[10px] text-slate-400">βカロテン・鉄分補給常備菜</p>
+                <div id="prep-pills-namul" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
               </div>
             </div>
-            <span class="text-[10px] font-mono font-bold text-slate-500">3食分</span>
+            <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">3食分</span>
           </div>
 
-          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between border border-amber-100 shadow-2xs">
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-circle-check text-emerald-500 text-sm"></i>
-              <div>
+          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
+              <div class="min-w-0">
                 <p class="font-bold text-slate-800">鶏むねそぼろ（冷凍ストック）</p>
                 <p class="text-[10px] text-slate-400">P: 28g / 木曜弁当のタンパク源</p>
+                <div id="prep-pills-soboro" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
               </div>
             </div>
-            <span class="text-[10px] font-mono font-bold text-slate-500">4食分</span>
+            <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">4食分</span>
           </div>
         </div>
       </div>
@@ -500,6 +513,42 @@
 
   <div id="app-toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] max-w-[90%] hidden px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-lg pointer-events-none"></div>
 
+  <!-- ==================== 献立スロット登録／編集 ==================== -->
+  <div id="meal-edit-backdrop" onclick="closeMealEditor()" class="fixed inset-0 z-50 bg-black/50 hidden"></div>
+  <div id="meal-edit-sheet" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden max-h-[88vh] overflow-y-auto">
+    <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+      <div class="min-w-0 pr-2">
+        <p class="text-[10px] font-bold tracking-wider text-emerald-600 uppercase">Meal Slot</p>
+        <h3 id="meal-edit-heading" class="text-base font-bold text-slate-900 truncate">献立を編集</h3>
+      </div>
+      <button type="button" onclick="closeMealEditor()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+    <div class="space-y-3 text-xs">
+      <div>
+        <label for="meal-edit-title" class="font-bold text-slate-700 block mb-1">料理名</label>
+        <input type="text" id="meal-edit-title" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="例: 焼き鮭とキノコのホイル焼き">
+      </div>
+      <div id="meal-edit-recipes-wrap" class="hidden">
+        <label class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
+        <div id="meal-edit-recipes" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+      </div>
+      <button type="button" id="meal-edit-open-recipe" onclick="openMatchedRecipeFromMeal()" class="hidden active-scale w-full bg-slate-50 border border-slate-200 text-emerald-700 font-bold py-2.5 rounded-2xl flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-book-bookmark"></i>
+        <span>レシピを開く</span>
+      </button>
+      <div class="pt-1 flex gap-2">
+        <button type="button" onclick="clearMealSlot()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl active-scale">クリア</button>
+        <button type="button" onclick="saveMealSlot()" class="w-2/3 bg-emerald-600 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm active-scale">
+          <i class="fa-solid fa-check"></i>
+          <span>保存</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== レシピ登録（ハーフモーダル） ==================== -->
   <div id="register-modal-backdrop" onclick="closeRegisterModal()" class="fixed inset-0 z-50 bg-black/50 hidden"></div>
   <div id="register-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden max-h-[88vh] overflow-y-auto">
@@ -565,6 +614,9 @@
       selectedRecipeId: null,
       recipes: [],
       cloudStatus: 'loading',
+      calendarView: 'day',
+      mealEditorDate: null,
+      mealEditorSlot: null,
       isShoppingMode: false,
       cookingStep: 1,
       timerSeconds: 0,
@@ -661,6 +713,24 @@
       { key: 'dinner', label: '晩', badge: 'bg-indigo-100 text-indigo-800' }
     ];
 
+    const PREP_STOCKS = [
+      { id: 'chicken', match: /サラダチキン/, days: ['水', '金'] },
+      { id: 'namul', match: /ナムル/, days: null },
+      { id: 'soboro', match: /そぼろ/, days: ['木'] }
+    ];
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function dayDomId(dateStr) {
+      return `week-day-${String(dateStr).replace('/', '-')}`;
+    }
+
     function mealTitle(slot) {
       return ((slot && slot.title) || '').trim();
     }
@@ -715,6 +785,30 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function setCalendarView(view) {
+      appState.calendarView = view === 'week' ? 'week' : 'day';
+      renderCalendar();
+    }
+
+    function updateCalendarViewChrome() {
+      const isWeek = appState.calendarView === 'week';
+      const strip = document.getElementById('week-strip');
+      const dayCard = document.getElementById('day-detail-card');
+      const weekOverview = document.getElementById('week-overview');
+      const dayBtn = document.getElementById('cal-view-day');
+      const weekBtn = document.getElementById('cal-view-week');
+      if (strip) {
+        strip.classList.toggle('hidden', isWeek);
+        strip.classList.toggle('flex', !isWeek);
+      }
+      if (dayCard) dayCard.classList.toggle('hidden', isWeek);
+      if (weekOverview) weekOverview.classList.toggle('hidden', !isWeek);
+      const activeCls = 'flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale bg-slate-900 text-white shadow-sm';
+      const idleCls = 'flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale text-slate-600';
+      if (dayBtn) dayBtn.className = isWeek ? idleCls : activeCls;
+      if (weekBtn) weekBtn.className = isWeek ? activeCls : idleCls;
+    }
+
     function renderCalendar() {
       const strip = document.getElementById('week-strip');
       if (strip) {
@@ -751,7 +845,10 @@
         });
       }
 
+      updateCalendarViewChrome();
       renderDayDetail();
+      renderWeekOverview();
+      renderPrepDayPills();
     }
 
     function selectDay(dateStr) {
@@ -759,18 +856,88 @@
       renderCalendar();
     }
 
-    function renderMealSlots(dayData) {
+    function findDayData(dateStr) {
+      return appState.calendarDays.find(d => d.date === dateStr) || null;
+    }
+
+    function isPrepMealTitle(title) {
+      return PREP_STOCKS.some(stock => stock.match.test(title || ''));
+    }
+
+    function prepDaysForStock(stock) {
+      if (stock.days && stock.days.length) return stock.days;
+      const found = [];
+      appState.calendarDays.forEach(dayData => {
+        const meals = dayMeals(dayData);
+        const hit = MEAL_SLOTS.some(meta => stock.match.test(mealTitle(meals[meta.key])));
+        if (hit && !found.includes(dayData.day)) found.push(dayData.day);
+      });
+      return found;
+    }
+
+    function pfcBlockHtml(dayData) {
+      if (!dayData.pfc) return '';
+      return `
+        <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1">
+          <span>P: <strong class="text-rose-600 font-bold">${dayData.pfc.p}g</strong></span>
+          <span>F: <strong class="text-amber-600 font-bold">${dayData.pfc.f}g</strong></span>
+          <span>C: <strong class="text-sky-600 font-bold">${dayData.pfc.c}g</strong></span>
+        </div>
+      `;
+    }
+
+    function dayCardHeaderHtml(dayData, compact) {
+      const tagClass = TAG_CLASSES[dayData.tagColor] || TAG_CLASSES.emerald;
+      const dateTitle = compact ? 'text-xs' : 'text-sm';
+      return `
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+            <span class="${dateTitle} font-bold text-slate-900">${escapeHtml(dayData.date)} (${escapeHtml(dayData.day)})</span>
+            ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${tagClass}">${escapeHtml(dayData.tag)}</span>
+          </div>
+          <button type="button" onclick="toggleDayServings('${escapeHtml(dayData.date)}')" class="active-scale text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 shrink-0 ${
+            dayData.servings === 1
+              ? 'bg-amber-500 text-white border-amber-500'
+              : 'bg-slate-100 text-slate-700 border-slate-200'
+          }">
+            <i class="fa-solid ${dayData.servings === 1 ? 'fa-user' : 'fa-user-group'} text-[9px]"></i>
+            <span>${dayData.servings}人分</span>
+          </button>
+        </div>
+      `;
+    }
+
+    function renderMealSlots(dayData, options) {
+      const compact = !!(options && options.compact);
+      const dateStr = (options && options.date) || dayData.date;
       const meals = dayMeals(dayData);
+      const pad = compact ? 'p-2' : 'p-2.5';
+      const titleClass = compact ? 'truncate' : 'leading-snug';
       const rows = MEAL_SLOTS.map(meta => {
         const title = mealTitle(meals[meta.key]);
         const filled = title.length > 0;
         const isDinner = meta.key === 'dinner';
-        const isRecipeMeal = isDinner && title.includes('鶏むね肉と秋茄子');
         const showAi = isDinner && !filled;
+        const prepChip = filled && isPrepMealTitle(title)
+          ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
+          : '';
+        const openFn = `openMealEditor('${escapeHtml(dateStr)}','${meta.key}')`;
 
         if (showAi) {
+          if (compact) {
+            return `
+              <div onclick="${openFn}" class="bg-emerald-50 border border-emerald-100 rounded-2xl ${pad} flex items-center justify-between gap-2 cursor-pointer active:bg-emerald-100">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
+                  <p class="text-xs font-bold text-emerald-800 truncate">未設定</p>
+                </div>
+                <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shrink-0">AI</button>
+              </div>
+            `;
+          }
           return `
-            <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 flex items-center justify-between gap-2">
+            <div onclick="${openFn}" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 flex items-center justify-between gap-2 cursor-pointer active:bg-emerald-100">
               <div class="flex items-start gap-2 min-w-0">
                 <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
                 <div class="min-w-0">
@@ -778,18 +945,21 @@
                   <p class="text-[10px] text-emerald-700 mt-0.5"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>空き枠です</p>
                 </div>
               </div>
-              <button type="button" onclick="aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full shrink-0">AIで決める</button>
+              <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full shrink-0">AIで決める</button>
             </div>
           `;
         }
 
         return `
-          <div ${isRecipeMeal ? 'onclick="jumpToRecipe()"' : ''} class="bg-slate-50 border border-slate-200/70 rounded-2xl p-2.5 flex items-center justify-between ${isRecipeMeal ? 'cursor-pointer active:bg-slate-100' : ''}">
-            <div class="flex items-start gap-2 min-w-0 pr-2">
+          <div onclick="${openFn}" class="bg-slate-50 border border-slate-200/70 rounded-2xl ${pad} flex items-center justify-between gap-2 cursor-pointer active:bg-slate-100">
+            <div class="flex items-center gap-2 min-w-0 pr-1">
               <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
-              <p class="text-xs font-bold ${filled ? 'text-slate-900' : 'text-slate-400'} leading-snug">${filled ? title : '未設定'}</p>
+              <p class="text-xs font-bold ${filled ? 'text-slate-900' : 'text-slate-400'} ${titleClass}">${filled ? escapeHtml(title) : '未設定'}</p>
             </div>
-            ${isRecipeMeal ? '<i class="fa-solid fa-chevron-right text-[11px] text-slate-400 shrink-0"></i>' : ''}
+            <div class="flex items-center gap-1 shrink-0">
+              ${prepChip}
+              <i class="fa-solid fa-chevron-right text-[11px] text-slate-300"></i>
+            </div>
           </div>
         `;
       }).join('');
@@ -801,42 +971,64 @@
       const card = document.getElementById('day-detail-card');
       if (!card) return;
 
-      const dayData = appState.calendarDays.find(d => d.date === appState.selectedDate) || appState.calendarDays[1];
-      const tagClass = TAG_CLASSES[dayData.tagColor] || TAG_CLASSES.emerald;
-
-      const pfcBlock = dayData.pfc
-        ? `
-          <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1">
-            <span>P: <strong class="text-rose-600 font-bold">${dayData.pfc.p}g</strong></span>
-            <span>F: <strong class="text-amber-600 font-bold">${dayData.pfc.f}g</strong></span>
-            <span>C: <strong class="text-sky-600 font-bold">${dayData.pfc.c}g</strong></span>
-          </div>
-        `
-        : '';
-
+      const dayData = findDayData(appState.selectedDate) || appState.calendarDays[1];
       card.innerHTML = `
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-sm font-bold text-slate-900">${dayData.date} (${dayData.day})</span>
-            ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
-            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${tagClass}">${dayData.tag}</span>
-          </div>
-          <button type="button" onclick="toggleDayServings()" class="active-scale text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 shrink-0 ${
-            dayData.servings === 1
-              ? 'bg-amber-500 text-white border-amber-500'
-              : 'bg-slate-100 text-slate-700 border-slate-200'
-          }">
-            <i class="fa-solid ${dayData.servings === 1 ? 'fa-user' : 'fa-user-group'} text-[9px]"></i>
-            <span>${dayData.servings}人分</span>
-          </button>
-        </div>
-        ${renderMealSlots(dayData)}
-        ${pfcBlock}
+        ${dayCardHeaderHtml(dayData, false)}
+        ${renderMealSlots(dayData, { date: dayData.date })}
+        ${pfcBlockHtml(dayData)}
       `;
     }
 
-    function toggleDayServings() {
-      const dayData = appState.calendarDays.find(d => d.date === appState.selectedDate);
+    function renderWeekOverview() {
+      const box = document.getElementById('week-overview');
+      if (!box) return;
+      box.innerHTML = appState.calendarDays.map(dayData => {
+        const selected = dayData.date === appState.selectedDate;
+        return `
+          <div id="${dayDomId(dayData.date)}" class="bg-white rounded-3xl p-3.5 shadow-sm border space-y-2.5 ${
+            selected ? 'border-emerald-300 ring-2 ring-emerald-500/20' : 'border-slate-200/60'
+          }">
+            ${dayCardHeaderHtml(dayData, true)}
+            ${renderMealSlots(dayData, { compact: true, date: dayData.date })}
+            ${pfcBlockHtml(dayData)}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPrepDayPills() {
+      PREP_STOCKS.forEach(stock => {
+        const el = document.getElementById(`prep-pills-${stock.id}`);
+        if (!el) return;
+        const days = prepDaysForStock(stock);
+        if (!days.length) {
+          el.innerHTML = '';
+          return;
+        }
+        el.innerHTML = days.map(dayLabel => `
+          <button type="button" onclick="jumpToPrepDay('${escapeHtml(dayLabel)}')" class="active-scale text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+            ${escapeHtml(dayLabel)}
+          </button>
+        `).join('');
+      });
+    }
+
+    function jumpToPrepDay(dayLabel) {
+      const dayData = appState.calendarDays.find(d => d.day === dayLabel);
+      if (!dayData) return;
+      appState.selectedDate = dayData.date;
+      appState.calendarView = 'week';
+      if (appState.activeTab !== 'calendar') switchTab('calendar');
+      renderCalendar();
+      requestAnimationFrame(() => {
+        const el = document.getElementById(dayDomId(dayData.date));
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    function toggleDayServings(dateStr) {
+      if (dateStr) appState.selectedDate = dateStr;
+      const dayData = findDayData(appState.selectedDate);
       if (!dayData) return;
       dayData.servings = dayData.servings === 2 ? 1 : 2;
       if (dayData.isBusinessTrip) {
@@ -859,10 +1051,115 @@
       renderCalendar();
     }
 
+    function findRecipeForTitle(title) {
+      const q = (title || '').trim();
+      if (!q) return null;
+      return appState.recipes.find(r => {
+        const name = r.name || '';
+        return name && (q.includes(name) || name.includes(q));
+      }) || null;
+    }
+
     function jumpToRecipe() {
-      const r = appState.recipes.find(x => (x.name || '').includes('鶏むね肉と秋茄子')) || appState.recipes[0];
+      const title = dinnerTitle(findDayData(appState.selectedDate));
+      const r = findRecipeForTitle(title)
+        || appState.recipes.find(x => (x.name || '').includes('鶏むね肉と秋茄子'))
+        || appState.recipes[0];
       if (r) showRecipeDetail(r.id);
       switchTab('recipe');
+    }
+
+    function openMealEditor(dateStr, slotKey) {
+      const dayData = findDayData(dateStr);
+      if (!dayData) return;
+      const meta = MEAL_SLOTS.find(m => m.key === slotKey) || MEAL_SLOTS[0];
+      appState.selectedDate = dateStr;
+      appState.mealEditorDate = dateStr;
+      appState.mealEditorSlot = slotKey;
+      const heading = document.getElementById('meal-edit-heading');
+      const input = document.getElementById('meal-edit-title');
+      const title = mealTitle(dayMeals(dayData)[slotKey]);
+      if (heading) heading.textContent = `${dayData.date} (${dayData.day}) の${meta.label}`;
+      if (input) input.value = title;
+      renderMealEditorRecipes(title);
+      document.getElementById('meal-edit-backdrop').classList.remove('hidden');
+      document.getElementById('meal-edit-sheet').classList.remove('hidden');
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+
+    function renderMealEditorRecipes(currentTitle) {
+      const wrap = document.getElementById('meal-edit-recipes-wrap');
+      const list = document.getElementById('meal-edit-recipes');
+      const openBtn = document.getElementById('meal-edit-open-recipe');
+      if (!wrap || !list) return;
+      const recipes = appState.recipes || [];
+      wrap.classList.toggle('hidden', recipes.length === 0);
+      list.innerHTML = recipes.map(recipe => `
+        <button type="button" onclick="pickMealRecipe(${encodeJsString(recipe.name)})" class="active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800">
+          ${escapeHtml(recipe.name)}
+        </button>
+      `).join('');
+      const matched = findRecipeForTitle(currentTitle);
+      if (openBtn) openBtn.classList.toggle('hidden', !matched);
+    }
+
+    function pickMealRecipe(name) {
+      const input = document.getElementById('meal-edit-title');
+      if (input) input.value = name;
+      renderMealEditorRecipes(name);
+    }
+
+    function encodeJsString(value) {
+      return JSON.stringify(value == null ? '' : String(value)).replace(/</g, '\\u003c');
+    }
+
+    function closeMealEditor() {
+      const backdrop = document.getElementById('meal-edit-backdrop');
+      const sheet = document.getElementById('meal-edit-sheet');
+      if (backdrop) backdrop.classList.add('hidden');
+      if (sheet) sheet.classList.add('hidden');
+      appState.mealEditorDate = null;
+      appState.mealEditorSlot = null;
+    }
+
+    function ensureMealSlot(dayData, slotKey) {
+      if (!dayData.meals) dayData.meals = { breakfast: { title: '' }, lunch: { title: '' }, dinner: { title: '' } };
+      if (!dayData.meals[slotKey]) dayData.meals[slotKey] = { title: '' };
+      return dayData.meals[slotKey];
+    }
+
+    function saveMealSlot() {
+      const dayData = findDayData(appState.mealEditorDate);
+      const slotKey = appState.mealEditorSlot;
+      const input = document.getElementById('meal-edit-title');
+      if (!dayData || !slotKey) return;
+      const title = ((input && input.value) || '').trim();
+      ensureMealSlot(dayData, slotKey).title = title;
+      closeMealEditor();
+      renderCalendar();
+      showToast(title ? '献立を保存しました' : '献立をクリアしました');
+    }
+
+    function clearMealSlot() {
+      const input = document.getElementById('meal-edit-title');
+      if (input) input.value = '';
+      saveMealSlot();
+    }
+
+    function openMatchedRecipeFromMeal() {
+      const input = document.getElementById('meal-edit-title');
+      const title = ((input && input.value) || '').trim();
+      const recipe = findRecipeForTitle(title);
+      closeMealEditor();
+      if (recipe) {
+        showRecipeDetail(recipe.id);
+        switchTab('recipe');
+        return;
+      }
+      jumpToRecipe();
     }
 
     function aiSuggestRemaining() {
@@ -875,6 +1172,12 @@
         target.pfc = { p: 35, f: 15, c: 38 };
         appState.selectedDate = '9/12';
         renderCalendar();
+        if (appState.calendarView === 'week') {
+          requestAnimationFrame(() => {
+            const el = document.getElementById(dayDomId('9/12'));
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+        }
       }
     }
 
@@ -1753,6 +2056,11 @@
         setCloudStatus('SQL未実行', false);
       }
       renderRecipeList();
+      const mealSheet = document.getElementById('meal-edit-sheet');
+      const mealInput = document.getElementById('meal-edit-title');
+      if (mealSheet && !mealSheet.classList.contains('hidden') && mealInput) {
+        renderMealEditorRecipes(mealInput.value);
+      }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -1760,6 +2068,10 @@
       renderShoppingList();
       loadRecipes();
       refreshLucide();
+      document.getElementById('meal-edit-title').addEventListener('input', function () {
+        const openBtn = document.getElementById('meal-edit-open-recipe');
+        if (openBtn) openBtn.classList.toggle('hidden', !findRecipeForTitle(this.value));
+      });
       document.getElementById('reg-servings').addEventListener('change', function () {
         const n = Number(this.value);
         if (!n || n < 1) this.value = 1;
