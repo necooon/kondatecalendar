@@ -1,5 +1,5 @@
-// Generated from Supabase project aqrlponulqzjmfisvhlu (Issue #11).
-// recipes.ingredients / recipes.steps / recipes.pfc の JSONB 形は js/recipes-db.js の JSDoc を正とする。
+// Generated from Supabase project aqrlponulqzjmfisvhlu (Issue #11 / #13).
+// recipes JSONB 形は js/recipes-db.js の JSDoc を正とする。
 export type Json =
   | string
   | number
@@ -18,8 +18,10 @@ export type RecipeIngredientJson = {
 
 /** JSONB stored in public.recipes.steps (maps to RecipeStep.timer). */
 export type RecipeStepJson = {
+  title?: string
   instruction: string
   timer_seconds: number | null
+  uses?: string[]
 }
 
 /** JSONB stored in public.recipes.pfc. */
@@ -28,6 +30,21 @@ export type RecipePfcJson = {
   f: number
   c: number
   kcal: number
+}
+
+/** JSONB stored in public.recipes.versions[versionKey]. */
+export type RecipeVersionJson = {
+  title: string
+  rating: string
+  message: string
+  note?: string
+  sort_order: number
+  branch: string
+  hash: string
+  author: string
+  committed_at: string
+  ingredients: RecipeIngredientJson[]
+  steps: RecipeStepJson[]
 }
 
 export type Database = {
@@ -347,6 +364,7 @@ export type Database = {
       }
       recipes: {
         Row: {
+          branch: string
           created_at: string
           id: string
           ingredients: Json
@@ -355,9 +373,12 @@ export type Database = {
           servings_base: number
           steps: Json
           tag: string
+          tags: Json
           updated_at: string
+          versions: Json
         }
         Insert: {
+          branch?: string
           created_at?: string
           id?: string
           ingredients?: Json
@@ -366,9 +387,12 @@ export type Database = {
           servings_base?: number
           steps?: Json
           tag?: string
+          tags?: Json
           updated_at?: string
+          versions?: Json
         }
         Update: {
+          branch?: string
           created_at?: string
           id?: string
           ingredients?: Json
@@ -377,7 +401,9 @@ export type Database = {
           servings_base?: number
           steps?: Json
           tag?: string
+          tags?: Json
           updated_at?: string
+          versions?: Json
         }
         Relationships: []
       }

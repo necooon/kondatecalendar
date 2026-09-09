@@ -1,15 +1,18 @@
 -- RecipeOps レシピ（kondatecalendar プロジェクト）
--- 材料・手順は JSONB。味バージョン履歴テーブルは持たない。
--- Supabase SQL Editor で1回実行してよい（create if not exists）。
+-- 材料・手順は JSONB の HEAD スナップショット。versions に味コミット履歴を持つ。
+-- Supabase SQL Editor で1回実行してよい（create if not exists / add column if not exists）。
 
 create table if not exists public.recipes (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   tag text not null default '',
+  tags jsonb not null default '[]'::jsonb,
+  branch text not null default 'main',
   servings_base integer not null default 2 check (servings_base >= 1),
   pfc jsonb,
   ingredients jsonb not null default '[]'::jsonb,
   steps jsonb not null default '[]'::jsonb,
+  versions jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint recipes_pfc_object_chk
@@ -17,8 +20,25 @@ create table if not exists public.recipes (
   constraint recipes_ingredients_array_chk
     check (jsonb_typeof(ingredients) = 'array'),
   constraint recipes_steps_array_chk
-    check (jsonb_typeof(steps) = 'array')
+    check (jsonb_typeof(steps) = 'array'),
+  constraint recipes_tags_array_chk
+    check (jsonb_typeof(tags) = 'array'),
+  constraint recipes_versions_object_chk
+    check (jsonb_typeof(versions) = 'object')
 );
+
+alter table public.recipes
+  add column if not exists branch text not null default 'main',
+  add column if not exists tags jsonb not null default '[]'::jsonb,
+  add column if not exists versions jsonb not null default '{}'::jsonb;
+
+alter table public.recipes drop constraint if exists recipes_tags_array_chk;
+alter table public.recipes add constraint recipes_tags_array_chk
+  check (jsonb_typeof(tags) = 'array');
+
+alter table public.recipes drop constraint if exists recipes_versions_object_chk;
+alter table public.recipes add constraint recipes_versions_object_chk
+  check (jsonb_typeof(versions) = 'object');
 
 create index if not exists recipes_created_at_idx
   on public.recipes (created_at desc);
