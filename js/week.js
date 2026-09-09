@@ -6,17 +6,22 @@ window.KitchenGit = window.KitchenGit || {};
  */
 KitchenGit.Week = (function () {
   const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日'];
-  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
   function pad2(n) {
     return String(n).padStart(2, '0');
   }
 
-  function parseIsoDate(iso) {
-    if (iso instanceof Date) {
-      return new Date(iso.getFullYear(), iso.getMonth(), iso.getDate());
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function localDate(value) {
+    if (value instanceof Date) {
+      if (Number.isNaN(value.getTime())) return new Date(NaN);
+      return new Date(value.getFullYear(), value.getMonth(), value.getDate());
     }
-    const parts = String(iso || '').split('-').map(Number);
+    const parts = String(value || '').split('-').map(Number);
     const y = parts[0];
     const m = parts[1];
     const d = parts[2];
@@ -25,35 +30,34 @@ KitchenGit.Week = (function () {
   }
 
   function toIsoDate(date) {
-    const d = date instanceof Date ? date : parseIsoDate(date);
+    const d = localDate(date);
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   }
 
   function startOfWeekMonday(date) {
-    const d = date instanceof Date
-      ? new Date(date.getFullYear(), date.getMonth(), date.getDate())
-      : parseIsoDate(date);
-    const offset = (d.getDay() + 6) % 7;
-    d.setDate(d.getDate() - offset);
+    const d = localDate(date);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
     return d;
   }
 
   function addDays(date, n) {
-    const d = date instanceof Date
-      ? new Date(date.getFullYear(), date.getMonth(), date.getDate())
-      : parseIsoDate(date);
-    d.setDate(d.getDate() + Number(n) || 0);
+    const d = localDate(date);
+    d.setDate(d.getDate() + (Number(n) || 0));
     return d;
   }
 
   function weekdayIndex(isoOrDate) {
-    const d = isoOrDate instanceof Date ? isoOrDate : parseIsoDate(isoOrDate);
+    const d = localDate(isoOrDate);
     if (Number.isNaN(d.getTime())) return 0;
     return (d.getDay() + 6) % 7;
   }
 
+  function dayNumber(iso) {
+    return localDate(iso).getDate();
+  }
+
   function formatMd(iso, withYear) {
-    const d = parseIsoDate(iso);
+    const d = localDate(iso);
     if (withYear) {
       return `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}`;
     }
@@ -61,22 +65,15 @@ KitchenGit.Week = (function () {
   }
 
   function formatWeekRangeLabel(weekStartIso) {
-    const start = parseIsoDate(weekStartIso);
+    const start = localDate(weekStartIso);
     const end = addDays(start, 6);
-    const startIso = toIsoDate(start);
-    const endIso = toIsoDate(end);
-    const startDow = WEEKDAYS[0];
-    const endDow = WEEKDAYS[6];
-    if (start.getFullYear() !== end.getFullYear()) {
-      return `${formatMd(startIso, true)} (${startDow}) - ${formatMd(endIso, true)} (${endDow})`;
-    }
-    return `${formatMd(startIso)} (${startDow}) - ${formatMd(endIso)} (${endDow})`;
+    const crossing = start.getFullYear() !== end.getFullYear();
+    return `${formatMd(start, crossing)} (${WEEKDAYS[0]}) - ${formatMd(end, crossing)} (${WEEKDAYS[6]})`;
   }
 
   function weekDelta(weekStartIso, today) {
     const thisStart = startOfWeekMonday(today || new Date());
-    const shown = parseIsoDate(weekStartIso);
-    return Math.round((shown.getTime() - thisStart.getTime()) / (7 * MS_PER_DAY));
+    return Math.round((localDate(weekStartIso).getTime() - thisStart.getTime()) / MS_PER_WEEK);
   }
 
   function relativeWeekBadge(weekStartIso, today) {
@@ -89,60 +86,59 @@ KitchenGit.Week = (function () {
   }
 
   function relativeWeekTitle(weekStartIso, today) {
-    const badge = relativeWeekBadge(weekStartIso, today);
-    if (badge === '今週') return '今週の朝昼晩＆人数管理';
-    if (badge === '来週') return '来週の朝昼晩＆人数管理';
-    if (badge === '先週') return '先週の朝昼晩＆人数管理';
-    return `${badge}の朝昼晩＆人数管理`;
+    return `${relativeWeekBadge(weekStartIso, today)}の朝昼晩＆人数管理`;
+  }
+
+  function dayDomId(dateStr) {
+    return `week-day-${String(dateStr).replace(/\//g, '-')}`;
   }
 
   function emptyMeals() {
     return { breakfast: { title: '' }, lunch: { title: '' }, dinner: { title: '' } };
   }
 
+  function stampDay(weekStartIso, index, extra) {
+    const iso = toIsoDate(addDays(weekStartIso, index));
+    return Object.assign({
+      date: iso,
+      day: WEEKDAYS[index],
+      tag: '未登録',
+      tagColor: 'slate',
+      servings: 2,
+      isBusinessTrip: false,
+      pfc: null,
+      meals: emptyMeals()
+    }, extra || {}, { date: iso, day: WEEKDAYS[index] });
+  }
+
   function buildEmptyWeekDays(weekStartIso) {
-    const start = parseIsoDate(weekStartIso);
-    return WEEKDAYS.map((day, i) => {
-      const iso = toIsoDate(addDays(start, i));
-      return {
-        date: iso,
-        displayDate: formatMd(iso),
-        day,
-        tag: '未登録',
-        tagColor: 'slate',
-        servings: 2,
-        isBusinessTrip: false,
-        pfc: null,
-        meals: emptyMeals()
-      };
-    });
+    return WEEKDAYS.map((_, i) => stampDay(weekStartIso, i));
   }
 
   function applyTemplateToWeek(weekStartIso, templates) {
-    const start = parseIsoDate(weekStartIso);
     return (templates || []).map((tpl, i) => {
-      const iso = toIsoDate(addDays(start, i));
-      const copy = JSON.parse(JSON.stringify(tpl));
-      copy.date = iso;
-      copy.displayDate = formatMd(iso);
-      copy.day = WEEKDAYS[i];
+      const copy = clone(tpl);
       if (!copy.meals) copy.meals = emptyMeals();
-      return copy;
+      return stampDay(weekStartIso, i, copy);
     });
   }
 
   return {
     WEEKDAYS,
-    parseIsoDate,
+    clone,
+    localDate,
+    parseIsoDate: localDate,
     toIsoDate,
     startOfWeekMonday,
     addDays,
     weekdayIndex,
+    dayNumber,
     formatMd,
     formatWeekRangeLabel,
     weekDelta,
     relativeWeekBadge,
     relativeWeekTitle,
+    dayDomId,
     emptyMeals,
     buildEmptyWeekDays,
     applyTemplateToWeek
