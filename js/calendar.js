@@ -3,15 +3,6 @@ window.KitchenGit = window.KitchenGit || {};
 KitchenGit.Calendar = (function () {
   const Week = () => KitchenGit.Week;
 
-  const TAG_CLASSES = {
-    purple: 'bg-purple-100 text-purple-800',
-    amber: 'bg-amber-100 text-amber-800',
-    blue: 'bg-blue-100 text-blue-800',
-    rose: 'bg-rose-100 text-rose-800',
-    emerald: 'bg-emerald-100 text-emerald-800',
-    slate: 'bg-slate-100 text-slate-600'
-  };
-
   const MEAL_SLOTS = [
     { key: 'breakfast', label: '朝', badge: 'bg-amber-100 text-amber-800' },
     { key: 'lunch', label: '昼', badge: 'bg-sky-100 text-sky-800' },
@@ -19,7 +10,10 @@ KitchenGit.Calendar = (function () {
   ];
 
   const AI_DINNER = {
-    title: '秋鯖の竜田揚げ ＆ キノコポン酢和え',
+    items: [
+      { title: '秋鯖の竜田揚げ' },
+      { title: 'キノコポン酢和え' }
+    ],
     tag: 'AI提案 (旬食材)',
     tagColor: 'emerald',
     pfc: { p: 35, f: 15, c: 38 }
@@ -55,7 +49,12 @@ KitchenGit.Calendar = (function () {
       meals: {
         breakfast: { title: 'ホテル朝食' },
         lunch: { title: '鶏むねそぼろ弁当' },
-        dinner: { title: '秋刀魚の塩焼き ＆ 具だくさん豚汁' }
+        dinner: {
+          items: [
+            { title: '秋刀魚の塩焼き' },
+            { title: '具だくさん豚汁' }
+          ]
+        }
       }
     },
     {
@@ -107,24 +106,47 @@ KitchenGit.Calendar = (function () {
     return JSON.stringify(value == null ? '' : String(value)).replace(/</g, '\\u003c');
   }
 
-  function mealTitle(slot) {
-    return ((slot && slot.title) || '').trim();
+  function normalizeMealItem(raw) {
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      const title = raw.trim();
+      return title ? { title, recipeId: null } : null;
+    }
+    const title = (raw.title || '').trim();
+    if (!title) return null;
+    return { title, recipeId: raw.recipeId || null };
+  }
+
+  function mealItems(slot) {
+    if (!slot) return [];
+    if (Array.isArray(slot.items)) {
+      return slot.items.map(normalizeMealItem).filter(Boolean);
+    }
+    const one = normalizeMealItem(slot);
+    return one ? [one] : [];
   }
 
   function isMealFilled(slot) {
-    return mealTitle(slot).length > 0;
+    return mealItems(slot).length > 0;
   }
 
   function dayMeals(dayData) {
     return (dayData && dayData.meals) || {};
   }
 
-  function dinnerTitle(dayData) {
-    return mealTitle(dayMeals(dayData).dinner);
+  function isChickenDinner(dayData) {
+    return mealItems(dayMeals(dayData).dinner).some((item) => item.title.includes('鶏むね肉と秋茄子'));
   }
 
-  function isChickenDinner(dayData) {
-    return dinnerTitle(dayData).includes('鶏むね肉と秋茄子');
+  function emptyEditorItems() {
+    return [{ title: '', recipeId: null }];
+  }
+
+  function cloneMealItems(items) {
+    return (items || []).map((item) => ({
+      title: item.title || '',
+      recipeId: item.recipeId || null
+    }));
   }
 
   function displayDateOf(dayData) {
@@ -143,8 +165,15 @@ KitchenGit.Calendar = (function () {
 
   function ensureMealSlot(dayData, slotKey) {
     if (!dayData.meals) dayData.meals = Week().emptyMeals();
-    if (!dayData.meals[slotKey]) dayData.meals[slotKey] = { title: '' };
+    if (!dayData.meals[slotKey]) dayData.meals[slotKey] = Week().emptyMealSlot();
     return dayData.meals[slotKey];
+  }
+
+  function writeMealItems(dayData, slotKey, items) {
+    const slot = ensureMealSlot(dayData, slotKey);
+    slot.items = cloneMealItems(items).filter((item) => item.title.trim());
+    delete slot.title;
+    return slot;
   }
 
   function titleMatchesPrep(title, item) {
@@ -162,11 +191,17 @@ KitchenGit.Calendar = (function () {
     return currentPrepItems(state).some((item) => titleMatchesPrep(title, item));
   }
 
+  function isPrepMealSlot(state, slot) {
+    return mealItems(slot).some((item) => isPrepMealTitle(state, item.title));
+  }
+
   function prepDaysForStock(state, stock) {
     if (stock.days && stock.days.length) return stock.days;
     const found = [];
     state.calendarDays.forEach((dayData) => {
-      const hit = MEAL_SLOTS.some((meta) => titleMatchesPrep(mealTitle(dayMeals(dayData)[meta.key]), stock));
+      const hit = MEAL_SLOTS.some((meta) =>
+        mealItems(dayMeals(dayData)[meta.key]).some((item) => titleMatchesPrep(item.title, stock))
+      );
       if (hit && !found.includes(dayData.day)) found.push(dayData.day);
     });
     return found;
@@ -251,7 +286,7 @@ KitchenGit.Calendar = (function () {
     const saturday = state.calendarDays.find((d) => d.day === '土');
     const target = emptyDinner || saturday || state.calendarDays[state.calendarDays.length - 1];
     if (!target) return null;
-    ensureMealSlot(target, 'dinner').title = AI_DINNER.title;
+    writeMealItems(target, 'dinner', AI_DINNER.items);
     target.tag = AI_DINNER.tag;
     target.tagColor = AI_DINNER.tagColor;
     target.pfc = AI_DINNER.pfc;
@@ -304,14 +339,12 @@ KitchenGit.Calendar = (function () {
   }
 
   function dayCardHeaderHtml(dayData, compact) {
-    const tagClass = TAG_CLASSES[dayData.tagColor] || TAG_CLASSES.emerald;
     const dateTitle = compact ? 'text-xs' : 'text-sm';
     return `
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 flex-wrap min-w-0">
           <span class="${dateTitle} font-bold text-slate-900">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
           ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
-          <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${tagClass}">${escapeHtml(dayData.tag)}</span>
         </div>
         <button type="button" onclick="toggleDayServings('${escapeHtml(dayData.date)}')" class="active-scale text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 shrink-0 ${
           dayData.servings === 1
@@ -333,10 +366,10 @@ KitchenGit.Calendar = (function () {
   function mealSlotRowHtml(state, dayData, meta, options) {
     const compact = !!(options && options.compact);
     const dateStr = (options && options.date) || dayData.date;
-    const title = mealTitle(dayMeals(dayData)[meta.key]);
-    const filled = title.length > 0;
+    const items = mealItems(dayMeals(dayData)[meta.key]);
+    const filled = items.length > 0;
     const showAi = meta.key === 'dinner' && !filled;
-    const prepChip = filled && isPrepMealTitle(state, title)
+    const prepChip = filled && isPrepMealSlot(state, dayMeals(dayData)[meta.key])
       ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
       : '';
     const openFn = `openMealEditor('${escapeHtml(dateStr)}','${meta.key}')`;
@@ -369,13 +402,17 @@ KitchenGit.Calendar = (function () {
       `;
     }
 
+    const titlesHtml = filled
+      ? items.map((item) => `<p class="text-xs font-bold text-slate-900 ${titleClass}">${escapeHtml(item.title)}</p>`).join('')
+      : `<p class="text-xs font-bold text-slate-400 ${titleClass}">未設定</p>`;
+
     return `
-      <div onclick="${openFn}" class="bg-slate-50 border border-slate-200/70 rounded-2xl ${pad} flex items-center justify-between gap-2 cursor-pointer active:bg-slate-100">
-        <div class="flex items-center gap-2 min-w-0 pr-1">
-          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
-          <p class="text-xs font-bold ${filled ? 'text-slate-900' : 'text-slate-400'} ${titleClass}">${filled ? escapeHtml(title) : '未設定'}</p>
+      <div onclick="${openFn}" class="bg-slate-50 border border-slate-200/70 rounded-2xl ${pad} flex items-start justify-between gap-2 cursor-pointer active:bg-slate-100">
+        <div class="flex items-start gap-2 min-w-0 pr-1">
+          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0 mt-0.5">${meta.label}</span>
+          <div class="min-w-0 space-y-0.5">${titlesHtml}</div>
         </div>
-        <div class="flex items-center gap-1 shrink-0">
+        <div class="flex items-center gap-1 shrink-0 mt-0.5">
           ${prepChip}
           <i class="fa-solid fa-chevron-right text-[11px] text-slate-300"></i>
         </div>
@@ -598,17 +635,18 @@ KitchenGit.Calendar = (function () {
       state.selectedDate = dateStr;
       state.mealEditorDate = dateStr;
       state.mealEditorSlot = slotKey;
+      const existing = mealItems(dayMeals(dayData)[slotKey]);
+      state.mealEditorItems = existing.length ? cloneMealItems(existing) : emptyEditorItems();
       const heading = document.getElementById('meal-edit-heading');
-      const input = document.getElementById('meal-edit-title');
-      const title = mealTitle(dayMeals(dayData)[slotKey]);
       if (heading) heading.textContent = `${displayDateOf(dayData)} (${dayData.day}) の${meta.label}`;
-      if (input) input.value = title;
-      renderMealEditorRecipes(state, title);
+      renderMealEditorItems(state);
+      renderMealEditorRecipes(state);
       document.getElementById('meal-edit-backdrop').classList.remove('hidden');
       document.getElementById('meal-edit-sheet').classList.remove('hidden');
-      if (input) {
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
+      const firstInput = document.querySelector('#meal-edit-items input');
+      if (firstInput) {
+        firstInput.focus();
+        firstInput.setSelectionRange(firstInput.value.length, firstInput.value.length);
       }
     };
     window.closeMealEditor = function () {
@@ -618,32 +656,76 @@ KitchenGit.Calendar = (function () {
       if (sheet) sheet.classList.add('hidden');
       state.mealEditorDate = null;
       state.mealEditorSlot = null;
+      state.mealEditorItems = [];
     };
-    window.pickMealRecipe = function (name) {
-      const input = document.getElementById('meal-edit-title');
-      if (input) input.value = name;
-      renderMealEditorRecipes(state, name);
+    window.addMealEditorItem = function () {
+      syncMealEditorItemsFromDom(state);
+      state.mealEditorItems.push({ title: '', recipeId: null });
+      renderMealEditorItems(state);
+      const inputs = document.querySelectorAll('#meal-edit-items input');
+      const last = inputs[inputs.length - 1];
+      if (last) last.focus();
+    };
+    window.removeMealEditorItem = function (index) {
+      syncMealEditorItemsFromDom(state);
+      state.mealEditorItems.splice(index, 1);
+      if (!state.mealEditorItems.length) state.mealEditorItems = emptyEditorItems();
+      renderMealEditorItems(state);
+      renderMealEditorRecipes(state);
+    };
+    window.pickMealRecipe = function (name, recipeId) {
+      syncMealEditorItemsFromDom(state);
+      const title = (name || '').trim();
+      if (!title) return;
+      const duplicate = state.mealEditorItems.some((item) => {
+        if (recipeId && item.recipeId === recipeId) return true;
+        return (item.title || '').trim() === title;
+      });
+      if (duplicate) {
+        if (hooks.showToast) hooks.showToast('すでに追加されています');
+        return;
+      }
+      const last = state.mealEditorItems[state.mealEditorItems.length - 1];
+      if (last && !(last.title || '').trim()) {
+        last.title = title;
+        last.recipeId = recipeId || null;
+      } else {
+        state.mealEditorItems.push({ title, recipeId: recipeId || null });
+      }
+      renderMealEditorItems(state);
+      renderMealEditorRecipes(state);
     };
     window.saveMealSlot = function () {
       const dayData = findDay(state.calendarDays, state.mealEditorDate);
       const slotKey = state.mealEditorSlot;
-      const input = document.getElementById('meal-edit-title');
       if (!dayData || !slotKey) return;
-      const title = ((input && input.value) || '').trim();
-      ensureMealSlot(dayData, slotKey).title = title;
+      syncMealEditorItemsFromDom(state);
+      const items = cloneMealItems(state.mealEditorItems).map((item) => {
+        const title = item.title.trim();
+        const recipe = editorItemRecipe(state, { title, recipeId: item.recipeId });
+        return { title, recipeId: recipe ? recipe.id : null };
+      }).filter((item) => item.title);
+      writeMealItems(dayData, slotKey, items);
       window.closeMealEditor();
       render(state);
-      if (hooks.showToast) hooks.showToast(title ? '献立を保存しました' : '献立をクリアしました');
+      if (hooks.showToast) hooks.showToast(items.length ? '献立を保存しました' : '献立をクリアしました');
     };
     window.clearMealSlot = function () {
-      const input = document.getElementById('meal-edit-title');
-      if (input) input.value = '';
-      window.saveMealSlot();
+      const dayData = findDay(state.calendarDays, state.mealEditorDate);
+      const slotKey = state.mealEditorSlot;
+      if (!dayData || !slotKey) return;
+      writeMealItems(dayData, slotKey, []);
+      window.closeMealEditor();
+      render(state);
+      if (hooks.showToast) hooks.showToast('献立をクリアしました');
     };
-    window.openMatchedRecipeFromMeal = function () {
-      const input = document.getElementById('meal-edit-title');
-      const title = ((input && input.value) || '').trim();
-      const recipe = findRecipeForTitle(recipesOf(state), title);
+    window.openMatchedRecipeFromMeal = function (index) {
+      syncMealEditorItemsFromDom(state);
+      const item = state.mealEditorItems[index];
+      const title = item && (item.title || '').trim();
+      const recipes = recipesOf(state);
+      const recipe = (item && item.recipeId && recipes.find((r) => r.id === item.recipeId))
+        || findRecipeForTitle(recipes, title);
       window.closeMealEditor();
       if (hooks.onOpenRecipe) hooks.onOpenRecipe(recipe, title);
     };
@@ -652,24 +734,76 @@ KitchenGit.Calendar = (function () {
     };
   }
 
-  function renderMealEditorRecipes(state, currentTitle) {
+  function syncMealEditorItemsFromDom(state) {
+    const rows = document.querySelectorAll('#meal-edit-items [data-meal-item]');
+    if (!rows.length) return;
+    state.mealEditorItems = Array.from(rows).map((row) => ({
+      title: ((row.querySelector('input') && row.querySelector('input').value) || ''),
+      recipeId: row.dataset.recipeId || null
+    }));
+  }
+
+  function editorItemRecipe(state, item) {
+    if (!item) return null;
+    const recipes = recipesOf(state);
+    if (item.recipeId) {
+      const byId = recipes.find((r) => r.id === item.recipeId);
+      if (byId) return byId;
+    }
+    return findRecipeForTitle(recipes, item.title);
+  }
+
+  function renderMealEditorItems(state) {
+    const list = document.getElementById('meal-edit-items');
+    if (!list) return;
+    const items = state.mealEditorItems && state.mealEditorItems.length
+      ? state.mealEditorItems
+      : emptyEditorItems();
+    state.mealEditorItems = items;
+    list.innerHTML = items.map((item, index) => {
+      const recipe = editorItemRecipe(state, item);
+      const recipeId = recipe ? recipe.id : (item.recipeId || '');
+      const openBtn = recipe
+        ? `<button type="button" onclick="event.stopPropagation(); openMatchedRecipeFromMeal(${index})" class="active-scale w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title="レシピを開く" aria-label="レシピを開く"><i class="fa-solid fa-book-bookmark text-xs"></i></button>`
+        : '';
+      return `
+        <div data-meal-item data-recipe-id="${escapeHtml(recipeId)}" class="flex items-center gap-1.5">
+          <input type="text" value="${escapeHtml(item.title || '')}" placeholder="例: 焼き鮭とキノコのホイル焼き" class="flex-1 min-w-0 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          ${openBtn}
+          <button type="button" onclick="event.stopPropagation(); removeMealEditorItem(${index})" class="active-scale w-9 h-9 rounded-xl bg-slate-100 text-slate-400 shrink-0" title="削除" aria-label="削除">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderMealEditorRecipes(state) {
     const wrap = document.getElementById('meal-edit-recipes-wrap');
     const list = document.getElementById('meal-edit-recipes');
-    const openBtn = document.getElementById('meal-edit-open-recipe');
     if (!wrap || !list) return;
     const recipes = recipesOf(state);
     wrap.classList.toggle('hidden', recipes.length === 0);
-    list.innerHTML = recipes.map((recipe) => `
-      <button type="button" onclick="pickMealRecipe(${encodeJsString(recipe.name)})" class="active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800">
-        ${escapeHtml(recipe.name)}
-      </button>
-    `).join('');
-    if (openBtn) openBtn.classList.toggle('hidden', !findRecipeForTitle(recipes, currentTitle));
-  }
-
-  function syncMealEditorRecipeButton(state, title) {
-    const openBtn = document.getElementById('meal-edit-open-recipe');
-    if (openBtn) openBtn.classList.toggle('hidden', !findRecipeForTitle(recipesOf(state), title));
+    const addedKeys = new Set(
+      (state.mealEditorItems || []).flatMap((item) => {
+        const keys = [];
+        if (item.recipeId) keys.push(`id:${item.recipeId}`);
+        const title = (item.title || '').trim();
+        if (title) keys.push(`name:${title}`);
+        return keys;
+      })
+    );
+    list.innerHTML = recipes.map((recipe) => {
+      const added = addedKeys.has(`id:${recipe.id}`) || addedKeys.has(`name:${recipe.name}`);
+      const cls = added
+        ? 'w-full text-left bg-emerald-50 border border-emerald-200 rounded-2xl px-3 py-2 font-bold text-emerald-800'
+        : 'active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800';
+      return `
+        <button type="button" onclick="pickMealRecipe(${encodeJsString(recipe.name)}, ${encodeJsString(recipe.id)})" class="${cls}">
+          ${escapeHtml(recipe.name)}${added ? ' <span class="text-[10px] font-bold">追加済</span>' : ''}
+        </button>
+      `;
+    }).join('');
   }
 
   return {
@@ -680,7 +814,6 @@ KitchenGit.Calendar = (function () {
     isChickenDinner,
     findDay,
     findRecipeForTitle,
-    renderMealEditorRecipes,
-    syncMealEditorRecipeButton
+    renderMealEditorRecipes
   };
 })();
