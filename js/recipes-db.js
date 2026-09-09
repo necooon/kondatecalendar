@@ -472,9 +472,38 @@ KitchenGit.RecipesDB = (function () {
     return updateRecipe(mapped);
   }
 
+  async function hydrateLegacy(recipes) {
+    const model = M();
+    const demoByName = {};
+    KitchenGit.demoRecipes().forEach((demo) => {
+      demoByName[demo.name] = demo;
+    });
+    const result = [];
+    for (const recipe of recipes) {
+      const demo = demoByName[recipe.name];
+      const keys = Object.keys(recipe.versions || {});
+      const inferred = keys.length === 1 && keys[0] === 'v1.0' && recipe.versions['v1.0'].message === '初回作成';
+      if (!demo || !inferred) {
+        result.push(recipe);
+        continue;
+      }
+      recipe.tags = (demo.tags || []).slice();
+      recipe.branch = demo.branch || 'main';
+      recipe.pfc = demo.pfc || recipe.pfc;
+      recipe.versions = model.clone(demo.versions);
+      try {
+        result.push(await updateRecipe(recipe));
+      } catch (e) {
+        console.error('version hydrate failed', e);
+        result.push(recipe);
+      }
+    }
+    return result;
+  }
+
   async function seedIfEmpty() {
     const existing = await fetchAll();
-    if (existing.length) return existing;
+    if (existing.length) return hydrateLegacy(existing);
     const seeded = [];
     for (const demo of KitchenGit.demoRecipes()) {
       const { id, ...rest } = demo;
