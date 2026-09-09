@@ -266,20 +266,13 @@
           <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>一覧へ
         </button>
 
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-              <span id="recipe-tag-badge" class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">定番 #02</span>
-              <span class="bg-slate-900 text-white text-[10px] font-bold font-mono px-2 py-0.5 rounded-full" id="recipe-active-badge">v1.2</span>
-            </div>
-            <h2 id="recipe-title" class="text-lg font-bold text-slate-900 leading-snug">鶏むね肉と秋茄子のさっぱり炒め</h2>
-            <div id="recipe-hashtags" class="flex flex-wrap gap-1 mt-1.5"></div>
+        <div>
+          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+            <span id="recipe-tag-badge" class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">定番 #02</span>
+            <span class="bg-slate-900 text-white text-[10px] font-bold font-mono px-2 py-0.5 rounded-full" id="recipe-active-badge">v1.2</span>
           </div>
-          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shrink-0">
-            <button type="button" onclick="changeRecipeServings(-1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">−</button>
-            <span id="recipe-servings-text" class="w-12 text-center text-xs font-bold font-mono text-emerald-700">2人分</span>
-            <button type="button" onclick="changeRecipeServings(1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">＋</button>
-          </div>
+          <h2 id="recipe-title" class="text-lg font-bold text-slate-900 leading-snug">鶏むね肉と秋茄子のさっぱり炒め</h2>
+          <div id="recipe-hashtags" class="flex flex-wrap gap-1 mt-1.5"></div>
         </div>
 
         <div>
@@ -323,9 +316,12 @@
             <i data-lucide="utensils" class="w-4 h-4 text-emerald-600"></i>
             <h3 class="text-xs font-bold text-slate-800">材料</h3>
           </div>
-          <span id="diff-version-tag" class="text-[10px] font-mono text-slate-400">v1.1 との比較</span>
+          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shrink-0">
+            <button type="button" onclick="changeRecipeServings(-1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">−</button>
+            <span id="recipe-servings-text" class="w-12 text-center text-xs font-bold font-mono text-emerald-700">2人分</span>
+            <button type="button" onclick="changeRecipeServings(1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">＋</button>
+          </div>
         </div>
-        <div id="recipe-commit-meta" class="text-[11px] text-slate-500 space-y-0.5"></div>
         <div id="recipe-ingredients-box" class="space-y-2"></div>
       </div>
 
@@ -1064,22 +1060,6 @@
       });
     }
 
-    function ingredientDiffs(currentIngs, prevIngs) {
-      if (!prevIngs) {
-        return currentIngs.map(ing => ({ ...ing, diff: 'none', diffNote: '' }));
-      }
-      const prevMap = {};
-      prevIngs.forEach(p => { prevMap[p.name] = p; });
-      return currentIngs.map(ing => {
-        const prev = prevMap[ing.name];
-        if (!prev) return { ...ing, diff: 'add', diffNote: ing.note || '追加' };
-        if (Number(prev.baseAmount) !== Number(ing.baseAmount) || prev.unit !== ing.unit) {
-          return { ...ing, diff: 'mod', diffNote: `${prev.baseAmount}${prev.unit}→${ing.baseAmount}${ing.unit}` };
-        }
-        return { ...ing, diff: 'none', diffNote: '' };
-      });
-    }
-
     function nextVersionKey(recipe) {
       const versions = (recipe && recipe.versions) || (selectedRecipe() && selectedRecipe().versions) || {};
       const nums = Object.keys(versions).map(k => parseFloat(String(k).replace(/^v/i, ''))).filter(n => !Number.isNaN(n));
@@ -1151,11 +1131,6 @@
       const v = versions[appState.activeVersion] || allVersions[appState.activeVersion];
       if (!v) return;
 
-      const idx = keys.indexOf(appState.activeVersion);
-      const prevKey = keys[idx + 1];
-      const compareTag = prevKey ? `${prevKey} との比較` : '初回バージョン';
-      const decorated = ingredientDiffs(v.ingredients || [], prevKey ? versions[prevKey].ingredients : null);
-
       document.getElementById('recipe-title').innerText = recipe.name;
       const tagBadge = document.getElementById('recipe-tag-badge');
       if (recipe.tag) {
@@ -1166,7 +1141,6 @@
       }
       renderHashtags(recipe);
       renderBranchHeader(recipe, v);
-      document.getElementById('diff-version-tag').innerText = compareTag;
       document.getElementById('recipe-active-badge').innerText = appState.activeVersion;
       document.getElementById('recipe-servings-text').innerText = `${appState.servings}人分`;
 
@@ -1180,14 +1154,6 @@
       if (pfcNote) {
         pfcNote.textContent = unmatchedText;
         pfcNote.classList.toggle('hidden', !unmatchedText);
-      }
-
-      const meta = document.getElementById('recipe-commit-meta');
-      if (meta) {
-        meta.innerHTML = `
-          <p><span class="font-bold text-slate-600">Author</span> ${v.author || 'You'}</p>
-          <p><span class="font-bold text-slate-600">記録</span> ${recipeModel().formatCommittedAt(v.committedAt)}</p>
-        `;
       }
 
       const tabs = document.getElementById('recipe-version-tabs');
@@ -1206,27 +1172,14 @@
 
       const container = document.getElementById('recipe-ingredients-box');
       container.innerHTML = '';
-      decorated.forEach(ing => {
+      (v.ingredients || []).forEach(ing => {
         const scaled = recipeModel().scaleAmount(ing.baseAmount, appState.servings, recipe.servingsBase);
         const row = document.createElement('div');
-        let diffBadge = '';
-        let rowBg = 'bg-slate-50 border-slate-200/70';
-        if (ing.diff === 'add') {
-          diffBadge = '<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold font-mono px-1.5 py-0.5 rounded mr-1.5">+ ADD</span>';
-          rowBg = 'bg-emerald-50/70 border-emerald-200';
-        } else if (ing.diff === 'mod') {
-          diffBadge = '<span class="bg-amber-100 text-amber-800 text-[9px] font-bold font-mono px-1.5 py-0.5 rounded mr-1.5">Δ MOD</span>';
-          rowBg = 'bg-amber-50/70 border-amber-200';
-        }
-        row.className = `p-2.5 rounded-2xl border flex items-center justify-between text-xs ${rowBg}`;
+        row.className = 'p-2.5 rounded-2xl border flex items-center justify-between text-xs bg-slate-50 border-slate-200/70';
         row.innerHTML = `
-          <div class="flex items-center">
-            ${diffBadge}
-            <div>
-              <span class="font-bold text-slate-800">${ing.name}</span>
-              ${ing.diffNote ? `<p class="text-[10px] text-amber-700 font-medium">${ing.diffNote}</p>` : ''}
-              ${ing.note ? `<p class="text-[10px] text-slate-400">${ing.note}</p>` : ''}
-            </div>
+          <div>
+            <span class="font-bold text-slate-800">${ing.name}</span>
+            ${ing.note ? `<p class="text-[10px] text-slate-400">${ing.note}</p>` : ''}
           </div>
           <span class="font-mono font-bold text-slate-900 whitespace-nowrap ml-2">${scaled} ${ing.unit}</span>
         `;
