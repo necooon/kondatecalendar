@@ -35,8 +35,6 @@ export type RecipePfcJson = {
 /** JSONB stored in public.recipes.versions[versionKey]. */
 export type RecipeVersionJson = {
   title: string
-  rating: string
-  message: string
   note?: string
   sort_order: number
   branch: string

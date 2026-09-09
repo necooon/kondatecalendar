@@ -270,7 +270,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5 mb-1 flex-wrap">
               <span id="recipe-tag-badge" class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">定番 #02</span>
-              <span class="bg-slate-900 text-white text-[10px] font-bold font-mono px-2 py-0.5 rounded-full" id="recipe-active-badge">v1.2 (★4.5)</span>
+              <span class="bg-slate-900 text-white text-[10px] font-bold font-mono px-2 py-0.5 rounded-full" id="recipe-active-badge">v1.2</span>
             </div>
             <h2 id="recipe-title" class="text-lg font-bold text-slate-900 leading-snug">鶏むね肉と秋茄子のさっぱり炒め</h2>
             <div id="recipe-hashtags" class="flex flex-wrap gap-1 mt-1.5"></div>
@@ -337,10 +337,18 @@
         <div id="recipe-steps-box" class="space-y-2.5"></div>
       </div>
 
+      <div id="recipe-note-card" class="hidden bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
+        <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
+          <i data-lucide="sticky-note" class="w-4 h-4 text-emerald-600"></i>
+          <h3 class="text-xs font-bold text-slate-800">メモ</h3>
+        </div>
+        <p id="recipe-note-text" class="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap"></p>
+      </div>
+
       <div class="grid grid-cols-2 gap-2">
         <button type="button" onclick="openCommitModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 border border-slate-200/80 shadow-sm">
-          <i data-lucide="save" class="w-4 h-4 text-emerald-600"></i>
-          <span>レシピを更新・保存</span>
+          <i data-lucide="pen-line" class="w-4 h-4 text-emerald-600"></i>
+          <span>レシピを編集</span>
         </button>
         <button type="button" onclick="openCookingMode()" class="active-scale bg-emerald-600 text-white text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/30">
           <i data-lucide="play" class="w-4 h-4"></i>
@@ -436,65 +444,50 @@
     </div>
   </div>
 
-  <!-- ==================== レシピ更新・保存（3パターン） ==================== -->
+  <!-- ==================== レシピ編集（新バージョン自動採番） ==================== -->
   <div id="commit-modal-backdrop" onclick="closeCommitModal()" class="fixed inset-0 z-50 bg-black/50 hidden transition-opacity"></div>
   <div id="commit-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden transform transition-transform duration-200 max-h-[90vh] overflow-y-auto">
     <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
 
     <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
       <div class="flex items-center gap-2 min-w-0">
-        <i data-lucide="save" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-        <h3 class="text-base font-bold text-slate-900 truncate">レシピを更新・保存</h3>
+        <span id="commit-next-badge" class="bg-purple-100 text-purple-700 font-mono text-xs font-bold px-2 py-0.5 rounded-md">v1.3</span>
+        <h3 class="text-base font-bold text-slate-900 truncate">レシピを編集</h3>
       </div>
       <button type="button" onclick="closeCommitModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
     </div>
 
-    <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl mb-3.5 text-[11px] font-bold">
-      <button type="button" id="save-tab-commit" onclick="switchSaveTab('commit')" class="rounded-xl py-2 bg-white text-emerald-700 shadow-sm">新バージョン</button>
-      <button type="button" id="save-tab-amend" onclick="switchSaveTab('amend')" class="rounded-xl py-2 text-slate-500">直接編集</button>
-      <button type="button" id="save-tab-fork" onclick="switchSaveTab('fork')" class="rounded-xl py-2 text-slate-500">複製</button>
-    </div>
-
     <div class="space-y-3.5 text-xs">
-      <div id="save-fork-fields" class="hidden space-y-3">
-        <div>
-          <label class="font-bold text-slate-700 block mb-1">新しい料理名</label>
-          <input type="text" id="fork-name" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="font-bold text-slate-700 block mb-1">新ブランチ名</label>
-          <input type="text" id="fork-branch" value="arrange" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-        </div>
+      <div>
+        <label class="font-bold text-slate-700 block mb-1">料理名</label>
+        <input type="text" id="edit-name" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
-
-      <div id="save-version-row">
-        <label class="font-bold text-slate-700 block mb-1">バージョンタグ</label>
-        <input type="text" id="commit-version-key" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      <div>
+        <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
+        <input type="number" min="1" step="1" id="edit-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
 
       <div>
-        <label class="font-bold text-slate-700 block mb-1">星評価（1.0〜5.0）</label>
-        <select id="commit-rating-select" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"></select>
+        <div class="flex items-center justify-between mb-1">
+          <label class="font-bold text-slate-700">材料</label>
+          <button type="button" onclick="addIngredientRow('edit-ingredients')" class="text-emerald-700 font-bold">＋ 行を追加</button>
+        </div>
+        <div id="edit-ingredients" class="space-y-1.5"></div>
       </div>
 
       <div>
-        <label class="font-bold text-slate-700 block mb-1">コミットメッセージ</label>
-        <input type="text" id="commit-input-title" placeholder="変更点をひとこと" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <div class="flex items-center justify-between mb-1">
+          <label class="font-bold text-slate-700">手順</label>
+          <button type="button" onclick="addStepRow('edit-steps')" class="text-emerald-700 font-bold">＋ 行を追加</button>
+        </div>
+        <div id="edit-steps" class="space-y-1.5"></div>
       </div>
 
       <div>
         <label class="font-bold text-slate-700 block mb-1">メモ（任意）</label>
         <textarea id="commit-input-note" rows="2" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="例: パートナー絶賛。生姜は千切りの方が風味が際立つ。"></textarea>
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between mb-1">
-          <label class="font-bold text-slate-700">材料調整</label>
-          <button type="button" onclick="addSaveIngredientRow()" class="text-emerald-700 font-bold">＋ 行を追加</button>
-        </div>
-        <div id="save-ingredients" class="space-y-1.5"></div>
       </div>
 
       <p id="commit-error" class="hidden text-rose-600 font-bold"></p>
@@ -503,7 +496,7 @@
         <button type="button" onclick="closeCommitModal()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl text-xs active-scale">キャンセル</button>
         <button type="button" onclick="saveRecipeUpdate()" id="commit-save-btn" class="w-2/3 bg-emerald-600 text-white font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm active-scale">
           <i class="fa-solid fa-check"></i>
-          <span>保存する</span>
+          <span>v1.3 として保存</span>
         </button>
       </div>
     </div>
@@ -533,14 +526,14 @@
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="font-bold text-slate-700">材料</label>
-          <button type="button" onclick="addRegisterIngredientRow()" class="text-emerald-700 font-bold">＋ 行を追加</button>
+          <button type="button" onclick="addIngredientRow('reg-ingredients')" class="text-emerald-700 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-ingredients" class="space-y-1.5"></div>
       </div>
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="font-bold text-slate-700">手順</label>
-          <button type="button" onclick="addRegisterStepRow()" class="text-emerald-700 font-bold">＋ 行を追加</button>
+          <button type="button" onclick="addStepRow('reg-steps')" class="text-emerald-700 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-steps" class="space-y-1.5"></div>
       </div>
@@ -582,8 +575,6 @@
       timerDuration: 0,
       timerInterval: null,
       wakeLock: null,
-      commitRating: 4,
-      saveMode: 'commit',
       toastTimer: null,
 
       calendarDays: [
@@ -1176,7 +1167,7 @@
       renderHashtags(recipe);
       renderBranchHeader(recipe, v);
       document.getElementById('diff-version-tag').innerText = compareTag;
-      document.getElementById('recipe-active-badge').innerText = `${appState.activeVersion} (${v.rating})`;
+      document.getElementById('recipe-active-badge').innerText = appState.activeVersion;
       document.getElementById('recipe-servings-text').innerText = `${appState.servings}人分`;
 
       const pfc = recipePfcFromIngredients(recipe, v);
@@ -1196,14 +1187,12 @@
         meta.innerHTML = `
           <p><span class="font-bold text-slate-600">Author</span> ${v.author || 'You'}</p>
           <p><span class="font-bold text-slate-600">記録</span> ${recipeModel().formatCommittedAt(v.committedAt)}</p>
-          <p><span class="font-bold text-slate-600">メッセージ</span> ${v.message || '—'}</p>
         `;
       }
 
       const tabs = document.getElementById('recipe-version-tabs');
       tabs.innerHTML = '';
       keys.forEach(vKey => {
-        const item = versions[vKey];
         const isActive = vKey === appState.activeVersion;
         const b = document.createElement('button');
         b.type = 'button';
@@ -1211,7 +1200,7 @@
         b.className = `active-scale shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
           isActive ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
         }`;
-        b.innerHTML = `<span>${vKey}</span> <span class="text-[10px] opacity-75">${item.rating}</span>`;
+        b.innerHTML = `<span>${vKey}</span>`;
         tabs.appendChild(b);
       });
 
@@ -1277,6 +1266,14 @@
             stepsBox.appendChild(card);
           });
         }
+      }
+
+      const noteCard = document.getElementById('recipe-note-card');
+      const noteText = document.getElementById('recipe-note-text');
+      if (noteCard && noteText) {
+        const note = (v.note || '').trim();
+        noteText.textContent = note;
+        noteCard.classList.toggle('hidden', !note);
       }
       refreshLucide();
     }
@@ -1429,37 +1426,6 @@
       }
     }
 
-    function parseRatingValue() {
-      const sel = document.getElementById('commit-rating-select');
-      const n = Number(sel && sel.value);
-      return Number.isFinite(n) ? n : 4;
-    }
-
-    function fillRatingSelect(selected) {
-      const sel = document.getElementById('commit-rating-select');
-      if (!sel) return;
-      const current = selected != null ? selected : 4;
-      const values = [];
-      for (let n = 10; n <= 50; n += 5) values.push(n / 10);
-      if (!values.some((v) => Math.abs(v - current) < 0.05) && current >= 1 && current <= 5) {
-        values.push(current);
-        values.sort((a, b) => a - b);
-      }
-      sel.innerHTML = '';
-      values.forEach((val) => {
-        const opt = document.createElement('option');
-        opt.value = String(val);
-        opt.textContent = `★${Number(val).toFixed(1)}`;
-        if (Math.abs(val - current) < 0.05) opt.selected = true;
-        sel.appendChild(opt);
-      });
-    }
-
-    function ratingFromVersion(version) {
-      const m = String((version && version.rating) || '').match(/(\d+(?:\.\d+)?)/);
-      return m ? Number(m[1]) : 4;
-    }
-
     const REGISTER_UNIT_OPTIONS = [
       'g', 'ml', 'kg',
       '大さじ', '小さじ',
@@ -1467,68 +1433,130 @@
       '適量', '少々'
     ];
 
-    function switchSaveTab(mode) {
-      appState.saveMode = mode;
-      ['commit', 'amend', 'fork'].forEach((id) => {
-        const btn = document.getElementById(`save-tab-${id}`);
-        if (!btn) return;
-        const on = id === mode;
-        btn.className = `rounded-xl py-2 ${on ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`;
-      });
-      document.getElementById('save-fork-fields').classList.toggle('hidden', mode !== 'fork');
-      document.getElementById('save-version-row').classList.toggle('hidden', mode === 'fork');
-      const versionInput = document.getElementById('commit-version-key');
-      const recipe = selectedRecipe();
-      if (mode === 'amend') {
-        versionInput.value = appState.activeVersion;
-        versionInput.readOnly = true;
-      } else if (mode === 'commit') {
-        versionInput.value = nextVersionKey(recipe);
-        versionInput.readOnly = false;
-      }
-      versionInput.classList.toggle('opacity-60', mode === 'amend');
-      const saveLabel = document.getElementById('commit-save-btn').querySelector('span');
-      if (mode === 'commit') saveLabel.innerText = '新バージョンとして保存';
-      else if (mode === 'amend') saveLabel.innerText = 'この版を上書き';
-      else saveLabel.innerText = '複製して保存';
+    function escapeAttr(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;');
     }
 
-    function addSaveIngredientRow(name, amount, unit) {
-      const wrap = document.getElementById('save-ingredients');
+    function addIngredientRow(wrapId, name, amount, unit, note) {
+      const wrap = document.getElementById(wrapId);
+      if (!wrap) return;
       const row = document.createElement('div');
       row.className = 'grid grid-cols-6 gap-1.5 items-center';
+      row.dataset.note = note || '';
       const unitValue = unit || 'g';
+      const amountValue = amount != null && amount !== '' ? amount : '';
       const optionsHtml = REGISTER_UNIT_OPTIONS.map(u =>
         `<option value="${u}"${u === unitValue ? ' selected' : ''}>${u}</option>`
       ).join('');
       row.innerHTML = `
-        <input type="text" value="${name || ''}" placeholder="材料名" class="col-span-3 bg-slate-100 border border-slate-200 rounded-xl p-2">
-        <input type="number" step="0.1" value="${amount != null ? amount : ''}" placeholder="量" class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2 font-mono">
+        <input type="text" value="${escapeAttr(name)}" placeholder="材料名" class="col-span-3 bg-slate-100 border border-slate-200 rounded-xl p-2">
+        <input type="number" step="0.1" value="${escapeAttr(amountValue)}" placeholder="量" class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2 font-mono">
         <select class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2">${optionsHtml}</select>
-        <button type="button" class="col-span-1 text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="col-span-1 text-slate-400" aria-label="材料を削除"><i class="fa-solid fa-xmark"></i></button>
       `;
       row.querySelector('button').addEventListener('click', () => row.remove());
       wrap.appendChild(row);
     }
 
-    function collectSaveIngredients() {
-      return [...document.getElementById('save-ingredients').children].map((row) => {
+    function collectIngredientRows(wrapId) {
+      return [...document.getElementById(wrapId).children].map((row) => {
         const inputs = row.querySelectorAll('input');
         const unitSelect = row.querySelector('select');
         return {
           name: inputs[0].value.trim(),
           baseAmount: Number(inputs[1].value) || 0,
           unit: (unitSelect && unitSelect.value) || 'g',
-          note: ''
+          note: row.dataset.note || ''
         };
       }).filter((ing) => ing.name);
     }
 
-    function fillSaveIngredients(ingredients) {
-      const wrap = document.getElementById('save-ingredients');
+    function fillIngredientRows(wrapId, ingredients) {
+      const wrap = document.getElementById(wrapId);
       wrap.innerHTML = '';
-      (ingredients && ingredients.length ? ingredients : [{ name: '', baseAmount: '', unit: 'g' }]).forEach((ing) => {
-        addSaveIngredientRow(ing.name, ing.baseAmount, ing.unit);
+      const list = ingredients && ingredients.length ? ingredients : [{ name: '', baseAmount: '', unit: 'g' }];
+      list.forEach((ing) => addIngredientRow(wrapId, ing.name, ing.baseAmount, ing.unit, ing.note));
+    }
+
+    function renumberStepRows(wrapId) {
+      const wrap = document.getElementById(wrapId);
+      if (!wrap) return;
+      [...wrap.children].forEach((row, index) => {
+        const numEl = row.querySelector('.step-num');
+        if (numEl) numEl.textContent = String(index + 1);
+      });
+    }
+
+    function moveStepRow(row, dir) {
+      const wrap = row.parentElement;
+      if (!wrap) return;
+      if (dir < 0 && row.previousElementSibling) {
+        wrap.insertBefore(row, row.previousElementSibling);
+      } else if (dir > 0 && row.nextElementSibling) {
+        wrap.insertBefore(row.nextElementSibling, row);
+      }
+      if (wrap.id) renumberStepRows(wrap.id);
+    }
+
+    function addStepRow(wrapId, instruction, minutes, title) {
+      const wrap = document.getElementById(wrapId);
+      if (!wrap) return;
+      const row = document.createElement('div');
+      row.className = 'reg-step-row space-y-1 bg-slate-50 rounded-2xl p-2 border border-slate-200/70';
+      const minutesValue = minutes != null && minutes !== '' ? minutes : '';
+      row.innerHTML = `
+        <div class="flex items-start gap-2">
+          <span class="step-num font-mono font-bold text-emerald-700 shrink-0 pt-2">1</span>
+          <div class="flex-1 space-y-1 min-w-0">
+            <input type="text" value="${escapeAttr(title)}" placeholder="手順タイトル（任意）" class="step-title w-full bg-white border border-slate-200 rounded-xl p-2">
+            <textarea rows="2" placeholder="手順の説明" class="w-full bg-white border border-slate-200 rounded-xl p-2">${escapeAttr(instruction)}</textarea>
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-2 pl-6">
+          <label class="text-slate-500 flex items-center gap-1">タイマー（分）
+            <input type="number" min="0" step="1" value="${escapeAttr(minutesValue)}" class="w-16 bg-white border border-slate-200 rounded-lg p-1 font-mono">
+          </label>
+          <div class="flex items-center gap-2">
+            <button type="button" class="step-up text-slate-400" aria-label="上へ"><i class="fa-solid fa-arrow-up"></i></button>
+            <button type="button" class="step-down text-slate-400" aria-label="下へ"><i class="fa-solid fa-arrow-down"></i></button>
+            <button type="button" class="step-remove text-slate-400" aria-label="手順を削除"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+      `;
+      row.querySelector('.step-up').addEventListener('click', () => moveStepRow(row, -1));
+      row.querySelector('.step-down').addEventListener('click', () => moveStepRow(row, 1));
+      row.querySelector('.step-remove').addEventListener('click', () => {
+        row.remove();
+        renumberStepRows(wrapId);
+      });
+      wrap.appendChild(row);
+      renumberStepRows(wrapId);
+    }
+
+    function collectStepRows(wrapId, ingredients) {
+      return [...document.getElementById(wrapId).children].map((row, index) => {
+        const instruction = row.querySelector('textarea').value.trim();
+        const titleEl = row.querySelector('.step-title');
+        const min = row.querySelector('input[type="number"]').value;
+        return {
+          title: ((titleEl && titleEl.value.trim()) || `手順 ${index + 1}`),
+          instruction,
+          timer: min === '' ? null : Number(min) * 60,
+          uses: KitchenGit.RecipeModel.inferUses(instruction, ingredients)
+        };
+      }).filter((s) => s.instruction);
+    }
+
+    function fillStepRows(wrapId, steps) {
+      const wrap = document.getElementById(wrapId);
+      wrap.innerHTML = '';
+      const list = steps && steps.length ? steps : [{ instruction: '', title: '', timer: null }];
+      list.forEach((step) => {
+        const minutes = step.timer != null && Number(step.timer) > 0 ? Math.round(Number(step.timer) / 60) : '';
+        addStepRow(wrapId, step.instruction, minutes, step.title);
       });
     }
 
@@ -1536,18 +1564,17 @@
       const recipe = selectedRecipe();
       if (!recipe) return;
       const v = recipe.versions[appState.activeVersion];
+      const nextKey = nextVersionKey(recipe);
       document.getElementById('commit-error').classList.add('hidden');
-      document.getElementById('commit-input-title').value = '';
+      document.getElementById('edit-name').value = recipe.name || '';
+      document.getElementById('edit-servings').value = String(recipe.servingsBase || 2);
       document.getElementById('commit-input-note').value = (v && v.note) || '';
-      document.getElementById('fork-name').value = `${recipe.name} (アレンジ)`;
-      document.getElementById('fork-branch').value = 'arrange';
-      fillRatingSelect(ratingFromVersion(v));
-      fillSaveIngredients(v && v.ingredients);
-      switchSaveTab('commit');
-      document.getElementById('commit-version-key').value = nextVersionKey(recipe);
+      document.getElementById('commit-next-badge').innerText = nextKey;
+      document.getElementById('commit-save-btn').querySelector('span').innerText = `${nextKey} として保存`;
+      fillIngredientRows('edit-ingredients', v && v.ingredients);
+      fillStepRows('edit-steps', v && v.steps);
       document.getElementById('commit-modal-backdrop').classList.remove('hidden');
       document.getElementById('commit-modal').classList.remove('hidden');
-      refreshLucide();
     }
 
     function closeCommitModal() {
@@ -1577,103 +1604,33 @@
       if (!recipe) return;
       const errEl = document.getElementById('commit-error');
       errEl.classList.add('hidden');
-      const mode = appState.saveMode;
-      const message = document.getElementById('commit-input-title').value.trim() || (mode === 'fork' ? 'アレンジ' : '味アップデート');
+      const name = document.getElementById('edit-name').value.trim();
+      const servingsBase = Number(document.getElementById('edit-servings').value) || 2;
       const note = document.getElementById('commit-input-note').value.trim();
-      const ratingNum = parseRatingValue();
-      const rating = `★${ratingNum.toFixed(1)}`;
-      const ingredients = collectSaveIngredients();
+      const ingredients = collectIngredientRows('edit-ingredients');
+      if (!name) {
+        errEl.textContent = '料理名を入力してください';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      if (servingsBase < 1) {
+        errEl.textContent = '人数は1以上にしてください';
+        errEl.classList.remove('hidden');
+        return;
+      }
       if (!ingredients.length) {
         errEl.textContent = '材料を1つ以上入力してください';
         errEl.classList.remove('hidden');
         return;
       }
-      const current = recipe.versions[appState.activeVersion] || recipe.versions[latestVersionKey(recipe)];
-      const steps = recipeModel().clone((current && current.steps) || []);
-      steps.forEach((step) => {
-        step.uses = recipeModel().inferUses(step.instruction, ingredients);
-      });
+      const steps = collectStepRows('edit-steps', ingredients);
       const now = new Date().toISOString();
-
+      const key = nextVersionKey(recipe);
+      const maxOrder = Math.max(0, ...Object.values(recipe.versions).map((ver) => ver.sortOrder || 0));
       try {
-        if (mode === 'fork') {
-          const name = document.getElementById('fork-name').value.trim();
-          const branch = document.getElementById('fork-branch').value.trim() || 'arrange';
-          if (!name) throw new Error('新しい料理名を入力してください');
-          const payload = {
-            name,
-            tag: recipe.tag || '',
-            tags: (recipe.tags || []).slice(),
-            branch,
-            servingsBase: recipe.servingsBase || 2,
-            pfc: computeRecipePfc(recipe, ingredients),
-            versions: {
-              'v1.0': {
-                title: `v1.0 (${message})`,
-                rating,
-                message,
-                note,
-                sortOrder: 0,
-                branch,
-                hash: recipeModel().shortHash(name + branch + now),
-                author: 'You',
-                committedAt: now,
-                ingredients,
-                steps
-              }
-            }
-          };
-          let saved;
-          if (KitchenGit.RecipesDB.isReady()) {
-            saved = await KitchenGit.RecipesDB.insertRecipe(payload);
-            appState.recipes = await KitchenGit.RecipesDB.fetchAll();
-            setCloudStatus('クラウド同期', true);
-          } else {
-            saved = { ...payload, id: 'local-' + Date.now() };
-            appState.recipes = [saved, ...appState.recipes];
-          }
-          closeCommitModal();
-          showRecipeDetail(saved.id);
-          renderRecipeList();
-          showToast('レシピを複製しました');
-          return;
-        }
-
-        if (mode === 'amend') {
-          const key = appState.activeVersion;
-          const prev = recipe.versions[key];
-          recipe.versions[key] = {
-            ...prev,
-            title: `${key} (${message})`,
-            rating,
-            message,
-            note,
-            hash: recipeModel().shortHash(recipe.id + key + now),
-            committedAt: now,
-            ingredients,
-            steps
-          };
-          recipe.pfc = computeRecipePfc(recipe, ingredients);
-          if (canPersistRecipe(recipe)) {
-            const updated = await persistRecipe(recipe);
-            const idx = appState.recipes.findIndex((r) => r.id === recipe.id);
-            if (idx >= 0) appState.recipes[idx] = updated;
-          }
-          closeCommitModal();
-          renderRecipeView();
-          renderRecipeList();
-          showToast('現在の版を更新しました');
-          return;
-        }
-
-        let key = document.getElementById('commit-version-key').value.trim() || nextVersionKey(recipe);
-        if (!/^v/i.test(key)) key = `v${key}`;
-        if (recipe.versions[key]) throw new Error(`${key} は既にあります。別のタグにしてください`);
-        const maxOrder = Math.max(0, ...Object.values(recipe.versions).map((ver) => ver.sortOrder || 0));
+        if (recipe.versions[key]) throw new Error(`${key} は既にあります`);
         const next = {
-          title: `${key} (最新: ${message})`,
-          rating,
-          message,
+          title: key,
           note,
           sortOrder: maxOrder + 1,
           branch: appState.activeBranch || recipe.branch || 'main',
@@ -1683,10 +1640,13 @@
           ingredients,
           steps
         };
+        recipe.name = name;
+        recipe.servingsBase = servingsBase;
         recipe.versions[key] = next;
         recipe.branch = next.branch;
-        recipe.pfc = computeRecipePfc(recipe, ingredients);
+        recipe.pfc = computeRecipePfc({ ...recipe, servingsBase }, ingredients);
         appState.activeVersion = key;
+        appState.servings = servingsBase;
         if (canPersistRecipe(recipe)) {
           const updated = await persistRecipe(recipe);
           const idx = appState.recipes.findIndex((r) => r.id === recipe.id);
@@ -1719,70 +1679,6 @@
       return '未照合: ' + unmatched.join('、') + '（栄養素マスタにないため加算していません）';
     }
 
-    function collectRegisterIngredients() {
-      return [...document.getElementById('reg-ingredients').children].map(row => {
-        const inputs = row.querySelectorAll('input');
-        const unitSelect = row.querySelector('select');
-        return {
-          name: inputs[0].value.trim(),
-          baseAmount: Number(inputs[1].value) || 0,
-          unit: (unitSelect && unitSelect.value) || 'g',
-          note: ''
-        };
-      }).filter(ing => ing.name);
-    }
-
-    function addRegisterIngredientRow(name, amount, unit) {
-      const wrap = document.getElementById('reg-ingredients');
-      const row = document.createElement('div');
-      row.className = 'grid grid-cols-6 gap-1.5 items-center';
-      const unitValue = unit || 'g';
-      const optionsHtml = REGISTER_UNIT_OPTIONS.map(u =>
-        `<option value="${u}"${u === unitValue ? ' selected' : ''}>${u}</option>`
-      ).join('');
-      row.innerHTML = `
-        <input type="text" value="${name || ''}" placeholder="材料名" class="col-span-3 bg-slate-100 border border-slate-200 rounded-xl p-2">
-        <input type="number" step="0.1" value="${amount || ''}" placeholder="量" class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2 font-mono">
-        <select class="col-span-1 bg-slate-100 border border-slate-200 rounded-xl p-2">${optionsHtml}</select>
-        <button type="button" class="col-span-1 text-slate-400"><i class="fa-solid fa-xmark"></i></button>
-      `;
-      row.querySelector('button').addEventListener('click', () => {
-        row.remove();
-      });
-      wrap.appendChild(row);
-    }
-
-    function renumberRegisterSteps() {
-      [...document.getElementById('reg-steps').children].forEach((row, index) => {
-        const numEl = row.querySelector('.step-num');
-        if (numEl) numEl.textContent = String(index + 1);
-      });
-    }
-
-    function addRegisterStepRow(instruction, minutes) {
-      const wrap = document.getElementById('reg-steps');
-      const row = document.createElement('div');
-      row.className = 'reg-step-row space-y-1 bg-slate-50 rounded-2xl p-2 border border-slate-200/70';
-      row.innerHTML = `
-        <div class="flex items-start gap-2">
-          <span class="step-num font-mono font-bold text-emerald-700 shrink-0 pt-2">1</span>
-          <textarea rows="2" placeholder="手順の説明" class="w-full bg-white border border-slate-200 rounded-xl p-2">${instruction || ''}</textarea>
-        </div>
-        <div class="flex items-center justify-between gap-2 pl-6">
-          <label class="text-slate-500 flex items-center gap-1">タイマー（分）
-            <input type="number" min="0" step="1" value="${minutes || ''}" class="w-16 bg-white border border-slate-200 rounded-lg p-1 font-mono">
-          </label>
-          <button type="button" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-      `;
-      row.querySelector('button').addEventListener('click', () => {
-        row.remove();
-        renumberRegisterSteps();
-      });
-      wrap.appendChild(row);
-      renumberRegisterSteps();
-    }
-
     function openRegisterModal() {
       document.getElementById('register-error').classList.add('hidden');
       document.getElementById('reg-name').value = '';
@@ -1790,8 +1686,8 @@
       document.getElementById('reg-servings').value = '2';
       document.getElementById('reg-ingredients').innerHTML = '';
       document.getElementById('reg-steps').innerHTML = '';
-      addRegisterIngredientRow();
-      addRegisterStepRow();
+      addIngredientRow('reg-ingredients');
+      addStepRow('reg-steps');
       document.getElementById('register-modal-backdrop').classList.remove('hidden');
       document.getElementById('register-modal').classList.remove('hidden');
     }
@@ -1806,23 +1702,14 @@
       if (!name) throw new Error('料理名を入力してください');
       const tag = document.getElementById('reg-tag').value.trim();
       const servingsBase = Number(document.getElementById('reg-servings').value) || 2;
-      const ingredients = collectRegisterIngredients();
+      const ingredients = collectIngredientRows('reg-ingredients');
       const n = window.KitchenGit && KitchenGit.Nutrition;
       const computed = n
         ? n.computePerServing(ingredients, servingsBase)
         : { p: 0, f: 0, c: 0, kcal: 0 };
       const pfc = { p: computed.p, f: computed.f, c: computed.c, kcal: computed.kcal };
       const now = new Date().toISOString();
-      const steps = [...document.getElementById('reg-steps').children].map((row, index) => {
-        const instruction = row.querySelector('textarea').value.trim();
-        const min = row.querySelector('input[type="number"]').value;
-        return {
-          title: `手順 ${index + 1}`,
-          instruction,
-          timer: min === '' ? null : Number(min) * 60,
-          uses: KitchenGit.RecipeModel.inferUses(instruction, ingredients)
-        };
-      }).filter(s => s.instruction);
+      const steps = collectStepRows('reg-steps', ingredients);
       const tags = tag
         ? tag.split(/[#＃,\s]+/).map((t) => t.trim()).filter(Boolean)
         : [];
@@ -1835,9 +1722,7 @@
         pfc,
         versions: {
           'v1.0': {
-            title: 'v1.0 (初回作成)',
-            rating: '★4.0',
-            message: '初回作成',
+            title: 'v1.0',
             note: '',
             sortOrder: 0,
             branch: 'main',
@@ -1923,6 +1808,10 @@
       loadRecipes();
       refreshLucide();
       document.getElementById('reg-servings').addEventListener('change', function () {
+        const n = Number(this.value);
+        if (!n || n < 1) this.value = 1;
+      });
+      document.getElementById('edit-servings').addEventListener('change', function () {
         const n = Number(this.value);
         if (!n || n < 1) this.value = 1;
       });

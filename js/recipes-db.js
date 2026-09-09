@@ -31,8 +31,6 @@ window.KitchenGit = window.KitchenGit || {};
  *
  * @typedef {object} RecipeVersion
  * @property {string} title
- * @property {string} rating
- * @property {string} message
  * @property {string} note
  * @property {number} sortOrder
  * @property {string} branch
@@ -108,12 +106,10 @@ KitchenGit.RecipeModel = (function () {
     if (!version) return null;
     return {
       title: version.title || '',
-      rating: version.rating || '★4.0',
-      message: version.message || '',
       note: version.note || '',
       sort_order: version.sortOrder || 0,
       branch: version.branch || 'main',
-      hash: version.hash || shortHash(version.title + version.message),
+      hash: version.hash || shortHash(version.title + (version.note || '')),
       author: version.author || 'You',
       committed_at: version.committedAt || new Date().toISOString(),
       ingredients: ingredientsToDb(version.ingredients),
@@ -125,8 +121,6 @@ KitchenGit.RecipeModel = (function () {
     if (!raw || typeof raw !== 'object') return null;
     return {
       title: raw.title || '',
-      rating: raw.rating || '★4.0',
-      message: raw.message || '',
       note: raw.note || '',
       sortOrder: raw.sort_order != null ? raw.sort_order : (raw.sortOrder || 0),
       branch: raw.branch || 'main',
@@ -228,9 +222,7 @@ KitchenGit.RecipeModel = (function () {
   function fallbackVersion(row, ingredients, steps) {
     const created = row.created_at || new Date().toISOString();
     return {
-      title: 'v1.0 (初回作成)',
-      rating: '★4.0',
-      message: '初回作成',
+      title: 'v1.0',
       note: '',
       sortOrder: 0,
       branch: row.branch || 'main',
@@ -294,9 +286,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
       pfc: { p: 36.4, f: 5.0, c: 6.8, kcal: 217 },
       versions: {
         'v1.2': {
-          title: 'v1.2 (最新: 生姜増量・大葉)',
-          rating: '★4.9',
-          message: '生姜増量・大葉',
+          title: 'v1.2',
           note: '',
           sortOrder: 2,
           branch: 'main',
@@ -314,9 +304,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
           ]
         },
         'v1.1': {
-          title: 'v1.1 (大葉追加)',
-          rating: '★4.5',
-          message: '大葉追加',
+          title: 'v1.1',
           note: '',
           sortOrder: 1,
           branch: 'main',
@@ -334,9 +322,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
           ]
         },
         'v1.0': {
-          title: 'v1.0 (初回作成)',
-          rating: '★4.0',
-          message: '初回作成',
+          title: 'v1.0',
           note: '',
           sortOrder: 0,
           branch: 'main',
@@ -482,7 +468,11 @@ KitchenGit.RecipesDB = (function () {
     for (const recipe of recipes) {
       const demo = demoByName[recipe.name];
       const keys = Object.keys(recipe.versions || {});
-      const inferred = keys.length === 1 && keys[0] === 'v1.0' && recipe.versions['v1.0'].message === '初回作成';
+      const v10 = recipe.versions['v1.0'];
+      const inferred = keys.length === 1 && keys[0] === 'v1.0' && (
+        (v10 && v10.message === '初回作成') ||
+        (v10 && v10.title === 'v1.0 (初回作成)')
+      );
       if (!demo || !inferred) {
         result.push(recipe);
         continue;
