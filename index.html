@@ -127,11 +127,29 @@
         <div class="flex items-center justify-between mb-3">
           <div>
             <span class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">Weekly Plan</span>
-            <h2 class="text-lg font-bold text-slate-900 tracking-tight">今週の朝昼晩＆人数管理</h2>
+            <h2 id="week-plan-title" class="text-lg font-bold text-slate-900 tracking-tight">今週の朝昼晩＆人数管理</h2>
           </div>
           <button type="button" onclick="aiSuggestRemaining()" class="active-scale inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm shadow-emerald-600/30">
             <i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i>
             <span>AI提案</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1 mb-3">
+          <button type="button" onclick="shiftWeek(-7)" aria-label="前週" class="active-scale min-w-11 min-h-11 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+            <i class="fa-solid fa-chevron-left text-sm"></i>
+          </button>
+          <div class="flex-1 min-w-0 text-center px-1">
+            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+              <span id="week-range-label" class="text-sm font-bold text-slate-900 font-mono leading-tight">9/7 (月) - 9/13 (日)</span>
+              <span id="week-relative-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">今週</span>
+            </div>
+            <button type="button" id="goto-this-week-btn" onclick="goToThisWeek()" class="hidden mt-1 text-[11px] font-bold text-emerald-700 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 active-scale">
+              今週
+            </button>
+          </div>
+          <button type="button" onclick="shiftWeek(7)" aria-label="翌週" class="active-scale min-w-11 min-h-11 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+            <i class="fa-solid fa-chevron-right text-sm"></i>
           </button>
         </div>
 
@@ -165,48 +183,11 @@
             </span>
             <h3 class="text-xs font-bold text-slate-800">日曜まとめて作り置き（平日時短）</h3>
           </div>
-          <span class="text-[10px] font-bold font-mono bg-white/80 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
-            3品ストック
+          <span id="prep-count-badge" class="text-[10px] font-bold font-mono bg-white/80 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+            0品ストック
           </span>
         </div>
-
-        <div class="space-y-1.5 text-xs">
-          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
-            <div class="flex items-center gap-2 min-w-0">
-              <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
-              <div class="min-w-0">
-                <p class="font-bold text-slate-800">自家製ハーブサラダチキン <span class="font-mono text-emerald-600 text-[11px]">v2.1</span></p>
-                <p class="text-[10px] text-slate-400">P: 42g / 低脂質 / 水曜と金曜に消費</p>
-                <div id="prep-pills-chicken" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
-              </div>
-            </div>
-            <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">2食分</span>
-          </div>
-
-          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
-            <div class="flex items-center gap-2 min-w-0">
-              <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
-              <div class="min-w-0">
-                <p class="font-bold text-slate-800">ほうれん草と人参のナムル</p>
-                <p class="text-[10px] text-slate-400">βカロテン・鉄分補給常備菜</p>
-                <div id="prep-pills-namul" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
-              </div>
-            </div>
-            <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">3食分</span>
-          </div>
-
-          <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
-            <div class="flex items-center gap-2 min-w-0">
-              <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
-              <div class="min-w-0">
-                <p class="font-bold text-slate-800">鶏むねそぼろ（冷凍ストック）</p>
-                <p class="text-[10px] text-slate-400">P: 28g / 木曜弁当のタンパク源</p>
-                <div id="prep-pills-soboro" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
-              </div>
-            </div>
-            <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">4食分</span>
-          </div>
-        </div>
+        <div id="prep-stock-list" class="space-y-1.5 text-xs"></div>
       </div>
     </section>
 
@@ -603,10 +584,81 @@
   <script src="js/config.js"></script>
   <script src="js/nutrition.js"></script>
   <script src="js/recipes-db.js"></script>
+  <script src="js/week.js"></script>
   <script>
+    const DEMO_DAY_TEMPLATES = [
+      {
+        tag: '定番ルーティン', tagColor: 'blue', servings: 2, isBusinessTrip: false, pfc: { p: 34, f: 12, c: 40 },
+        meals: {
+          breakfast: { title: 'ヨーグルトとバナナ' },
+          lunch: { title: 'ほうれん草ナムル弁当' },
+          dinner: { title: '焼き鮭とキノコのホイル焼き' }
+        }
+      },
+      {
+        tag: '最新 v1.2', tagColor: 'purple', servings: 2, isBusinessTrip: false, pfc: { p: 38, f: 8, c: 42 },
+        meals: {
+          breakfast: { title: '納豆ごはん' },
+          lunch: { title: 'ハーブサラダチキン弁当' },
+          dinner: { title: '鶏むね肉と秋茄子のさっぱり炒め' }
+        }
+      },
+      {
+        tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 32, f: 9, c: 35 },
+        meals: {
+          breakfast: { title: 'ホテル朝食' },
+          lunch: { title: 'サラダチキン弁当（出張）' },
+          dinner: { title: '豚ヒレと豆腐のスタミナ炒め' }
+        }
+      },
+      {
+        tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 29, f: 14, c: 30 },
+        meals: {
+          breakfast: { title: 'ホテル朝食' },
+          lunch: { title: '鶏むねそぼろ弁当' },
+          dinner: { title: '秋刀魚の塩焼き ＆ 具だくさん豚汁' }
+        }
+      },
+      {
+        tag: '2週に1回', tagColor: 'emerald', servings: 2, isBusinessTrip: false, pfc: { p: 36, f: 11, c: 65 },
+        meals: {
+          breakfast: { title: '納豆ごはん' },
+          lunch: { title: 'ナムルとサラダチキン' },
+          dinner: { title: '特製スパイスキーマカレー' }
+        }
+      },
+      {
+        tag: '空き枠', tagColor: 'slate', servings: 2, isBusinessTrip: false, pfc: null,
+        meals: {
+          breakfast: { title: 'ホットケーキ' },
+          lunch: { title: '残りキーマカレー' },
+          dinner: { title: '' }
+        }
+      },
+      {
+        tag: '作り置き', tagColor: 'rose', servings: 2, isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 },
+        meals: {
+          breakfast: { title: 'トーストと卵' },
+          lunch: { title: '作り置き仕込みの軽食' },
+          dinner: { title: '週末作り置き ＆ 軽食' }
+        }
+      }
+    ];
+
+    const DEMO_PREP_ITEMS = [
+      { id: 'chicken', name: '自家製ハーブサラダチキン', version: 'v2.1', note: 'P: 42g / 低脂質 / 水曜と金曜に消費', servingsLabel: '2食分', match: 'サラダチキン', days: ['水', '金'] },
+      { id: 'namul', name: 'ほうれん草と人参のナムル', version: '', note: 'βカロテン・鉄分補給常備菜', servingsLabel: '3食分', match: 'ナムル', days: null },
+      { id: 'soboro', name: '鶏むねそぼろ（冷凍ストック）', version: '', note: 'P: 28g / 木曜弁当のタンパク源', servingsLabel: '4食分', match: 'そぼろ', days: ['木'] }
+    ];
+
     const appState = {
       activeTab: 'calendar',
-      selectedDate: '9/8',
+      selectedDate: '',
+      weekStart: '',
+      demoWeekStart: '',
+      weeksByStart: {},
+      prepByWeekStart: {},
+      weekLoading: false,
       servings: 2,
       activeVersion: 'v1.2',
       activeBranch: 'main',
@@ -624,65 +676,7 @@
       timerInterval: null,
       wakeLock: null,
       toastTimer: null,
-
-      calendarDays: [
-        {
-          date: '9/7', day: '月', tag: '定番ルーティン', tagColor: 'blue', servings: 2, isBusinessTrip: false, pfc: { p: 34, f: 12, c: 40 },
-          meals: {
-            breakfast: { title: 'ヨーグルトとバナナ' },
-            lunch: { title: 'ほうれん草ナムル弁当' },
-            dinner: { title: '焼き鮭とキノコのホイル焼き' }
-          }
-        },
-        {
-          date: '9/8', day: '火', tag: '最新 v1.2', tagColor: 'purple', servings: 2, isBusinessTrip: false, pfc: { p: 38, f: 8, c: 42 },
-          meals: {
-            breakfast: { title: '納豆ごはん' },
-            lunch: { title: 'ハーブサラダチキン弁当' },
-            dinner: { title: '鶏むね肉と秋茄子のさっぱり炒め' }
-          }
-        },
-        {
-          date: '9/9', day: '水', tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 32, f: 9, c: 35 },
-          meals: {
-            breakfast: { title: 'ホテル朝食' },
-            lunch: { title: 'サラダチキン弁当（出張）' },
-            dinner: { title: '豚ヒレと豆腐のスタミナ炒め' }
-          }
-        },
-        {
-          date: '9/10', day: '木', tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 29, f: 14, c: 30 },
-          meals: {
-            breakfast: { title: 'ホテル朝食' },
-            lunch: { title: '鶏むねそぼろ弁当' },
-            dinner: { title: '秋刀魚の塩焼き ＆ 具だくさん豚汁' }
-          }
-        },
-        {
-          date: '9/11', day: '金', tag: '2週に1回', tagColor: 'emerald', servings: 2, isBusinessTrip: false, pfc: { p: 36, f: 11, c: 65 },
-          meals: {
-            breakfast: { title: '納豆ごはん' },
-            lunch: { title: 'ナムルとサラダチキン' },
-            dinner: { title: '特製スパイスキーマカレー' }
-          }
-        },
-        {
-          date: '9/12', day: '土', tag: '空き枠', tagColor: 'slate', servings: 2, isBusinessTrip: false, pfc: null,
-          meals: {
-            breakfast: { title: 'ホットケーキ' },
-            lunch: { title: '残りキーマカレー' },
-            dinner: { title: '' }
-          }
-        },
-        {
-          date: '9/13', day: '日', tag: '作り置き', tagColor: 'rose', servings: 2, isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 },
-          meals: {
-            breakfast: { title: 'トーストと卵' },
-            lunch: { title: '作り置き仕込みの軽食' },
-            dinner: { title: '週末作り置き ＆ 軽食' }
-          }
-        }
-      ],
+      calendarDays: [],
 
       shoppingItems: [
         { id: 1, category: '野菜・きのこ', name: '秋茄子', amount: '3本', usage: '火曜炒め物', excluded: false },
@@ -713,11 +707,19 @@
       { key: 'dinner', label: '晩', badge: 'bg-indigo-100 text-indigo-800' }
     ];
 
-    const PREP_STOCKS = [
-      { id: 'chicken', match: /サラダチキン/, days: ['水', '金'] },
-      { id: 'namul', match: /ナムル/, days: null },
-      { id: 'soboro', match: /そぼろ/, days: ['木'] }
-    ];
+    function currentPrepItems() {
+      return appState.prepByWeekStart[appState.weekStart] || [];
+    }
+
+    function prepMatcher(item) {
+      return item.match instanceof RegExp ? item.match : new RegExp(item.match || 'a^');
+    }
+
+    function displayDateOf(dayData) {
+      if (!dayData) return '';
+      if (dayData.displayDate) return dayData.displayDate;
+      return KitchenGit.Week.formatMd(dayData.date);
+    }
 
     function escapeHtml(value) {
       return String(value == null ? '' : value)
@@ -728,8 +730,128 @@
     }
 
     function dayDomId(dateStr) {
-      return `week-day-${String(dateStr).replace('/', '-')}`;
+      return `week-day-${String(dateStr).replace(/\//g, '-')}`;
     }
+
+    function ensureWeek(weekStart) {
+      const Week = KitchenGit.Week;
+      if (!appState.weeksByStart[weekStart]) {
+        appState.weeksByStart[weekStart] = weekStart === appState.demoWeekStart
+          ? Week.applyTemplateToWeek(weekStart, DEMO_DAY_TEMPLATES)
+          : Week.buildEmptyWeekDays(weekStart);
+      }
+      if (appState.prepByWeekStart[weekStart] === undefined) {
+        appState.prepByWeekStart[weekStart] = weekStart === appState.demoWeekStart
+          ? JSON.parse(JSON.stringify(DEMO_PREP_ITEMS))
+          : [];
+      }
+      return appState.weeksByStart[weekStart];
+    }
+
+    function initCalendarWeek() {
+      const Week = KitchenGit.Week;
+      const today = new Date();
+      const thisStart = Week.toIsoDate(Week.startOfWeekMonday(today));
+      appState.demoWeekStart = thisStart;
+      appState.weekStart = thisStart;
+      appState.weeksByStart = {};
+      appState.prepByWeekStart = {};
+      appState.calendarDays = ensureWeek(thisStart);
+      const todayIso = Week.toIsoDate(today);
+      appState.selectedDate = appState.calendarDays.some(d => d.date === todayIso)
+        ? todayIso
+        : appState.calendarDays[0].date;
+    }
+
+    function setDisplayedWeek(weekStart, options) {
+      const Week = KitchenGit.Week;
+      const opts = options || {};
+      const keepWeekday = opts.weekdayIndex != null
+        ? opts.weekdayIndex
+        : Week.weekdayIndex(appState.selectedDate || weekStart);
+      appState.weekStart = weekStart;
+      appState.calendarDays = ensureWeek(weekStart);
+      if (opts.selectToday) {
+        const todayIso = Week.toIsoDate(new Date());
+        const found = appState.calendarDays.find(d => d.date === todayIso);
+        appState.selectedDate = found ? todayIso : appState.calendarDays[Math.min(keepWeekday, 6)].date;
+      } else {
+        appState.selectedDate = appState.calendarDays[Math.min(keepWeekday, 6)].date;
+      }
+      renderCalendar();
+    }
+
+    function shiftWeek(deltaDays) {
+      const Week = KitchenGit.Week;
+      const weekday = Week.weekdayIndex(appState.selectedDate || appState.weekStart);
+      const nextStart = Week.toIsoDate(Week.addDays(appState.weekStart, deltaDays));
+      setDisplayedWeek(nextStart, { weekdayIndex: weekday });
+    }
+
+    function goToThisWeek() {
+      const Week = KitchenGit.Week;
+      const thisStart = Week.toIsoDate(Week.startOfWeekMonday(new Date()));
+      setDisplayedWeek(thisStart, { selectToday: true });
+    }
+
+    function renderWeekNav() {
+      const Week = KitchenGit.Week;
+      const title = document.getElementById('week-plan-title');
+      const range = document.getElementById('week-range-label');
+      const badge = document.getElementById('week-relative-badge');
+      const thisBtn = document.getElementById('goto-this-week-btn');
+      if (title) title.textContent = Week.relativeWeekTitle(appState.weekStart);
+      if (range) range.textContent = Week.formatWeekRangeLabel(appState.weekStart);
+      const rel = Week.relativeWeekBadge(appState.weekStart);
+      if (badge) {
+        badge.textContent = rel;
+        badge.className = rel === '今週'
+          ? 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800'
+          : 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700';
+      }
+      if (thisBtn) thisBtn.classList.toggle('hidden', Week.weekDelta(appState.weekStart) === 0);
+    }
+
+    function weekHasAnyMeal(days) {
+      return (days || appState.calendarDays).some(dayData =>
+        MEAL_SLOTS.some(meta => isMealFilled(dayMeals(dayData)[meta.key]))
+      );
+    }
+
+    function emptyWeekCtaHtml() {
+      return `
+        <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-3 space-y-2">
+          <p class="text-xs font-bold text-slate-800">献立が未登録です</p>
+          <p class="text-[11px] text-slate-500 leading-relaxed">この週の献立はまだありません。AIに提案してもらうか、レシピから登録できます。</p>
+          <div class="flex flex-col gap-1.5">
+            <button type="button" onclick="aiSuggestRemaining()" class="active-scale w-full bg-emerald-600 text-white text-[11px] font-bold py-2 rounded-xl">
+              <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>AIに今週の献立を提案してもらう
+            </button>
+            <button type="button" onclick="openRegisterFromCalendar()" class="active-scale w-full bg-white text-slate-800 text-[11px] font-bold py-2 rounded-xl border border-slate-200">
+              + レシピを登録する
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function calendarSkeletonHtml() {
+      return `
+        <div class="animate-pulse space-y-2">
+          <div class="h-4 bg-slate-100 rounded-full w-1/3"></div>
+          <div class="h-12 bg-slate-100 rounded-2xl"></div>
+          <div class="h-12 bg-slate-100 rounded-2xl"></div>
+          <div class="h-12 bg-slate-100 rounded-2xl"></div>
+        </div>
+      `;
+    }
+
+    function openRegisterFromCalendar() {
+      switchTab('recipe');
+      openRegisterModal();
+    }
+
+    initCalendarWeek();
 
     function mealTitle(slot) {
       return ((slot && slot.title) || '').trim();
@@ -838,7 +960,7 @@
 
           btn.innerHTML = `
             <span class="text-[10px] font-bold ${dayColor}">${item.day}</span>
-            <span class="text-sm font-bold font-mono">${item.date.split('/')[1]}</span>
+            <span class="text-sm font-bold font-mono">${KitchenGit.Week.parseIsoDate(item.date).getDate()}</span>
             <span class="mt-1 flex items-center gap-[3px]">${slotDots}</span>
           `;
           strip.appendChild(btn);
@@ -846,9 +968,10 @@
       }
 
       updateCalendarViewChrome();
+      renderWeekNav();
       renderDayDetail();
       renderWeekOverview();
-      renderPrepDayPills();
+      renderPrepStock();
     }
 
     function selectDay(dateStr) {
@@ -861,15 +984,16 @@
     }
 
     function isPrepMealTitle(title) {
-      return PREP_STOCKS.some(stock => stock.match.test(title || ''));
+      return currentPrepItems().some(item => prepMatcher(item).test(title || ''));
     }
 
     function prepDaysForStock(stock) {
       if (stock.days && stock.days.length) return stock.days;
       const found = [];
+      const matcher = prepMatcher(stock);
       appState.calendarDays.forEach(dayData => {
         const meals = dayMeals(dayData);
-        const hit = MEAL_SLOTS.some(meta => stock.match.test(mealTitle(meals[meta.key])));
+        const hit = MEAL_SLOTS.some(meta => matcher.test(mealTitle(meals[meta.key])));
         if (hit && !found.includes(dayData.day)) found.push(dayData.day);
       });
       return found;
@@ -892,7 +1016,7 @@
       return `
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-1.5 flex-wrap min-w-0">
-            <span class="${dateTitle} font-bold text-slate-900">${escapeHtml(dayData.date)} (${escapeHtml(dayData.day)})</span>
+            <span class="${dateTitle} font-bold text-slate-900">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
             ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
             <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${tagClass}">${escapeHtml(dayData.tag)}</span>
           </div>
@@ -970,10 +1094,20 @@
     function renderDayDetail() {
       const card = document.getElementById('day-detail-card');
       if (!card) return;
+      if (appState.weekLoading) {
+        card.innerHTML = calendarSkeletonHtml();
+        return;
+      }
 
-      const dayData = findDayData(appState.selectedDate) || appState.calendarDays[1];
+      const dayData = findDayData(appState.selectedDate) || appState.calendarDays[0];
+      if (!dayData) {
+        card.innerHTML = emptyWeekCtaHtml();
+        return;
+      }
+      const emptyBanner = weekHasAnyMeal() ? '' : emptyWeekCtaHtml();
       card.innerHTML = `
         ${dayCardHeaderHtml(dayData, false)}
+        ${emptyBanner}
         ${renderMealSlots(dayData, { date: dayData.date })}
         ${pfcBlockHtml(dayData)}
       `;
@@ -982,7 +1116,12 @@
     function renderWeekOverview() {
       const box = document.getElementById('week-overview');
       if (!box) return;
-      box.innerHTML = appState.calendarDays.map(dayData => {
+      if (appState.weekLoading) {
+        box.innerHTML = `<div class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-200/60">${calendarSkeletonHtml()}</div>`;
+        return;
+      }
+      const emptyBanner = weekHasAnyMeal() ? '' : `<div>${emptyWeekCtaHtml()}</div>`;
+      box.innerHTML = emptyBanner + appState.calendarDays.map(dayData => {
         const selected = dayData.date === appState.selectedDate;
         return `
           <div id="${dayDomId(dayData.date)}" class="bg-white rounded-3xl p-3.5 shadow-sm border space-y-2.5 ${
@@ -996,8 +1135,40 @@
       }).join('');
     }
 
+    function renderPrepStock() {
+      const list = document.getElementById('prep-stock-list');
+      const badge = document.getElementById('prep-count-badge');
+      const items = currentPrepItems();
+      if (badge) badge.textContent = `${items.length}品ストック`;
+      if (!list) return;
+      if (!items.length) {
+        list.innerHTML = `
+          <div class="bg-white/95 rounded-2xl p-3 border border-amber-100 space-y-2">
+            <p class="font-bold text-slate-800">作り置きが未登録です</p>
+            <p class="text-[10px] text-slate-500 leading-relaxed">この週の日曜作り置きはまだありません。</p>
+            <button type="button" onclick="openRegisterFromCalendar()" class="active-scale w-full bg-amber-500 text-white text-[11px] font-bold py-2 rounded-xl">+ レシピを登録する</button>
+          </div>
+        `;
+        return;
+      }
+      list.innerHTML = items.map(item => `
+        <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
+          <div class="flex items-center gap-2 min-w-0">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
+            <div class="min-w-0">
+              <p class="font-bold text-slate-800">${escapeHtml(item.name)}${item.version ? ` <span class="font-mono text-emerald-600 text-[11px]">${escapeHtml(item.version)}</span>` : ''}</p>
+              <p class="text-[10px] text-slate-400">${escapeHtml(item.note || '')}</p>
+              <div id="prep-pills-${escapeHtml(item.id)}" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">${escapeHtml(item.servingsLabel || '')}</span>
+        </div>
+      `).join('');
+      renderPrepDayPills();
+    }
+
     function renderPrepDayPills() {
-      PREP_STOCKS.forEach(stock => {
+      currentPrepItems().forEach(stock => {
         const el = document.getElementById(`prep-pills-${stock.id}`);
         if (!el) return;
         const days = prepDaysForStock(stock);
@@ -1079,7 +1250,7 @@
       const heading = document.getElementById('meal-edit-heading');
       const input = document.getElementById('meal-edit-title');
       const title = mealTitle(dayMeals(dayData)[slotKey]);
-      if (heading) heading.textContent = `${dayData.date} (${dayData.day}) の${meta.label}`;
+      if (heading) heading.textContent = `${displayDateOf(dayData)} (${dayData.day}) の${meta.label}`;
       if (input) input.value = title;
       renderMealEditorRecipes(title);
       document.getElementById('meal-edit-backdrop').classList.remove('hidden');
@@ -1163,21 +1334,21 @@
     }
 
     function aiSuggestRemaining() {
-      const target = appState.calendarDays.find(d => d.date === '9/12');
-      if (target) {
-        if (!target.meals) target.meals = { breakfast: { title: '' }, lunch: { title: '' }, dinner: { title: '' } };
-        target.meals.dinner = { title: '秋鯖の竜田揚げ ＆ キノコポン酢和え' };
-        target.tag = 'AI提案 (旬食材)';
-        target.tagColor = 'emerald';
-        target.pfc = { p: 35, f: 15, c: 38 };
-        appState.selectedDate = '9/12';
-        renderCalendar();
-        if (appState.calendarView === 'week') {
-          requestAnimationFrame(() => {
-            const el = document.getElementById(dayDomId('9/12'));
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          });
-        }
+      const emptyDinner = appState.calendarDays.find(d => !isMealFilled(dayMeals(d).dinner));
+      const saturday = appState.calendarDays.find(d => d.day === '土');
+      const target = emptyDinner || saturday || appState.calendarDays[appState.calendarDays.length - 1];
+      if (!target) return;
+      ensureMealSlot(target, 'dinner').title = '秋鯖の竜田揚げ ＆ キノコポン酢和え';
+      target.tag = 'AI提案 (旬食材)';
+      target.tagColor = 'emerald';
+      target.pfc = { p: 35, f: 15, c: 38 };
+      appState.selectedDate = target.date;
+      renderCalendar();
+      if (appState.calendarView === 'week') {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(dayDomId(target.date));
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
       }
     }
 
@@ -1546,8 +1717,8 @@
         document.getElementById('recipe-servings-text').innerText = `${next}人分`;
         const recipe = selectedRecipe();
         if (recipe && (recipe.name || '').includes('鶏むね肉と秋茄子')) {
-          const tue = appState.calendarDays.find(d => d.date === '9/8');
-          if (tue) tue.servings = next;
+          const chickenDay = appState.calendarDays.find(d => isChickenDinner(d));
+          if (chickenDay) chickenDay.servings = next;
         }
         renderRecipeView();
       }
