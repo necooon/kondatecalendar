@@ -130,6 +130,23 @@ KitchenGit.Meals = (function () {
     return (days || []).find((d) => d.date === dateStr) || null;
   }
 
+  function findDayInState(state, dateStr) {
+    if (!state || !dateStr) return null;
+    const current = findDay(state.calendarDays, dateStr);
+    if (current) return current;
+    const weeks = state.weeksByStart || {};
+    if (weeks[state.weekStart]) {
+      const sameWeek = findDay(weeks[state.weekStart], dateStr);
+      if (sameWeek) return sameWeek;
+    }
+    const keys = Object.keys(weeks);
+    for (let i = 0; i < keys.length; i += 1) {
+      const found = findDay(weeks[keys[i]], dateStr);
+      if (found) return found;
+    }
+    return null;
+  }
+
   return {
     MEAL_SLOTS,
     escapeHtml,
@@ -150,6 +167,7 @@ KitchenGit.Meals = (function () {
     slotMatchesPrep,
     findRecipeForTitle,
     findRecipeForItem,
-    findDay
+    findDay,
+    findDayInState
   };
 })();

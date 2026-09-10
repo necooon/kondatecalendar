@@ -63,13 +63,19 @@ KitchenGit.Calendar = (function () {
     return state.weeksByStart[weekStart];
   }
 
-  function mergeRowsIntoWeek(days, rows) {
+  function mergeRowsIntoWeek(days, rows, snapshotGens) {
     const byDate = {};
     (rows || []).forEach((row) => {
       if (row && row.date) byDate[row.date] = row;
     });
+    const gens = snapshotGens || {};
     return (days || []).map((day) => {
       const row = byDate[day.date];
+      const savedDuringFetch = (day.localSaveGen || 0) > (gens[day.date] || 0);
+      if (savedDuringFetch) {
+        if (row && row.id && !day.id) day.id = row.id;
+        return day;
+      }
       if (!row) return day;
       return Object.assign({}, day, {
         id: row.id,
@@ -79,8 +85,31 @@ KitchenGit.Calendar = (function () {
         isBusinessTrip: row.isBusinessTrip,
         pfc: row.pfc,
         meals: row.meals
-      }, { date: day.date, day: day.day });
+      }, { date: day.date, day: day.day, localSaveGen: day.localSaveGen });
     });
+  }
+
+  function findLiveDay(state, dateStr) {
+    return Meals().findDayInState(state, dateStr);
+  }
+
+  function touchDay(state, dayData) {
+    if (!dayData) return;
+    const gen = (state.mealSaveGen = (state.mealSaveGen || 0) + 1);
+    dayData.localSaveGen = gen;
+    const live = findLiveDay(state, dayData.date);
+    if (live && live !== dayData) live.localSaveGen = gen;
+  }
+
+  function copyDayWrite(target, source) {
+    if (!target || !source || target === source) return;
+    target.tag = source.tag;
+    target.tagColor = source.tagColor;
+    target.servings = source.servings;
+    target.isBusinessTrip = source.isBusinessTrip;
+    target.pfc = source.pfc;
+    target.meals = source.meals;
+    target.localSaveGen = source.localSaveGen;
   }
 
   function applyOfflineDemo(state) {
@@ -95,7 +124,11 @@ KitchenGit.Calendar = (function () {
   }
 
   async function hydrateWeek(state, weekStart) {
-    const days = ensureWeek(state, weekStart);
+    const daysAtStart = ensureWeek(state, weekStart);
+    const snapshotGens = {};
+    daysAtStart.forEach((day) => {
+      snapshotGens[day.date] = day.localSaveGen || 0;
+    });
     const DB = KitchenGit.MealsDB;
     if (!DB || !DB.isReady()) {
       if (weekStart === state.demoWeekStart) applyOfflineDemo(state);
@@ -103,12 +136,13 @@ KitchenGit.Calendar = (function () {
     }
     try {
       const rows = await DB.fetchRange(weekStart);
-      const merged = mergeRowsIntoWeek(days, rows);
+      const daysNow = ensureWeek(state, weekStart);
+      const merged = mergeRowsIntoWeek(daysNow, rows, snapshotGens);
       state.weeksByStart[weekStart] = merged;
       if (state.weekStart === weekStart) state.calendarDays = merged;
     } catch (e) {
       console.error(e);
-      if (weekStart === state.demoWeekStart && !Meals().weekHasAnyMeal(days)) {
+      if (weekStart === state.demoWeekStart && !Meals().weekHasAnyMeal(ensureWeek(state, weekStart))) {
         applyOfflineDemo(state);
       }
     }
@@ -135,10 +169,22 @@ KitchenGit.Calendar = (function () {
   async function persistDay(state, dayData) {
     const DB = KitchenGit.MealsDB;
     if (!dayData) return false;
-    if (!DB || !DB.isReady()) return true;
+    touchDay(state, dayData);
+    if (!DB || !DB.isReady()) {
+      copyDayWrite(findLiveDay(state, dayData.date) || dayData, dayData);
+      render(state);
+      return true;
+    }
+    const dateStr = dayData.date;
     try {
       const saved = await DB.upsertDay(dayData);
-      if (saved && saved.id) dayData.id = saved.id;
+      const live = findLiveDay(state, dateStr) || dayData;
+      if (saved && saved.id) {
+        live.id = saved.id;
+        dayData.id = saved.id;
+      }
+      copyDayWrite(live, dayData);
+      render(state);
       return true;
     } catch (e) {
       console.error(e);
@@ -156,6 +202,7 @@ KitchenGit.Calendar = (function () {
     state.weekStart = thisStart;
     state.weeksByStart = {};
     state.prepByWeekStart = {};
+    state.mealSaveGen = 0;
     state.calendarDays = ensureWeek(state, thisStart);
     const todayIso = W.toIsoDate(today);
     state.selectedDate = state.calendarDays.some((d) => d.date === todayIso)
@@ -204,6 +251,7 @@ KitchenGit.Calendar = (function () {
     target.tag = AI_DINNER.tag;
     target.tagColor = AI_DINNER.tagColor;
     target.pfc = AI_DINNER.pfc;
+    touchDay(state, target);
     state.selectedDate = target.date;
     return target;
   }
@@ -564,6 +612,7 @@ KitchenGit.Calendar = (function () {
       showToast: hooks.showToast,
       onOpenRecipe: hooks.onOpenRecipe,
       persistDay: (dayData) => persistDay(state, dayData),
+      touchDay: (dayData) => touchDay(state, dayData),
       onChange: () => render(state)
     });
   }
