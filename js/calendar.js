@@ -611,6 +611,7 @@ KitchenGit.Calendar = (function () {
       getRecipes: hooks.getRecipes,
       showToast: hooks.showToast,
       onOpenRecipe: hooks.onOpenRecipe,
+      onRegisterRecipe: hooks.onRegisterRecipe,
       persistDay: (dayData) => persistDay(state, dayData),
       touchDay: (dayData) => touchDay(state, dayData),
       onChange: () => render(state)

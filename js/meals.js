@@ -34,7 +34,7 @@ KitchenGit.Meals = (function () {
   }
 
   function emptyEditorItems() {
-    return [{ title: '', recipeId: null }];
+    return [];
   }
 
   function cloneMealItems(items) {
