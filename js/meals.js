@@ -20,7 +20,9 @@ KitchenGit.Meals = (function () {
   }
 
   function encodeJsString(value) {
-    return JSON.stringify(value == null ? '' : String(value)).replace(/</g, '\\u003c');
+    return JSON.stringify(value == null ? '' : String(value))
+      .replace(/&/g, '\\u0026')
+      .replace(/</g, '\\u003c');
   }
 
   function emptyMealSlot() {
