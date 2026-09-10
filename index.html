@@ -509,13 +509,10 @@
     </div>
     <div class="space-y-3 text-xs">
       <div>
-        <div class="flex items-center justify-between mb-1">
-          <label class="font-bold text-slate-700">料理</label>
-          <button type="button" onclick="addMealEditorItem()" class="text-emerald-700 font-bold">+ 料理を追加</button>
-        </div>
+        <label class="font-bold text-slate-700 block mb-1">この枠の料理</label>
         <div id="meal-edit-items" class="space-y-1.5"></div>
       </div>
-      <div id="meal-edit-recipes-wrap" class="hidden">
+      <div id="meal-edit-recipes-wrap">
         <label class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
         <div id="meal-edit-recipes" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
       </div>
