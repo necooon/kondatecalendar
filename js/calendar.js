@@ -85,6 +85,9 @@ KitchenGit.Calendar = (function () {
     { id: 'soboro', name: '鶏むねそぼろ（冷凍ストック）', version: '', note: 'P: 28g / 木曜弁当のタンパク源', servingsLabel: '4食分', match: 'そぼろ', days: ['木'] }
   ];
 
+  const VIEW_BTN_ACTIVE = 'flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale bg-slate-900 text-white shadow-sm';
+  const VIEW_BTN_IDLE = 'flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale text-slate-600';
+
   let hooks = {};
 
   function displayDateOf(dayData) {
@@ -252,8 +255,14 @@ KitchenGit.Calendar = (function () {
     `;
   }
 
+  function slotDotClass(filled, isSelected) {
+    if (filled) return 'bg-emerald-400';
+    return isSelected ? 'bg-white/35' : 'bg-slate-300';
+  }
+
   function mealSlotRowHtml(state, dayData, meta, options) {
     const M = Meals();
+    const compact = !!(options && options.compact);
     const dateStr = (options && options.date) || dayData.date;
     const slot = M.slotOf(dayData, meta.key);
     const items = M.mealItems(slot);
@@ -263,25 +272,41 @@ KitchenGit.Calendar = (function () {
       ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
       : '';
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
+    const pad = compact ? 'p-2' : 'p-2.5';
+    const titleClass = compact ? 'truncate' : 'leading-snug';
 
     if (showAi) {
-      return `
-        <div onclick="${openFn}" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-2 flex items-center justify-between gap-2 cursor-pointer active:bg-emerald-100">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
-            <p class="text-xs font-bold text-emerald-800 truncate">未設定</p>
+      if (compact) {
+        return `
+          <div onclick="${openFn}" class="bg-emerald-50 border border-emerald-100 rounded-2xl ${pad} flex items-center justify-between gap-2 cursor-pointer active:bg-emerald-100">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
+              <p class="text-xs font-bold text-emerald-800 truncate">未設定</p>
+            </div>
+            <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shrink-0">AI</button>
           </div>
-          <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shrink-0">AI</button>
+        `;
+      }
+      return `
+        <div onclick="${openFn}" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 flex items-center justify-between gap-2 cursor-pointer active:bg-emerald-100">
+          <div class="flex items-start gap-2 min-w-0">
+            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
+            <div class="min-w-0">
+              <p class="text-xs font-bold text-emerald-800">未設定</p>
+              <p class="text-[10px] text-emerald-700 mt-0.5"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>空き枠です</p>
+            </div>
+          </div>
+          <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-full shrink-0">AIで決める</button>
         </div>
       `;
     }
 
     const titlesHtml = filled
-      ? items.map((item) => `<p class="text-xs font-bold text-slate-900 truncate">${M.escapeHtml(item.title)}</p>`).join('')
-      : '<p class="text-xs font-bold text-slate-400 truncate">未設定</p>';
+      ? items.map((item) => `<p class="text-xs font-bold text-slate-900 ${titleClass}">${M.escapeHtml(item.title)}</p>`).join('')
+      : `<p class="text-xs font-bold text-slate-400 ${titleClass}">未設定</p>`;
 
     return `
-      <div onclick="${openFn}" class="bg-slate-50 border border-slate-200/70 rounded-2xl p-2 flex items-start justify-between gap-2 cursor-pointer active:bg-slate-100">
+      <div onclick="${openFn}" class="bg-slate-50 border border-slate-200/70 rounded-2xl ${pad} flex items-start justify-between gap-2 cursor-pointer active:bg-slate-100">
         <div class="flex items-start gap-2 min-w-0 pr-1">
           <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0 mt-0.5">${meta.label}</span>
           <div class="min-w-0 space-y-0.5">${titlesHtml}</div>
@@ -317,6 +342,75 @@ KitchenGit.Calendar = (function () {
     if (thisBtn) thisBtn.classList.toggle('hidden', W.weekDelta(state.weekStart) === 0);
   }
 
+  function updateCalendarViewChrome(state) {
+    const isWeek = state.calendarView === 'week';
+    const strip = document.getElementById('week-strip');
+    const dayCard = document.getElementById('day-detail-card');
+    const weekOverview = document.getElementById('week-overview');
+    const dayBtn = document.getElementById('cal-view-day');
+    const weekBtn = document.getElementById('cal-view-week');
+    if (strip) {
+      strip.classList.toggle('hidden', isWeek);
+      strip.classList.toggle('flex', !isWeek);
+    }
+    if (dayCard) dayCard.classList.toggle('hidden', isWeek);
+    if (weekOverview) weekOverview.classList.toggle('hidden', !isWeek);
+    if (dayBtn) dayBtn.className = isWeek ? VIEW_BTN_IDLE : VIEW_BTN_ACTIVE;
+    if (weekBtn) weekBtn.className = isWeek ? VIEW_BTN_ACTIVE : VIEW_BTN_IDLE;
+  }
+
+  function renderWeekStrip(state) {
+    const strip = document.getElementById('week-strip');
+    if (!strip) return;
+    const W = Week();
+    const M = Meals();
+    strip.innerHTML = '';
+    state.calendarDays.forEach((item) => {
+      const isSelected = item.date === state.selectedDate;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.onclick = () => {
+        state.selectedDate = item.date;
+        render(state);
+      };
+      btn.className = `shrink-0 w-12 py-2 rounded-2xl flex flex-col items-center transition-all active-scale ${
+        isSelected ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+      }`;
+      const dayColor = item.day === '日'
+        ? (isSelected ? 'text-rose-300' : 'text-rose-500')
+        : item.day === '土'
+          ? (isSelected ? 'text-sky-300' : 'text-sky-500')
+          : 'opacity-80';
+      const slotDots = M.MEAL_SLOTS.map((meta) => {
+        const filled = M.isMealFilled(M.slotOf(item, meta.key));
+        return `<span class="w-1.5 h-1.5 rounded-full ${slotDotClass(filled, isSelected)}"></span>`;
+      }).join('');
+      btn.innerHTML = `
+        <span class="text-[10px] font-bold ${dayColor}">${item.day}</span>
+        <span class="text-sm font-bold font-mono">${W.dayNumber(item.date)}</span>
+        <span class="mt-1 flex items-center gap-[3px]">${slotDots}</span>
+      `;
+      strip.appendChild(btn);
+    });
+  }
+
+  function renderDayDetail(state) {
+    const M = Meals();
+    const card = document.getElementById('day-detail-card');
+    if (!card) return;
+    const dayData = M.findDay(state.calendarDays, state.selectedDate) || state.calendarDays[0];
+    if (!dayData) {
+      card.innerHTML = emptyWeekCtaHtml();
+      return;
+    }
+    card.innerHTML = `
+      ${dayCardHeaderHtml(dayData, false)}
+      ${M.weekHasAnyMeal(state.calendarDays) ? '' : emptyWeekCtaHtml()}
+      ${renderMealSlots(state, dayData, { date: dayData.date })}
+      ${pfcBlockHtml(dayData)}
+    `;
+  }
+
   function renderWeekOverview(state) {
     const M = Meals();
     const box = document.getElementById('week-overview');
@@ -330,7 +424,7 @@ KitchenGit.Calendar = (function () {
           selected ? 'border-emerald-300 ring-2 ring-emerald-500/20' : 'border-slate-200/60'
         }">
           ${dayCardHeaderHtml(dayData, true)}
-          ${renderMealSlots(state, dayData, { date: dayData.date })}
+          ${renderMealSlots(state, dayData, { compact: true, date: dayData.date })}
           ${pfcBlockHtml(dayData)}
         </div>
       `;
@@ -385,7 +479,10 @@ KitchenGit.Calendar = (function () {
   }
 
   function render(state) {
+    updateCalendarViewChrome(state);
     renderWeekNav(state);
+    renderWeekStrip(state);
+    renderDayDetail(state);
     renderWeekOverview(state);
     renderPrepStock(state);
   }
@@ -406,10 +503,14 @@ KitchenGit.Calendar = (function () {
       goToThisWeek(state);
       render(state);
     };
+    window.setCalendarView = function (view) {
+      state.calendarView = view === 'week' ? 'week' : 'day';
+      render(state);
+    };
     window.aiSuggestRemaining = function () {
       const target = applyAiSuggestion(state);
       render(state);
-      if (target) scrollToDay(target.date);
+      if (target && state.calendarView === 'week') scrollToDay(target.date);
     };
     window.openRegisterFromCalendar = function () {
       if (hooks.onRegisterRecipe) hooks.onRegisterRecipe();
@@ -425,6 +526,7 @@ KitchenGit.Calendar = (function () {
       const dayData = state.calendarDays.find((d) => d.day === dayLabel);
       if (!dayData) return;
       state.selectedDate = dayData.date;
+      state.calendarView = 'week';
       if (hooks.onShowCalendar) hooks.onShowCalendar();
       render(state);
       scrollToDay(dayData.date);
