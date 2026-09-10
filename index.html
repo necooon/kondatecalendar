@@ -135,7 +135,7 @@
           </button>
         </div>
 
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1 mb-3">
           <button type="button" onclick="shiftWeek(-7)" aria-label="前週" class="active-scale min-w-11 min-h-11 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
             <i class="fa-solid fa-chevron-left text-sm"></i>
           </button>
@@ -152,10 +152,25 @@
             <i class="fa-solid fa-chevron-right text-sm"></i>
           </button>
         </div>
+
+        <div class="flex p-1 bg-slate-100 rounded-2xl mb-3" role="tablist" aria-label="献立の表示切替">
+          <button type="button" id="cal-view-day" onclick="setCalendarView('day')" class="flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale bg-slate-900 text-white shadow-sm">1日表示</button>
+          <button type="button" id="cal-view-week" onclick="setCalendarView('week')" class="flex-1 py-1.5 rounded-xl text-[11px] font-bold active-scale text-slate-600">1週間まとめ</button>
+        </div>
+
+        <!-- 水平日付ピッカー（iOSライクな横スクロールカレンダー） -->
+        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 pt-1" id="week-strip">
+          <!-- JSでレンダリング -->
+        </div>
+      </div>
+
+      <!-- 選択中の日の詳細カード（出張・人数トグル付き） -->
+      <div id="day-detail-card" class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
+        <!-- JSで選択日の詳細を動的更新 -->
       </div>
 
       <!-- 1週間まとめ（月〜日の縦スクロール） -->
-      <div id="week-overview" class="space-y-3">
+      <div id="week-overview" class="hidden space-y-3">
         <!-- JSで7日分をレンダリング -->
       </div>
 
@@ -587,6 +602,7 @@
       selectedRecipeId: null,
       recipes: [],
       cloudStatus: 'loading',
+      calendarView: 'day',
       mealEditorDate: null,
       mealEditorSlot: null,
       mealEditorItems: [],
