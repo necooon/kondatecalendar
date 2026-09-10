@@ -39,17 +39,6 @@ KitchenGit.Calendar = (function () {
     return currentPrepItems(state).some((item) => M.slotMatchesPrep(slot, item));
   }
 
-  function prepDaysForStock(state, stock) {
-    const M = Meals();
-    if (stock.days && stock.days.length) return stock.days;
-    const found = [];
-    state.calendarDays.forEach((dayData) => {
-      const hit = M.MEAL_SLOTS.some((meta) => M.slotMatchesPrep(M.slotOf(dayData, meta.key), stock));
-      if (hit && !found.includes(dayData.day)) found.push(dayData.day);
-    });
-    return found;
-  }
-
   function ensureWeek(state, weekStart) {
     const W = Week();
     if (!state.weeksByStart[weekStart]) {
@@ -497,60 +486,12 @@ KitchenGit.Calendar = (function () {
     }).join('');
   }
 
-  function renderPrepDayPills(state) {
-    const escapeHtml = Meals().escapeHtml;
-    currentPrepItems(state).forEach((stock) => {
-      const el = document.getElementById(`prep-pills-${stock.id}`);
-      if (!el) return;
-      const days = prepDaysForStock(state, stock);
-      el.innerHTML = days.map((dayLabel) => `
-        <button type="button" onclick="jumpToPrepDay('${escapeHtml(dayLabel)}')" class="active-scale text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-          ${escapeHtml(dayLabel)}
-        </button>
-      `).join('');
-    });
-  }
-
-  function renderPrepStock(state) {
-    const escapeHtml = Meals().escapeHtml;
-    const list = document.getElementById('prep-stock-list');
-    const badge = document.getElementById('prep-count-badge');
-    const items = currentPrepItems(state);
-    if (badge) badge.textContent = `${items.length}品ストック`;
-    if (!list) return;
-    if (!items.length) {
-      list.innerHTML = `
-        <div class="bg-white/95 rounded-2xl p-3 border border-amber-100 space-y-2">
-          <p class="font-bold text-slate-800">作り置きが未登録です</p>
-          <p class="text-[10px] text-slate-500 leading-relaxed">この週の日曜作り置きはまだありません。</p>
-          <button type="button" onclick="openRegisterFromCalendar()" class="active-scale w-full bg-amber-500 text-white text-[11px] font-bold py-2 rounded-xl">+ レシピを登録する</button>
-        </div>
-      `;
-      return;
-    }
-    list.innerHTML = items.map((item) => `
-      <div class="bg-white/95 rounded-2xl p-2.5 flex items-center justify-between gap-2 border border-amber-100 shadow-2xs">
-        <div class="flex items-center gap-2 min-w-0">
-          <i class="fa-solid fa-circle-check text-emerald-500 text-sm shrink-0"></i>
-          <div class="min-w-0">
-            <p class="font-bold text-slate-800">${escapeHtml(item.name)}${item.version ? ` <span class="font-mono text-emerald-600 text-[11px]">${escapeHtml(item.version)}</span>` : ''}</p>
-            <p class="text-[10px] text-slate-400">${escapeHtml(item.note || '')}</p>
-            <div id="prep-pills-${escapeHtml(item.id)}" class="flex flex-wrap items-center gap-1 mt-1.5"></div>
-          </div>
-        </div>
-        <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0">${escapeHtml(item.servingsLabel || '')}</span>
-      </div>
-    `).join('');
-    renderPrepDayPills(state);
-  }
-
   function render(state) {
     updateCalendarViewChrome(state);
     renderWeekNav(state);
     renderWeekStrip(state);
     renderDayDetail(state);
     renderWeekOverview(state);
-    renderPrepStock(state);
   }
 
   function scrollToDay(dateStr) {
@@ -593,15 +534,6 @@ KitchenGit.Calendar = (function () {
       }
       render(state);
       if (dayData) await persistDay(state, dayData);
-    };
-    window.jumpToPrepDay = function (dayLabel) {
-      const dayData = state.calendarDays.find((d) => d.day === dayLabel);
-      if (!dayData) return;
-      state.selectedDate = dayData.date;
-      state.calendarView = 'week';
-      if (hooks.onShowCalendar) hooks.onShowCalendar();
-      render(state);
-      scrollToDay(dayData.date);
     };
     window.renderCalendar = function () {
       render(state);
