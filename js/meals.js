@@ -38,7 +38,7 @@ KitchenGit.Meals = (function () {
   function cloneMealItems(items) {
     return (items || []).map((item) => ({
       title: item.title || '',
-      recipeId: item.recipeId || null
+      recipeId: item.recipeId || item.recipe_id || null
     }));
   }
 
@@ -50,7 +50,7 @@ KitchenGit.Meals = (function () {
     }
     const title = (raw.title || '').trim();
     if (!title) return null;
-    return { title, recipeId: raw.recipeId || null };
+    return { title, recipeId: raw.recipeId || raw.recipe_id || null };
   }
 
   function mealItems(slot) {

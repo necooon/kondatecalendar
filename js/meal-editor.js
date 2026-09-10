@@ -171,7 +171,7 @@ KitchenGit.MealEditor = (function () {
       renderItems(state);
       renderRecipes(state);
     };
-    window.saveMealSlot = function () {
+    window.saveMealSlot = async function () {
       const M = Meals();
       const dayData = M.findDay(state.calendarDays, state.mealEditorDate);
       const slotKey = state.mealEditorSlot;
@@ -186,9 +186,13 @@ KitchenGit.MealEditor = (function () {
       M.writeMealItems(dayData, slotKey, items);
       close(state);
       notifySaved();
+      if (hooks.persistDay) {
+        const ok = await hooks.persistDay(dayData);
+        if (!ok) return;
+      }
       toast(items.length ? '献立を保存しました' : '献立をクリアしました');
     };
-    window.clearMealSlot = function () {
+    window.clearMealSlot = async function () {
       const M = Meals();
       const dayData = M.findDay(state.calendarDays, state.mealEditorDate);
       const slotKey = state.mealEditorSlot;
@@ -196,6 +200,10 @@ KitchenGit.MealEditor = (function () {
       M.writeMealItems(dayData, slotKey, []);
       close(state);
       notifySaved();
+      if (hooks.persistDay) {
+        const ok = await hooks.persistDay(dayData);
+        if (!ok) return;
+      }
       toast('献立をクリアしました');
     };
     window.openMatchedRecipeFromMeal = function (index) {
