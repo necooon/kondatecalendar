@@ -241,12 +241,7 @@ KitchenGit.MealEditor = (function () {
       const snap = snapshotEditor(state);
       state.mealEditorItems = snap.items;
       const items = itemsFromRecipes(state);
-      if (!items.length) {
-        setEditorError('登録レシピから料理を選んでください');
-        toast('登録レシピから料理を選んでください', 'error');
-        return;
-      }
-      await commitSlot(state, snap.dateStr, snap.slotKey, items, '献立をクリアしました');
+      await commitSlot(state, snap.dateStr, snap.slotKey, items, '献立を保存しました');
     };
     window.clearMealSlot = async function () {
       if (!beginAction()) return;
