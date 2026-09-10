@@ -1,5 +1,6 @@
-// Generated from Supabase project aqrlponulqzjmfisvhlu (Issue #11 / #13).
+// Generated from Supabase project aqrlponulqzjmfisvhlu (Issue #11 / #13, meal_days).
 // recipes JSONB 形は js/recipes-db.js の JSDoc を正とする。
+// meal_days JSONB 形は js/meals-db.js の JSDoc を正とする。
 export type Json =
   | string
   | number
@@ -43,6 +44,26 @@ export type RecipeVersionJson = {
   committed_at: string
   ingredients: RecipeIngredientJson[]
   steps: RecipeStepJson[]
+}
+
+/** JSONB stored in public.meal_days.meals[slot].items. */
+export type MealItemJson = {
+  title: string
+  recipe_id?: string | null
+}
+
+/** JSONB stored in public.meal_days.meals. */
+export type MealDaysMealsJson = {
+  breakfast?: { items?: MealItemJson[] }
+  lunch?: { items?: MealItemJson[] }
+  dinner?: { items?: MealItemJson[] }
+}
+
+/** JSONB stored in public.meal_days.pfc. */
+export type MealDayPfcJson = {
+  p: number
+  f: number
+  c: number
 }
 
 export type Database = {
@@ -253,6 +274,45 @@ export type Database = {
           id?: string
           name?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      meal_days: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_business_trip: boolean
+          meals: Json
+          pfc: Json | null
+          servings: number
+          tag: string
+          tag_color: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_business_trip?: boolean
+          meals?: Json
+          pfc?: Json | null
+          servings?: number
+          tag?: string
+          tag_color?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_business_trip?: boolean
+          meals?: Json
+          pfc?: Json | null
+          servings?: number
+          tag?: string
+          tag_color?: string
+          updated_at?: string
         }
         Relationships: []
       }

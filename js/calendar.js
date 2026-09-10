@@ -15,70 +15,6 @@ KitchenGit.Calendar = (function () {
     pfc: { p: 35, f: 15, c: 38 }
   };
 
-  const DEMO_DAY_TEMPLATES = [
-    {
-      tag: '定番ルーティン', tagColor: 'blue', servings: 2, isBusinessTrip: false, pfc: { p: 34, f: 12, c: 40 },
-      meals: {
-        breakfast: { title: 'ヨーグルトとバナナ' },
-        lunch: { title: 'ほうれん草ナムル弁当' },
-        dinner: { title: '焼き鮭とキノコのホイル焼き' }
-      }
-    },
-    {
-      tag: '最新 v1.2', tagColor: 'purple', servings: 2, isBusinessTrip: false, pfc: { p: 38, f: 8, c: 42 },
-      meals: {
-        breakfast: { title: '納豆ごはん' },
-        lunch: { title: 'ハーブサラダチキン弁当' },
-        dinner: { title: '鶏むね肉と秋茄子のさっぱり炒め' }
-      }
-    },
-    {
-      tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 32, f: 9, c: 35 },
-      meals: {
-        breakfast: { title: 'ホテル朝食' },
-        lunch: { title: 'サラダチキン弁当（出張）' },
-        dinner: { title: '豚ヒレと豆腐のスタミナ炒め' }
-      }
-    },
-    {
-      tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 29, f: 14, c: 30 },
-      meals: {
-        breakfast: { title: 'ホテル朝食' },
-        lunch: { title: '鶏むねそぼろ弁当' },
-        dinner: {
-          items: [
-            { title: '秋刀魚の塩焼き' },
-            { title: '具だくさん豚汁' }
-          ]
-        }
-      }
-    },
-    {
-      tag: '2週に1回', tagColor: 'emerald', servings: 2, isBusinessTrip: false, pfc: { p: 36, f: 11, c: 65 },
-      meals: {
-        breakfast: { title: '納豆ごはん' },
-        lunch: { title: 'ナムルとサラダチキン' },
-        dinner: { title: '特製スパイスキーマカレー' }
-      }
-    },
-    {
-      tag: '空き枠', tagColor: 'slate', servings: 2, isBusinessTrip: false, pfc: null,
-      meals: {
-        breakfast: { title: 'ホットケーキ' },
-        lunch: { title: '残りキーマカレー' },
-        dinner: { title: '' }
-      }
-    },
-    {
-      tag: '作り置き', tagColor: 'rose', servings: 2, isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 },
-      meals: {
-        breakfast: { title: 'トーストと卵' },
-        lunch: { title: '作り置き仕込みの軽食' },
-        dinner: { title: '週末作り置き ＆ 軽食' }
-      }
-    }
-  ];
-
   const DEMO_PREP_ITEMS = [
     { id: 'chicken', name: '自家製ハーブサラダチキン', version: 'v2.1', note: 'P: 42g / 低脂質 / 水曜と金曜に消費', servingsLabel: '2食分', match: 'サラダチキン', days: ['水', '金'] },
     { id: 'namul', name: 'ほうれん草と人参のナムル', version: '', note: 'βカロテン・鉄分補給常備菜', servingsLabel: '3食分', match: 'ナムル', days: null },
@@ -117,9 +53,7 @@ KitchenGit.Calendar = (function () {
   function ensureWeek(state, weekStart) {
     const W = Week();
     if (!state.weeksByStart[weekStart]) {
-      state.weeksByStart[weekStart] = weekStart === state.demoWeekStart
-        ? W.applyTemplateToWeek(weekStart, DEMO_DAY_TEMPLATES)
-        : W.buildEmptyWeekDays(weekStart);
+      state.weeksByStart[weekStart] = W.buildEmptyWeekDays(weekStart);
     }
     if (state.prepByWeekStart[weekStart] === undefined) {
       state.prepByWeekStart[weekStart] = weekStart === state.demoWeekStart
@@ -127,6 +61,90 @@ KitchenGit.Calendar = (function () {
         : [];
     }
     return state.weeksByStart[weekStart];
+  }
+
+  function mergeRowsIntoWeek(days, rows) {
+    const byDate = {};
+    (rows || []).forEach((row) => {
+      if (row && row.date) byDate[row.date] = row;
+    });
+    return (days || []).map((day) => {
+      const row = byDate[day.date];
+      if (!row) return day;
+      return Object.assign({}, day, {
+        id: row.id,
+        tag: row.tag,
+        tagColor: row.tagColor,
+        servings: row.servings,
+        isBusinessTrip: row.isBusinessTrip,
+        pfc: row.pfc,
+        meals: row.meals
+      }, { date: day.date, day: day.day });
+    });
+  }
+
+  function applyOfflineDemo(state) {
+    const W = Week();
+    const templates = KitchenGit.demoMealDays ? KitchenGit.demoMealDays() : [];
+    const weekStart = state.demoWeekStart || state.weekStart;
+    if (!weekStart || !templates.length) return;
+    state.weeksByStart[weekStart] = W.applyTemplateToWeek(weekStart, templates);
+    if (state.weekStart === weekStart) {
+      state.calendarDays = state.weeksByStart[weekStart];
+    }
+  }
+
+  async function hydrateWeek(state, weekStart) {
+    const days = ensureWeek(state, weekStart);
+    const DB = KitchenGit.MealsDB;
+    if (!DB || !DB.isReady()) {
+      if (weekStart === state.demoWeekStart) applyOfflineDemo(state);
+      return;
+    }
+    try {
+      const rows = await DB.fetchRange(weekStart);
+      const merged = mergeRowsIntoWeek(days, rows);
+      state.weeksByStart[weekStart] = merged;
+      if (state.weekStart === weekStart) state.calendarDays = merged;
+    } catch (e) {
+      console.error(e);
+      if (weekStart === state.demoWeekStart && !Meals().weekHasAnyMeal(days)) {
+        applyOfflineDemo(state);
+      }
+    }
+  }
+
+  async function loadFromCloud(state) {
+    const DB = KitchenGit.MealsDB;
+    const ready = DB && DB.init();
+    if (!ready) {
+      applyOfflineDemo(state);
+      return false;
+    }
+    try {
+      await DB.seedIfEmpty();
+      await hydrateWeek(state, state.weekStart);
+      return true;
+    } catch (e) {
+      console.error(e);
+      applyOfflineDemo(state);
+      return false;
+    }
+  }
+
+  async function persistDay(state, dayData) {
+    const DB = KitchenGit.MealsDB;
+    if (!dayData) return false;
+    if (!DB || !DB.isReady()) return true;
+    try {
+      const saved = await DB.upsertDay(dayData);
+      if (saved && saved.id) dayData.id = saved.id;
+      return true;
+    } catch (e) {
+      console.error(e);
+      if (hooks.showToast) hooks.showToast('クラウドへ保存できませんでした', 'error');
+      return false;
+    }
   }
 
   function init(state, options) {
@@ -495,32 +513,38 @@ KitchenGit.Calendar = (function () {
   }
 
   function bindGlobals(state) {
-    window.shiftWeek = function (deltaDays) {
+    window.shiftWeek = async function (deltaDays) {
       shiftWeek(state, deltaDays);
       render(state);
+      await hydrateWeek(state, state.weekStart);
+      render(state);
     };
-    window.goToThisWeek = function () {
+    window.goToThisWeek = async function () {
       goToThisWeek(state);
+      render(state);
+      await hydrateWeek(state, state.weekStart);
       render(state);
     };
     window.setCalendarView = function (view) {
       state.calendarView = view === 'week' ? 'week' : 'day';
       render(state);
     };
-    window.aiSuggestRemaining = function () {
+    window.aiSuggestRemaining = async function () {
       const target = applyAiSuggestion(state);
       render(state);
+      if (target) await persistDay(state, target);
       if (target && state.calendarView === 'week') scrollToDay(target.date);
     };
     window.openRegisterFromCalendar = function () {
       if (hooks.onRegisterRecipe) hooks.onRegisterRecipe();
     };
-    window.toggleDayServings = function (dateStr) {
+    window.toggleDayServings = async function (dateStr) {
       const dayData = toggleServings(state, dateStr);
       if (dayData && Meals().isChickenDinner(dayData) && hooks.onChickenServingsChange) {
         hooks.onChickenServingsChange(dayData);
       }
       render(state);
+      if (dayData) await persistDay(state, dayData);
     };
     window.jumpToPrepDay = function (dayLabel) {
       const dayData = state.calendarDays.find((d) => d.day === dayLabel);
@@ -539,6 +563,7 @@ KitchenGit.Calendar = (function () {
       getRecipes: hooks.getRecipes,
       showToast: hooks.showToast,
       onOpenRecipe: hooks.onOpenRecipe,
+      persistDay: (dayData) => persistDay(state, dayData),
       onChange: () => render(state)
     });
   }
@@ -546,6 +571,8 @@ KitchenGit.Calendar = (function () {
   return {
     init,
     bindGlobals,
-    render
+    render,
+    hydrateWeek,
+    loadFromCloud
   };
 })();

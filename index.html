@@ -585,6 +585,7 @@
   <script src="js/recipes-db.js"></script>
   <script src="js/meals.js"></script>
   <script src="js/week.js"></script>
+  <script src="js/meals-db.js"></script>
   <script src="js/meal-editor.js"></script>
   <script src="js/calendar.js"></script>
   <script>
@@ -1569,10 +1570,16 @@
       }
     }
 
+    async function loadMealDays() {
+      await KitchenGit.Calendar.loadFromCloud(appState);
+      KitchenGit.Calendar.render(appState);
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       renderCalendar();
       renderShoppingList();
       loadRecipes();
+      loadMealDays();
       refreshLucide();
       document.getElementById('reg-servings').addEventListener('change', function () {
         const n = Number(this.value);

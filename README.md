@@ -16,14 +16,15 @@ iPhone向けの献立・買い物・レシピ管理アプリです。レシピ�
 
 調理モードは手順を大きく表示し、進捗バー・タイマー（開始/一時停止/リセット）と Screen Wake Lock（対応ブラウザ）で画面を消灯しにくくします。最後のステップ完了後にレシピ編集モーダルが開き、保存時はバージョンが自動で進みます。
 
-## クラウド（レシピ）
+## クラウド（レシピ・献立）
 
-専用の Supabase プロジェクト（kondatecalendar）にレシピを保存します。`public.recipes` は材料・手順の HEAD スナップショットに加え、`versions` JSONB で味コミット履歴を持ちます。初回だけ SQL Editor でスキーマを実行してください。
+専用の Supabase プロジェクト（kondatecalendar）にレシピと献立を保存します。`public.recipes` は材料・手順の HEAD スナップショットに加え、`versions` JSONB で味コミット履歴を持ちます。`public.meal_days` は日付ごとの朝・昼・晩（`meals` JSONB）と人数・PFC を持ちます。初回だけ SQL Editor でスキーマを実行してください。
 
 1. [Supabase SQL Editor](https://supabase.com/dashboard/project/aqrlponulqzjmfisvhlu/sql) を開く
 2. [`supabase/recipes.sql`](supabase/recipes.sql) の内容を実行する
+3. [`supabase/meals.sql`](supabase/meals.sql) の内容を実行する
 
-空のときはデモの「鶏むね肉と秋茄子のさっぱり炒め」をシードします。テーブルがまだ無い場合はオフラインのデモ一覧になり、登録内容はこの画面にだけ残ります。
+レシピが空のときはデモの「鶏むね肉と秋茄子のさっぱり炒め」をシードします。献立が空のときは今週のデモ献立をシードします。テーブルがまだ無い場合はオフラインのデモ表示になり、登録内容はこの画面にだけ残ります。
 
 TypeScript の Database 型は [`types/supabase.ts`](types/supabase.ts) です（ランタイムはバニラ JS）。
 
