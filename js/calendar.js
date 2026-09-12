@@ -432,6 +432,8 @@ KitchenGit.Calendar = (function () {
 
     MealEditor().bindGlobals(state, {
       getRecipes: hooks.getRecipes,
+      getFoodItems: hooks.getFoodItems,
+      insertFoodItem: hooks.insertFoodItem,
       showToast: hooks.showToast,
       onOpenRecipe: hooks.onOpenRecipe,
       onRegisterRecipe: hooks.onRegisterRecipe,

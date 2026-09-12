@@ -14,6 +14,10 @@ KitchenGit.MealEditor = (function () {
     return (hooks.getRecipes && hooks.getRecipes()) || state.recipes || [];
   }
 
+  function foodItemsOf(state) {
+    return (hooks.getFoodItems && hooks.getFoodItems()) || state.foodItems || [];
+  }
+
   function displayDateOf(dayData) {
     return dayData ? Week().formatMd(dayData.date) : '';
   }
@@ -49,14 +53,43 @@ KitchenGit.MealEditor = (function () {
     return (state.mealEditorItems || []).filter((item) => (item.title || '').trim());
   }
 
-  function itemsFromRecipes(state) {
+  function itemKeys(items) {
+    return (items || []).flatMap((item) => {
+      const keys = [];
+      if (item.recipeId) keys.push(`recipe:${item.recipeId}`);
+      if (item.itemId) keys.push(`item:${item.itemId}`);
+      const title = (item.title || '').trim();
+      if (title) keys.push(`name:${title.toLowerCase()}`);
+      return keys;
+    });
+  }
+
+  function isDuplicateItem(items, candidate) {
+    const keys = new Set(itemKeys(items));
+    if (candidate.recipeId && keys.has(`recipe:${candidate.recipeId}`)) return true;
+    if (candidate.itemId && keys.has(`item:${candidate.itemId}`)) return true;
+    const title = (candidate.title || '').trim();
+    if (title && keys.has(`name:${title.toLowerCase()}`)) return true;
+    return false;
+  }
+
+  function itemsFromEditor(state) {
     const M = Meals();
     const recipes = recipesOf(state);
+    const foodItems = foodItemsOf(state);
     return M.cloneMealItems(selectedItems(state)).map((item) => {
       const title = (item.title || '').trim();
+      if (!title) return null;
+
+      if (item.itemId || (!item.recipeId && M.findFoodItemForItem(foodItems, item))) {
+        const food = M.findFoodItemForItem(foodItems, item);
+        if (!food) return null;
+        return { title: food.name || title, recipeId: null, itemId: food.id };
+      }
+
       const recipe = M.findRecipeForItem(recipes, { title, recipeId: item.recipeId });
       if (!recipe) return null;
-      return { title: recipe.name || title, recipeId: recipe.id };
+      return { title: recipe.name || title, recipeId: recipe.id, itemId: null };
     }).filter(Boolean);
   }
 
@@ -69,26 +102,35 @@ KitchenGit.MealEditor = (function () {
     if (!items.length) {
       list.innerHTML = `
         <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          まだ選んでいません。下の登録レシピから追加します。
+          まだ選んでいません。下のレシピまたは材料から追加します。
         </p>
       `;
       return;
     }
     const recipes = recipesOf(state);
+    const foodItems = foodItemsOf(state);
     list.innerHTML = items.map((item, index) => {
-      const recipe = M.findRecipeForItem(recipes, item);
+      const food = M.findFoodItemForItem(foodItems, item);
+      const recipe = food ? null : M.findRecipeForItem(recipes, item);
       const recipeId = recipe ? recipe.id : (item.recipeId || '');
-      const label = (recipe && recipe.name) || item.title || '料理';
+      const itemId = food ? food.id : (item.itemId || '');
+      const label = (food && food.name) || (recipe && recipe.name) || item.title || '料理';
       const openBtn = recipe
         ? `<button type="button" onclick="event.stopPropagation(); openMatchedRecipeFromMeal(${index})" class="active-scale w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title="レシピを開く" aria-label="レシピを開く"><i class="fa-solid fa-book-bookmark text-xs"></i></button>`
         : '';
-      const unmatchedNote = recipe
+      const kindBadge = food
+        ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">材料</span>'
+        : '';
+      const unmatchedNote = (recipe || food)
         ? ''
-        : '<p class="text-[10px] font-medium text-amber-700">レシピ未登録のため、保存すると外れます</p>';
+        : '<p class="text-[10px] font-medium text-amber-700">未登録のため、保存すると外れます</p>';
       return `
-        <div data-meal-item data-recipe-id="${M.escapeHtml(recipeId)}" class="flex items-start gap-1.5 bg-slate-50 border border-slate-200 rounded-2xl pl-3 pr-1.5 py-1.5">
+        <div data-meal-item data-recipe-id="${M.escapeHtml(recipeId)}" data-item-id="${M.escapeHtml(itemId)}" class="flex items-start gap-1.5 bg-slate-50 border border-slate-200 rounded-2xl pl-3 pr-1.5 py-1.5">
           <div class="flex-1 min-w-0 py-1.5">
-            <p class="text-xs font-bold text-slate-900 truncate">${M.escapeHtml(label)}</p>
+            <div class="flex items-center gap-1.5 min-w-0">
+              <p class="text-xs font-bold text-slate-900 truncate">${M.escapeHtml(label)}</p>
+              ${kindBadge}
+            </div>
             ${unmatchedNote}
           </div>
           ${openBtn}
@@ -118,17 +160,9 @@ KitchenGit.MealEditor = (function () {
       `;
       return;
     }
-    const addedKeys = new Set(
-      selectedItems(state).flatMap((item) => {
-        const keys = [];
-        if (item.recipeId) keys.push(`id:${item.recipeId}`);
-        const title = (item.title || '').trim();
-        if (title) keys.push(`name:${title}`);
-        return keys;
-      })
-    );
+    const addedKeys = new Set(itemKeys(selectedItems(state)));
     list.innerHTML = recipes.map((recipe) => {
-      const added = addedKeys.has(`id:${recipe.id}`) || addedKeys.has(`name:${recipe.name}`);
+      const added = addedKeys.has(`recipe:${recipe.id}`) || addedKeys.has(`name:${(recipe.name || '').toLowerCase()}`);
       const cls = added
         ? 'w-full text-left bg-emerald-50 border border-emerald-200 rounded-2xl px-3 py-2 font-bold text-emerald-800'
         : 'active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800';
@@ -138,6 +172,46 @@ KitchenGit.MealEditor = (function () {
         </button>
       `;
     }).join('');
+  }
+
+  function renderFoodItems(state) {
+    const M = Meals();
+    const list = document.getElementById('meal-edit-food-items');
+    if (!list) return;
+    const foodItems = foodItemsOf(state);
+    if (!foodItems.length) {
+      list.innerHTML = `
+        <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
+          まだ食品が登録されていません。上の入力欄から追加できます。
+        </p>
+      `;
+      return;
+    }
+    const addedKeys = new Set(itemKeys(selectedItems(state)));
+    list.innerHTML = foodItems.map((food) => {
+      const added = addedKeys.has(`item:${food.id}`) || addedKeys.has(`name:${(food.name || '').toLowerCase()}`);
+      const cls = added
+        ? 'w-full text-left bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2 font-bold text-amber-800'
+        : 'active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800';
+      return `
+        <button type="button" onclick='pickMealFoodItem(${M.encodeJsString(food.name)}, ${M.encodeJsString(food.id)})' class="${cls}">
+          ${M.escapeHtml(food.name)}${added ? ' <span class="text-[10px] font-bold">追加済</span>' : ''}
+        </button>
+      `;
+    }).join('');
+  }
+
+  function appendMealItem(state, item) {
+    if (isDuplicateItem(selectedItems(state), item)) {
+      toast('すでに追加されています');
+      return false;
+    }
+    state.mealEditorItems = selectedItems(state).concat([item]);
+    setEditorError('');
+    renderItems(state);
+    renderRecipes(state);
+    renderFoodItems(state);
+    return true;
   }
 
   function open(state, dateStr, slotKey) {
@@ -152,9 +226,12 @@ KitchenGit.MealEditor = (function () {
     state.mealEditorItems = existing.length ? M.cloneMealItems(existing) : [];
     const heading = document.getElementById('meal-edit-heading');
     if (heading) heading.textContent = `${displayDateOf(dayData)} (${dayData.day}) の${meta.label}`;
+    const input = document.getElementById('meal-edit-food-input');
+    if (input) input.value = '';
     setEditorError('');
     renderItems(state);
     renderRecipes(state);
+    renderFoodItems(state);
     document.getElementById('meal-edit-backdrop').classList.remove('hidden');
     document.getElementById('meal-edit-sheet').classList.remove('hidden');
   }
@@ -219,28 +296,64 @@ KitchenGit.MealEditor = (function () {
       setEditorError('');
       renderItems(state);
       renderRecipes(state);
+      renderFoodItems(state);
     };
     window.pickMealRecipe = function (name, recipeId) {
       const title = (name || '').trim();
       if (!title || !recipeId) return;
-      const duplicate = selectedItems(state).some((item) => {
-        if (item.recipeId === recipeId) return true;
-        return (item.title || '').trim() === title;
-      });
-      if (duplicate) {
-        toast('すでに追加されています');
+      appendMealItem(state, { title, recipeId, itemId: null });
+    };
+    window.pickMealFoodItem = function (name, itemId) {
+      const title = (name || '').trim();
+      if (!title || !itemId) return;
+      appendMealItem(state, { title, recipeId: null, itemId });
+    };
+    window.addMealFoodItemFromInput = async function () {
+      if (!beginAction()) return;
+      const input = document.getElementById('meal-edit-food-input');
+      const name = input ? input.value.trim() : '';
+      if (!name) {
+        toast('材料名を入力してください', 'error');
         return;
       }
-      state.mealEditorItems = selectedItems(state).concat([{ title, recipeId }]);
-      setEditorError('');
-      renderItems(state);
-      renderRecipes(state);
+      try {
+        let food = null;
+        if (hooks.insertFoodItem) {
+          food = await hooks.insertFoodItem(name);
+        } else {
+          const ItemsDB = KitchenGit.ItemsDB;
+          const localItems = foodItemsOf(state);
+          food = ItemsDB.findByNameInList(localItems, name);
+          if (!food) {
+            food = {
+              id: 'local-' + Date.now(),
+              name,
+              category: ItemsDB.DEFAULT_CATEGORY,
+              unit: '個'
+            };
+            state.foodItems = ItemsDB.sortByName
+              ? ItemsDB.sortByName([food, ...localItems])
+              : [food, ...localItems];
+          }
+        }
+        if (!food) {
+          toast('材料を登録できませんでした', 'error');
+          return;
+        }
+        if (input) input.value = '';
+        if (appendMealItem(state, { title: food.name, recipeId: null, itemId: food.id })) {
+          renderFoodItems(state);
+        }
+      } catch (e) {
+        console.error(e);
+        toast('材料を登録できませんでした', 'error');
+      }
     };
     window.saveMealSlot = async function () {
       if (!beginAction()) return;
       const snap = snapshotEditor(state);
       state.mealEditorItems = snap.items;
-      const items = itemsFromRecipes(state);
+      const items = itemsFromEditor(state);
       await commitSlot(state, snap.dateStr, snap.slotKey, items, '献立を保存しました');
     };
     window.clearMealSlot = async function () {
@@ -262,6 +375,7 @@ KitchenGit.MealEditor = (function () {
   return {
     bindGlobals,
     renderRecipes,
+    renderFoodItems,
     open,
     close
   };
