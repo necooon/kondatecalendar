@@ -39,7 +39,24 @@ function demoSlot(items, servings) {
 }
 
 KitchenGit.demoMealDays = function demoMealDays() {
+  // Order matches Saturday-start week: 土, 日, 月, 火, 水, 木, 金
   return [
+    {
+      tag: '空き枠', tagColor: 'slate', isBusinessTrip: false, pfc: null,
+      meals: {
+        breakfast: demoSlot('ホットケーキ', 2),
+        lunch: demoSlot('残りキーマカレー', 2),
+        dinner: demoSlot('', 2)
+      }
+    },
+    {
+      tag: '作り置き', tagColor: 'rose', isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 },
+      meals: {
+        breakfast: demoSlot('トーストと卵', 2),
+        lunch: demoSlot('作り置き仕込みの軽食', 1),
+        dinner: demoSlot('週末作り置き ＆ 軽食', 2)
+      }
+    },
     {
       tag: '定番ルーティン', tagColor: 'blue', isBusinessTrip: false, pfc: { p: 34, f: 12, c: 40 },
       meals: {
@@ -81,22 +98,6 @@ KitchenGit.demoMealDays = function demoMealDays() {
         breakfast: demoSlot('納豆ごはん', 2),
         lunch: demoSlot('ナムルとサラダチキン', 2),
         dinner: demoSlot('特製スパイスキーマカレー', 2)
-      }
-    },
-    {
-      tag: '空き枠', tagColor: 'slate', isBusinessTrip: false, pfc: null,
-      meals: {
-        breakfast: demoSlot('ホットケーキ', 2),
-        lunch: demoSlot('残りキーマカレー', 2),
-        dinner: demoSlot('', 2)
-      }
-    },
-    {
-      tag: '作り置き', tagColor: 'rose', isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 },
-      meals: {
-        breakfast: demoSlot('トーストと卵', 2),
-        lunch: demoSlot('作り置き仕込みの軽食', 1),
-        dinner: demoSlot('週末作り置き ＆ 軽食', 2)
       }
     }
   ];
@@ -244,7 +245,7 @@ KitchenGit.MealsDB = (function () {
     throwIfError(error);
     if (data && data.length) return;
     const W = Week();
-    const weekStart = W.toIsoDate(W.startOfWeekMonday(new Date()));
+    const weekStart = W.toIsoDate(W.startOfWeekSaturday(new Date()));
     const days = W.applyTemplateToWeek(weekStart, KitchenGit.demoMealDays());
     const seeded = [];
     for (const day of days) {

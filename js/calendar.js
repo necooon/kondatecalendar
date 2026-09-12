@@ -181,7 +181,7 @@ KitchenGit.Calendar = (function () {
     hooks = options || {};
     const W = Week();
     const today = new Date();
-    const thisStart = W.toIsoDate(W.startOfWeekMonday(today));
+    const thisStart = W.toIsoDate(W.startOfWeekSaturday(today));
     state.demoWeekStart = thisStart;
     state.weekStart = thisStart;
     state.weeksByStart = {};
@@ -222,7 +222,7 @@ KitchenGit.Calendar = (function () {
 
   function goToThisWeek(state) {
     const W = Week();
-    setDisplayedWeek(state, W.toIsoDate(W.startOfWeekMonday(new Date())), { selectToday: true });
+    setDisplayedWeek(state, W.toIsoDate(W.startOfWeekSaturday(new Date())), { selectToday: true });
   }
 
   function applyAiSuggestion(state) {
