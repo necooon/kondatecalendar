@@ -1,11 +1,11 @@
 window.KitchenGit = window.KitchenGit || {};
 
 /**
- * Monday-start week helpers (local timezone).
+ * Saturday-start week helpers (local timezone).
  * Internal calendar keys are ISO `YYYY-MM-DD`.
  */
 KitchenGit.Week = (function () {
-  const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日'];
+  const WEEKDAYS = ['土', '日', '月', '火', '水', '木', '金'];
   const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
   function pad2(n) {
@@ -34,9 +34,9 @@ KitchenGit.Week = (function () {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   }
 
-  function startOfWeekMonday(date) {
+  function startOfWeekSaturday(date) {
     const d = localDate(date);
-    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    d.setDate(d.getDate() - ((d.getDay() + 1) % 7));
     return d;
   }
 
@@ -49,7 +49,7 @@ KitchenGit.Week = (function () {
   function weekdayIndex(isoOrDate) {
     const d = localDate(isoOrDate);
     if (Number.isNaN(d.getTime())) return 0;
-    return (d.getDay() + 6) % 7;
+    return (d.getDay() + 1) % 7;
   }
 
   function dayNumber(iso) {
@@ -72,7 +72,7 @@ KitchenGit.Week = (function () {
   }
 
   function weekDelta(weekStartIso, today) {
-    const thisStart = startOfWeekMonday(today || new Date());
+    const thisStart = startOfWeekSaturday(today || new Date());
     return Math.round((localDate(weekStartIso).getTime() - thisStart.getTime()) / MS_PER_WEEK);
   }
 
@@ -128,7 +128,7 @@ KitchenGit.Week = (function () {
     localDate,
     parseIsoDate: localDate,
     toIsoDate,
-    startOfWeekMonday,
+    startOfWeekSaturday,
     addDays,
     weekdayIndex,
     dayNumber,
