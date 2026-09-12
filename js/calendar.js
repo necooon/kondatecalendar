@@ -187,11 +187,15 @@ KitchenGit.Calendar = (function () {
     state.weeksByStart = {};
     state.prepByWeekStart = {};
     state.mealSaveGen = 0;
+    state.expandedDays = {};
     state.calendarDays = ensureWeek(state, thisStart);
     const todayIso = W.toIsoDate(today);
     state.selectedDate = state.calendarDays.some((d) => d.date === todayIso)
       ? todayIso
       : state.calendarDays[0].date;
+    if (state.calendarDays.some((d) => d.date === todayIso)) {
+      state.expandedDays[todayIso] = true;
+    }
     return state;
   }
 
@@ -205,10 +209,12 @@ KitchenGit.Calendar = (function () {
     const index = Math.min(Math.max(keepWeekday, 0), 6);
     state.weekStart = weekStart;
     state.calendarDays = ensureWeek(state, weekStart);
+    state.expandedDays = {};
     if (opts.selectToday) {
       const todayIso = W.toIsoDate(new Date());
       const found = M.findDay(state.calendarDays, todayIso);
       state.selectedDate = found ? todayIso : state.calendarDays[index].date;
+      if (found) state.expandedDays[todayIso] = true;
     } else {
       state.selectedDate = state.calendarDays[index].date;
     }
@@ -281,23 +287,80 @@ KitchenGit.Calendar = (function () {
     `;
   }
 
-  function pfcBlockHtml(dayData) {
-    if (!dayData.pfc) return '';
+  function recipesOf(state) {
+    return (hooks.getRecipes && hooks.getRecipes()) || state.recipes || [];
+  }
+
+  function pfcBlockHtml(state, dayData) {
+    const M = Meals();
+    const computed = M.computeDayPfc(dayData, recipesOf(state));
+    const pfc = computed || dayData.pfc;
+    if (!pfc) return '';
     return `
       <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1">
-        <span>P: <strong class="text-rose-600 font-bold">${dayData.pfc.p}g</strong></span>
-        <span>F: <strong class="text-amber-600 font-bold">${dayData.pfc.f}g</strong></span>
-        <span>C: <strong class="text-sky-600 font-bold">${dayData.pfc.c}g</strong></span>
+        <span>P: <strong class="text-rose-600 font-bold">${pfc.p}g</strong></span>
+        <span>F: <strong class="text-amber-600 font-bold">${pfc.f}g</strong></span>
+        <span>C: <strong class="text-sky-600 font-bold">${pfc.c}g</strong></span>
       </div>
     `;
   }
 
-  function dayCardHeaderHtml(dayData) {
-    const escapeHtml = Meals().escapeHtml;
+  function isDayExpanded(state, dateStr) {
+    return !!(state.expandedDays && state.expandedDays[dateStr]);
+  }
+
+  function setDayExpanded(state, dateStr, expanded) {
+    if (!state.expandedDays) state.expandedDays = {};
+    if (expanded) state.expandedDays[dateStr] = true;
+    else delete state.expandedDays[dateStr];
+  }
+
+  function toggleDayExpanded(state, dateStr) {
+    setDayExpanded(state, dateStr, !isDayExpanded(state, dateStr));
+    state.selectedDate = dateStr;
+  }
+
+  function expandAllDays(state) {
+    if (!state.expandedDays) state.expandedDays = {};
+    (state.calendarDays || []).forEach((day) => {
+      state.expandedDays[day.date] = true;
+    });
+  }
+
+  function collapseAllDays(state) {
+    state.expandedDays = {};
+  }
+
+  function mealSlotIndicatorHtml(dayData, meta) {
+    const M = Meals();
+    const filled = M.isMealFilled(M.slotOf(dayData, meta.key));
+    const dotColors = {
+      breakfast: filled ? 'text-amber-500' : 'text-slate-300',
+      lunch: filled ? 'text-sky-500' : 'text-slate-300',
+      dinner: filled ? 'text-indigo-500' : 'text-slate-300'
+    };
+    const dot = filled ? '●' : '○';
+    const status = filled ? '設定済み' : '未設定';
+    return `<span class="text-[10px] font-bold ${dotColors[meta.key] || 'text-slate-400'}" aria-label="${meta.label}${status}">${dot}</span>`;
+  }
+
+  function dayCardHeaderHtml(state, dayData) {
+    const M = Meals();
+    const escapeHtml = M.escapeHtml;
+    const dateStr = dayData.date;
+    const expanded = isDayExpanded(state, dateStr);
+    const indicators = expanded
+      ? ''
+      : `<span class="flex items-center gap-1.5">${Meals().MEAL_SLOTS.map((meta) => mealSlotIndicatorHtml(dayData, meta)).join('')}</span>`;
+    const chevron = expanded ? 'fa-chevron-down' : 'fa-chevron-right';
     return `
-      <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+      <button type="button" onclick="toggleDayAccordion('${escapeHtml(dateStr)}')" aria-expanded="${expanded ? 'true' : 'false'}" class="active-scale w-full flex items-center justify-between gap-2 text-left -mx-0.5 px-0.5 py-0.5 rounded-xl">
         <span class="text-xs font-bold text-slate-900">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
-      </div>
+        <span class="flex items-center gap-2 shrink-0">
+          ${indicators}
+          <i class="fa-solid ${chevron} text-[11px] text-slate-400" aria-hidden="true"></i>
+        </span>
+      </button>
     `;
   }
 
@@ -305,24 +368,24 @@ KitchenGit.Calendar = (function () {
     const M = Meals();
     const dateStr = (options && options.date) || dayData.date;
     const slot = M.slotOf(dayData, meta.key);
+    const filled = M.isMealFilled(slot);
+    const isMemo = M.isMemoSlot(slot);
     const items = M.mealItems(slot);
-    const filled = items.length > 0;
-    const showAi = meta.key === 'dinner' && !filled;
-    const prepChip = filled && isPrepMealSlot(state, slot)
+    const prepChip = filled && !isMemo && isPrepMealSlot(state, slot)
       ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
       : '';
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
 
-    if (showAi) {
+    if (isMemo) {
+      const label = M.slotDisplayLabel(slot);
       return `
-        <div onclick="${openFn}" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-2 flex items-center justify-between gap-2 cursor-pointer active:bg-emerald-100">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
-            <p class="text-xs font-bold text-emerald-800 truncate">未設定</p>
+        <div onclick="${openFn}" class="bg-amber-50 border border-amber-200 rounded-2xl p-2 flex items-start justify-between gap-2 cursor-pointer active:bg-amber-100">
+          <div class="flex items-start gap-2 min-w-0 pr-1">
+            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0 mt-0.5">${meta.label}</span>
+            <p class="text-xs font-bold text-amber-900 truncate">${M.escapeHtml(label)}</p>
           </div>
-          <div class="flex items-center gap-1 shrink-0">
-            ${slotServingsButtonHtml(dateStr, meta, slot)}
-            <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shrink-0">AI</button>
+          <div class="flex items-center gap-1 shrink-0 mt-0.5">
+            <i class="fa-solid fa-chevron-right text-[11px] text-amber-400"></i>
           </div>
         </div>
       `;
@@ -370,13 +433,16 @@ KitchenGit.Calendar = (function () {
     const W = Week();
     box.innerHTML = emptyBanner + state.calendarDays.map((dayData) => {
       const selected = dayData.date === state.selectedDate;
+      const expanded = isDayExpanded(state, dayData.date);
+      const bodyHtml = expanded
+        ? `${renderMealSlots(state, dayData, { compact: true, date: dayData.date })}${pfcBlockHtml(state, dayData)}`
+        : '';
       return `
-        <div id="${W.dayDomId(dayData.date)}" class="bg-white rounded-3xl p-3.5 shadow-sm border space-y-2.5 ${
-          selected ? 'border-emerald-300 ring-2 ring-emerald-500/20' : 'border-slate-200/60'
-        }">
-          ${dayCardHeaderHtml(dayData)}
-          ${renderMealSlots(state, dayData, { compact: true, date: dayData.date })}
-          ${pfcBlockHtml(dayData)}
+        <div id="${W.dayDomId(dayData.date)}" class="bg-white rounded-3xl p-3.5 shadow-sm border ${
+          expanded ? 'space-y-2.5' : ''
+        } ${selected && expanded ? 'border-emerald-300 ring-2 ring-emerald-500/20' : 'border-slate-200/60'}">
+          ${dayCardHeaderHtml(state, dayData)}
+          ${bodyHtml ? `<div class="space-y-2.5">${bodyHtml}</div>` : ''}
         </div>
       `;
     }).join('');
@@ -400,18 +466,21 @@ KitchenGit.Calendar = (function () {
       render(state);
       await hydrateWeek(state, state.weekStart);
       render(state);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.goToThisWeek = async function () {
       goToThisWeek(state);
       render(state);
       await hydrateWeek(state, state.weekStart);
       render(state);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.aiSuggestRemaining = async function () {
       const target = applyAiSuggestion(state);
       render(state);
       if (target) await persistDay(state, target);
       if (target) scrollToDay(target.date);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.openRegisterFromCalendar = function () {
       if (hooks.onRegisterRecipe) hooks.onRegisterRecipe();
@@ -425,8 +494,21 @@ KitchenGit.Calendar = (function () {
       }
       render(state);
       await persistDay(state, dayData);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.renderCalendar = function () {
+      render(state);
+    };
+    window.toggleDayAccordion = function (dateStr) {
+      toggleDayExpanded(state, dateStr);
+      render(state);
+    };
+    window.expandAllDays = function () {
+      expandAllDays(state);
+      render(state);
+    };
+    window.collapseAllDays = function () {
+      collapseAllDays(state);
       render(state);
     };
 
@@ -439,7 +521,8 @@ KitchenGit.Calendar = (function () {
       onRegisterRecipe: hooks.onRegisterRecipe,
       persistDay: (dayData) => persistDay(state, dayData),
       touchDay: (dayData) => touchDay(state, dayData),
-      onChange: () => render(state)
+      onChange: () => render(state),
+      onShoppingRefresh: hooks.onShoppingRefresh
     });
   }
 

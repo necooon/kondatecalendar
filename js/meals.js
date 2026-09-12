@@ -1,11 +1,23 @@
 window.KitchenGit = window.KitchenGit || {};
 
 /**
- * Meal-slot data: 1 slot holds `{ items: [{ title, recipeId?, itemId? }], servings: number }`.
- * Legacy `{ title }` is read via mealItems() and rewritten on save.
+ * Meal-slot data: 1 slot holds `{ items: [{ title, recipeId?, itemId? }], servings, kind?, memo?, memoTag? }`.
+ * kind: 'recipe' (default) | 'memo'. Legacy `{ title }` is read via mealItems().
  */
 KitchenGit.Meals = (function () {
   const DEFAULT_SERVINGS = 2;
+
+  const MEMO_QUICK_TAGS = [
+    { emoji: '🍴', label: '外食' },
+    { emoji: '🍱', label: 'テイクアウト' },
+    { emoji: '🏠', label: '実家・その他' }
+  ];
+
+  const MEMO_TAG_EMOJI = {
+    '外食': '🍴',
+    'テイクアウト': '🍱',
+    '実家・その他': '🏠'
+  };
 
   const MEAL_SLOTS = [
     { key: 'breakfast', label: '朝', badge: 'bg-amber-100 text-amber-800' },
@@ -28,7 +40,34 @@ KitchenGit.Meals = (function () {
   }
 
   function emptyMealSlot() {
-    return { items: [], servings: DEFAULT_SERVINGS };
+    return { items: [], servings: DEFAULT_SERVINGS, kind: 'recipe', memo: '', memoTag: null };
+  }
+
+  function slotKind(slot) {
+    if (slot && slot.kind === 'memo') return 'memo';
+    return 'recipe';
+  }
+
+  function isMemoSlot(slot) {
+    return slotKind(slot) === 'memo' && !!(slot.memo || '').trim();
+  }
+
+  function slotMemoText(slot) {
+    if (!isMemoSlot(slot)) return '';
+    const tag = (slot.memoTag || '').trim();
+    const body = (slot.memo || '').trim();
+    if (tag && body) return `${tag}：${body}`;
+    return body || tag;
+  }
+
+  function slotDisplayLabel(slot) {
+    if (!isMemoSlot(slot)) return '';
+    const tag = (slot.memoTag || '').trim();
+    const emoji = MEMO_TAG_EMOJI[tag] || '📝';
+    const body = (slot.memo || '').trim();
+    if (tag && body) return `${emoji} ${tag}：${body}`;
+    if (tag) return `${emoji} ${tag}`;
+    return `${emoji} ${body}`;
   }
 
   function slotServings(slot, fallback) {
@@ -91,6 +130,7 @@ KitchenGit.Meals = (function () {
   }
 
   function isMealFilled(slot) {
+    if (isMemoSlot(slot)) return true;
     return mealItems(slot).length > 0;
   }
 
@@ -121,8 +161,71 @@ KitchenGit.Meals = (function () {
   function writeMealItems(dayData, slotKey, items) {
     const slot = ensureMealSlot(dayData, slotKey);
     slot.items = cloneMealItems(items).filter((item) => item.title.trim());
+    slot.kind = 'recipe';
+    slot.memo = '';
+    slot.memoTag = null;
     delete slot.title;
     return slot;
+  }
+
+  function writeMealMemo(dayData, slotKey, payload) {
+    const slot = ensureMealSlot(dayData, slotKey);
+    const memo = ((payload && payload.memo) || '').trim();
+    const memoTag = (payload && payload.memoTag) ? String(payload.memoTag).trim() : null;
+    if (!memo && !memoTag) {
+      slot.items = [];
+      slot.kind = 'recipe';
+      slot.memo = '';
+      slot.memoTag = null;
+      delete slot.title;
+      return slot;
+    }
+    slot.kind = 'memo';
+    slot.memo = memo;
+    slot.memoTag = memoTag || null;
+    slot.items = [];
+    delete slot.title;
+    return slot;
+  }
+
+  function clearMealSlotData(dayData, slotKey) {
+    const slot = ensureMealSlot(dayData, slotKey);
+    slot.items = [];
+    slot.kind = 'recipe';
+    slot.memo = '';
+    slot.memoTag = null;
+    delete slot.title;
+    return slot;
+  }
+
+  function computeDayPfc(dayData, recipes) {
+    const Nutrition = KitchenGit.Nutrition;
+    if (!Nutrition || !dayData) return null;
+    let p = 0;
+    let f = 0;
+    let c = 0;
+    let hasAny = false;
+    MEAL_SLOTS.forEach((meta) => {
+      const slot = slotOf(dayData, meta.key);
+      if (!slot || isMemoSlot(slot)) return;
+      const servings = slotServings(slot);
+      mealItems(slot).forEach((item) => {
+        const recipe = findRecipeForItem(recipes, item);
+        if (!recipe || !recipe.pfc) return;
+        const base = Number(recipe.servingsBase) > 0 ? Number(recipe.servingsBase) : DEFAULT_SERVINGS;
+        const scale = servings / base;
+        p += (recipe.pfc.p || 0) * scale;
+        f += (recipe.pfc.f || 0) * scale;
+        c += (recipe.pfc.c || 0) * scale;
+        hasAny = true;
+      });
+    });
+    if (!hasAny) return null;
+    return {
+      p: Math.round(p * 10) / 10,
+      f: Math.round(f * 10) / 10,
+      c: Math.round(c * 10) / 10
+    };
   }
 
   function titleMatchesPrep(title, item) {
@@ -191,11 +294,17 @@ KitchenGit.Meals = (function () {
 
   return {
     DEFAULT_SERVINGS,
+    MEMO_QUICK_TAGS,
+    MEMO_TAG_EMOJI,
     MEAL_SLOTS,
     escapeHtml,
     encodeJsString,
     emptyMealSlot,
     emptyMeals,
+    slotKind,
+    isMemoSlot,
+    slotMemoText,
+    slotDisplayLabel,
     slotServings,
     setSlotServings,
     toggleSlotServings,
@@ -209,6 +318,9 @@ KitchenGit.Meals = (function () {
     isChickenDinner,
     ensureMealSlot,
     writeMealItems,
+    writeMealMemo,
+    clearMealSlotData,
+    computeDayPfc,
     titleMatchesPrep,
     slotMatchesPrep,
     findRecipeForTitle,

@@ -2,7 +2,7 @@ window.KitchenGit = window.KitchenGit || {};
 
 /**
  * DB JSONB の正（types/supabase.ts の meal_days.Row と対応）:
- * - meals: { breakfast|lunch|dinner: { items: { title, recipe_id?, item_id? }[], servings: number } }
+ * - meals: { breakfast|lunch|dinner: { items: { title, recipe_id?, item_id? }[], servings, kind?, memo?, memo_tag? } }
  * - pfc: { p, f, c } | null
  * - servings (列): 後方互換用。保存時は各食の最大人数を書き込む。
  *
@@ -149,19 +149,31 @@ KitchenGit.MealsDB = (function () {
     return row > 0 ? row : M.DEFAULT_SERVINGS;
   }
 
+  function slotToDb(slot, M) {
+    const kind = M.slotKind(slot);
+    const payload = {
+      items: M.mealItems(slot).map((item) => ({
+        title: item.title,
+        recipe_id: item.recipeId || null,
+        item_id: item.itemId || null
+      })),
+      servings: M.slotServings(slot)
+    };
+    if (kind === 'memo') {
+      payload.kind = 'memo';
+      payload.memo = (slot.memo || '').trim();
+      payload.memo_tag = slot.memoTag || slot.memo_tag || null;
+      payload.items = [];
+    }
+    return payload;
+  }
+
   function mealsToDb(meals) {
     const M = Meals();
     const out = M.emptyMeals();
     M.MEAL_SLOTS.forEach((meta) => {
       const slot = (meals && meals[meta.key]) || {};
-      out[meta.key] = {
-        items: M.mealItems(slot).map((item) => ({
-          title: item.title,
-          recipe_id: item.recipeId || null,
-          item_id: item.itemId || null
-        })),
-        servings: M.slotServings(slot)
-      };
+      out[meta.key] = slotToDb(slot, M);
     });
     return out;
   }
@@ -172,13 +184,17 @@ KitchenGit.MealsDB = (function () {
     const out = M.emptyMeals();
     M.MEAL_SLOTS.forEach((meta) => {
       const slot = (raw && raw[meta.key]) || {};
+      const kind = slot.kind === 'memo' ? 'memo' : 'recipe';
       out[meta.key] = {
         items: M.mealItems(slot).map((item) => ({
           title: item.title,
-          recipeId: item.recipeId || null,
-          itemId: item.itemId || null
+          recipeId: item.recipeId || item.recipe_id || null,
+          itemId: item.itemId || item.item_id || null
         })),
-        servings: M.slotServings(slot, fallback)
+        servings: M.slotServings(slot, fallback),
+        kind,
+        memo: slot.memo || '',
+        memoTag: slot.memo_tag || slot.memoTag || null
       };
     });
     return out;
