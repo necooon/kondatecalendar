@@ -333,7 +333,8 @@ KitchenGit.Calendar = (function () {
       dinner: filled ? 'text-indigo-500' : 'text-slate-300'
     };
     const dot = filled ? '●' : '○';
-    return `<span class="inline-flex items-center gap-0.5 text-[10px] font-bold ${dotColors[meta.key] || 'text-slate-400'}"><span class="text-[8px]">${meta.label}</span><span>${dot}</span></span>`;
+    const status = filled ? '設定済み' : '未設定';
+    return `<span class="text-[10px] font-bold ${dotColors[meta.key] || 'text-slate-400'}" aria-label="${meta.label}${status}">${dot}</span>`;
   }
 
   function dayCardHeaderHtml(state, dayData) {
