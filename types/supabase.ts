@@ -50,6 +50,7 @@ export type RecipeVersionJson = {
 export type MealItemJson = {
   title: string
   recipe_id?: string | null
+  item_id?: string | null
 }
 
 /** JSONB stored in public.meal_days.meals[slot]. */

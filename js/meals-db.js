@@ -2,7 +2,7 @@ window.KitchenGit = window.KitchenGit || {};
 
 /**
  * DB JSONB の正（types/supabase.ts の meal_days.Row と対応）:
- * - meals: { breakfast|lunch|dinner: { items, servings, kind?, memo?, memo_tag? } }
+ * - meals: { breakfast|lunch|dinner: { items: { title, recipe_id?, item_id? }[], servings, kind?, memo?, memo_tag? } }
  * - pfc: { p, f, c } | null
  * - servings (列): 後方互換用。保存時は各食の最大人数を書き込む。
  *
@@ -11,6 +11,7 @@ window.KitchenGit = window.KitchenGit || {};
  * @typedef {object} MealDayItem
  * @property {string} title
  * @property {string | null} recipeId
+ * @property {string | null} itemId
  *
  * @typedef {object} MealDay
  * @property {string} [id]
@@ -153,7 +154,8 @@ KitchenGit.MealsDB = (function () {
     const payload = {
       items: M.mealItems(slot).map((item) => ({
         title: item.title,
-        recipe_id: item.recipeId || null
+        recipe_id: item.recipeId || null,
+        item_id: item.itemId || null
       })),
       servings: M.slotServings(slot)
     };
@@ -186,7 +188,8 @@ KitchenGit.MealsDB = (function () {
       out[meta.key] = {
         items: M.mealItems(slot).map((item) => ({
           title: item.title,
-          recipeId: item.recipeId || item.recipe_id || null
+          recipeId: item.recipeId || item.recipe_id || null,
+          itemId: item.itemId || item.item_id || null
         })),
         servings: M.slotServings(slot, fallback),
         kind,

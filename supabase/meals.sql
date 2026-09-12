@@ -1,5 +1,5 @@
 -- RecipeOps 献立（kondatecalendar プロジェクト）
--- 1日1行。朝昼晩の料理は meals JSONB（items[].title / recipe_id、servings、kind、memo、memo_tag）。
+-- 1日1行。朝昼晩の料理は meals JSONB（items[].title / recipe_id? / item_id?、servings、kind、memo、memo_tag）。
 -- Supabase SQL Editor で1回実行してよい（create if not exists）。
 
 create table if not exists public.meal_days (

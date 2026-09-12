@@ -1,7 +1,7 @@
 window.KitchenGit = window.KitchenGit || {};
 
 /**
- * Meal-slot data: 1 slot holds `{ items, servings, kind?, memo?, memoTag? }`.
+ * Meal-slot data: 1 slot holds `{ items: [{ title, recipeId?, itemId? }], servings, kind?, memo?, memoTag? }`.
  * kind: 'recipe' (default) | 'memo'. Legacy `{ title }` is read via mealItems().
  */
 KitchenGit.Meals = (function () {
@@ -100,7 +100,8 @@ KitchenGit.Meals = (function () {
   function cloneMealItems(items) {
     return (items || []).map((item) => ({
       title: item.title || '',
-      recipeId: item.recipeId || item.recipe_id || null
+      recipeId: item.recipeId || item.recipe_id || null,
+      itemId: item.itemId || item.item_id || null
     }));
   }
 
@@ -112,7 +113,11 @@ KitchenGit.Meals = (function () {
     }
     const title = (raw.title || '').trim();
     if (!title) return null;
-    return { title, recipeId: raw.recipeId || raw.recipe_id || null };
+    return {
+      title,
+      recipeId: raw.recipeId || raw.recipe_id || null,
+      itemId: raw.itemId || raw.item_id || null
+    };
   }
 
   function mealItems(slot) {
@@ -252,6 +257,20 @@ KitchenGit.Meals = (function () {
     return findRecipeForTitle(recipes, item.title);
   }
 
+  function findFoodItemForItem(foodItems, item) {
+    if (!item) return null;
+    if (item.itemId) {
+      const byId = (foodItems || []).find((food) => food.id === item.itemId);
+      if (byId) return byId;
+    }
+    const title = (item.title || '').trim();
+    if (!title) return null;
+    return (foodItems || []).find((food) => {
+      const name = food.name || '';
+      return name && (title.includes(name) || name.includes(title));
+    }) || null;
+  }
+
   function findDay(days, dateStr) {
     return (days || []).find((d) => d.date === dateStr) || null;
   }
@@ -306,6 +325,7 @@ KitchenGit.Meals = (function () {
     slotMatchesPrep,
     findRecipeForTitle,
     findRecipeForItem,
+    findFoodItemForItem,
     findDay,
     findDayInState
   };

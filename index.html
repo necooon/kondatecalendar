@@ -491,6 +491,14 @@
           <label class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
           <div id="meal-edit-recipes" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
         </div>
+        <div id="meal-edit-food-wrap">
+          <label class="font-bold text-slate-700 block mb-1.5">材料・単品</label>
+          <div class="flex gap-2 mb-2">
+            <input type="text" id="meal-edit-food-input" placeholder="例: バナナ" class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <button type="button" onclick="addMealFoodItemFromInput()" class="active-scale shrink-0 bg-amber-500 text-white text-[11px] font-bold px-3 py-2 rounded-xl">＋ 追加</button>
+          </div>
+          <div id="meal-edit-food-items" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+        </div>
       </div>
       <div id="meal-edit-panel-memo" class="space-y-3 hidden">
         <div>
@@ -571,6 +579,7 @@
   <script src="js/config.js"></script>
   <script src="js/nutrition.js"></script>
   <script src="js/recipes-db.js"></script>
+  <script src="js/items-db.js"></script>
   <script src="js/meals.js"></script>
   <script src="js/week.js"></script>
   <script src="js/meals-db.js"></script>
@@ -591,6 +600,7 @@
       recipePane: 'list',
       selectedRecipeId: null,
       recipes: [],
+      foodItems: [],
       cloudStatus: 'loading',
       mealEditorDate: null,
       mealEditorSlot: null,
@@ -619,8 +629,34 @@
       renderShoppingList();
     }
 
+    async function insertFoodItem(name) {
+      const ItemsDB = KitchenGit.ItemsDB;
+      const trimmed = ItemsDB.normalizeName(name);
+      if (!trimmed) throw new Error('材料名を入力してください');
+
+      const existing = ItemsDB.findByNameInList(appState.foodItems, trimmed);
+      if (existing) return existing;
+
+      if (ItemsDB.isReady()) {
+        const saved = await ItemsDB.insertFoodByName(trimmed);
+        appState.foodItems = ItemsDB.sortByName([saved, ...appState.foodItems]);
+        return saved;
+      }
+
+      const local = {
+        id: 'local-' + Date.now(),
+        name: trimmed,
+        category: ItemsDB.DEFAULT_CATEGORY,
+        unit: '個'
+      };
+      appState.foodItems = ItemsDB.sortByName([local, ...appState.foodItems]);
+      return local;
+    }
+
     KitchenGit.Calendar.init(appState, {
       getRecipes() { return appState.recipes; },
+      getFoodItems() { return appState.foodItems; },
+      insertFoodItem,
       onRegisterRecipe() {
         switchTab('recipe');
         openRegisterModal();
@@ -1579,10 +1615,29 @@
       }
       renderRecipeList();
       refreshShoppingList();
-      const mealSheet = document.getElementById('meal-edit-sheet');
-      if (mealSheet && !mealSheet.classList.contains('hidden')) {
-        KitchenGit.MealEditor.renderRecipes(appState);
+      refreshMealEditorLists();
+    }
+
+    async function loadFoodItems() {
+      const ready = KitchenGit.ItemsDB.init();
+      if (!ready) {
+        appState.foodItems = [];
+        return;
       }
+      try {
+        appState.foodItems = await KitchenGit.ItemsDB.fetchFoodItems();
+      } catch (e) {
+        console.error(e);
+        appState.foodItems = [];
+      }
+      refreshMealEditorLists();
+    }
+
+    function refreshMealEditorLists() {
+      const mealSheet = document.getElementById('meal-edit-sheet');
+      if (!mealSheet || mealSheet.classList.contains('hidden')) return;
+      KitchenGit.MealEditor.renderRecipes(appState);
+      KitchenGit.MealEditor.renderFoodItems(appState);
     }
 
     async function loadMealDays() {
@@ -1595,6 +1650,7 @@
       renderCalendar();
       refreshShoppingList();
       loadRecipes();
+      loadFoodItems();
       loadMealDays();
       refreshLucide();
       document.getElementById('reg-servings').addEventListener('change', function () {
