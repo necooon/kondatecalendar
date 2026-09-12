@@ -297,7 +297,6 @@ KitchenGit.Calendar = (function () {
     return `
       <div class="flex items-center gap-1.5 flex-wrap min-w-0">
         <span class="text-xs font-bold text-slate-900">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
-        ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
       </div>
     `;
   }
