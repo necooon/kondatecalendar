@@ -296,12 +296,12 @@
         <div id="recipe-steps-box" class="space-y-2.5"></div>
       </div>
 
-      <div id="recipe-note-card" class="hidden bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
+      <div id="recipe-note-card" class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
         <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
           <i data-lucide="sticky-note" class="w-4 h-4 text-emerald-600"></i>
           <h3 class="text-xs font-bold text-slate-800">メモ</h3>
         </div>
-        <p id="recipe-note-text" class="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap"></p>
+        <textarea id="recipe-note-input" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y min-h-[4.5rem]" placeholder="メモを入力…"></textarea>
       </div>
 
       <div class="grid grid-cols-2 gap-2">
@@ -999,12 +999,9 @@
         }
       }
 
-      const noteCard = document.getElementById('recipe-note-card');
-      const noteText = document.getElementById('recipe-note-text');
-      if (noteCard && noteText) {
-        const note = (v.note || '').trim();
-        noteText.textContent = note;
-        noteCard.classList.toggle('hidden', !note);
+      const noteInput = document.getElementById('recipe-note-input');
+      if (noteInput && document.activeElement !== noteInput) {
+        noteInput.value = v.note || '';
       }
       refreshLucide();
     }
@@ -1330,6 +1327,29 @@
       return KitchenGit.RecipesDB.updateRecipe(recipe);
     }
 
+    async function saveRecipeNote() {
+      const recipe = selectedRecipe();
+      if (!recipe) return;
+      const input = document.getElementById('recipe-note-input');
+      if (!input) return;
+      const note = input.value.trim();
+      const vKey = appState.activeVersion;
+      const v = (recipe.versions || {})[vKey];
+      if (!v) return;
+      if ((v.note || '').trim() === note) return;
+      v.note = note;
+      if (canPersistRecipe(recipe)) {
+        try {
+          const updated = await persistRecipe(recipe);
+          const idx = appState.recipes.findIndex((r) => r.id === recipe.id);
+          if (idx >= 0) appState.recipes[idx] = updated;
+        } catch (e) {
+          console.error(e);
+          showToast('メモの保存に失敗しました', 'error');
+        }
+      }
+    }
+
     async function saveRecipeUpdate() {
       const recipe = selectedRecipe();
       if (!recipe) return;
@@ -1556,6 +1576,10 @@
         const n = Number(this.value);
         if (!n || n < 1) this.value = 1;
       });
+      const noteInput = document.getElementById('recipe-note-input');
+      if (noteInput) {
+        noteInput.addEventListener('blur', saveRecipeNote);
+      }
       document.addEventListener('click', (event) => {
         const menu = document.getElementById('branch-menu');
         const btn = document.getElementById('branch-toggle-btn');
