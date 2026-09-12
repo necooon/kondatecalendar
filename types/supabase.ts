@@ -56,6 +56,9 @@ export type MealItemJson = {
 export type MealSlotJson = {
   items?: MealItemJson[]
   servings?: number
+  kind?: 'recipe' | 'memo'
+  memo?: string
+  memo_tag?: string | null
 }
 
 /** JSONB stored in public.meal_days.meals. */
