@@ -52,11 +52,17 @@ export type MealItemJson = {
   recipe_id?: string | null
 }
 
+/** JSONB stored in public.meal_days.meals[slot]. */
+export type MealSlotJson = {
+  items?: MealItemJson[]
+  servings?: number
+}
+
 /** JSONB stored in public.meal_days.meals. */
 export type MealDaysMealsJson = {
-  breakfast?: { items?: MealItemJson[] }
-  lunch?: { items?: MealItemJson[] }
-  dinner?: { items?: MealItemJson[] }
+  breakfast?: MealSlotJson
+  lunch?: MealSlotJson
+  dinner?: MealSlotJson
 }
 
 /** JSONB stored in public.meal_days.pfc. */

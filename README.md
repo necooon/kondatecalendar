@@ -10,7 +10,7 @@ iPhone向けの献立・買い物・レシピ管理アプリです。レシピ�
 
 | タブ | できること |
 |------|------------|
-| 献立 | 1週間まとめで朝・昼・晩のメニュー確認、前週/翌週ナビ、人数トグル、空き枠への AI 提案 |
+| 献立 | 1週間まとめで朝・昼・晩のメニュー確認、前週/翌週ナビ、食ごとの人数トグル（朝/昼/晩）、空き枠への AI 提案 |
 | 買い物 | 売り場カテゴリ別リスト。家にある食材をタップすると打ち消し線＋「ストック有」になり、タブの件数バッジが減る。スーパーモードで文字を大きくする |
 | レシピ管理 | レシピ一覧・新規登録、GitHub風のブランチ/コミット切替、人数（1〜12）に応じた分量とPFC、調理手順、レシピ編集（バージョン自動採番） |
 
@@ -18,7 +18,7 @@ iPhone向けの献立・買い物・レシピ管理アプリです。レシピ�
 
 ## クラウド（レシピ・献立）
 
-専用の Supabase プロジェクト（kondatecalendar）にレシピと献立を保存します。`public.recipes` は材料・手順の HEAD スナップショットに加え、`versions` JSONB で味コミット履歴を持ちます。`public.meal_days` は日付ごとの朝・昼・晩（`meals` JSONB）と人数・PFC を持ちます。初回だけ SQL Editor でスキーマを実行してください。
+専用の Supabase プロジェクト（kondatecalendar）にレシピと献立を保存します。`public.recipes` は材料・手順の HEAD スナップショットに加え、`versions` JSONB で味コミット履歴を持ちます。`public.meal_days` は日付ごとの朝・昼・晩（`meals` JSONB、各食に `items` と `servings`）と PFC を持ちます。初回だけ SQL Editor でスキーマを実行してください。
 
 1. [Supabase SQL Editor](https://supabase.com/dashboard/project/aqrlponulqzjmfisvhlu/sql) を開く
 2. [`supabase/recipes.sql`](supabase/recipes.sql) の内容を実行する

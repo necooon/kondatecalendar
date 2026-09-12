@@ -1,5 +1,5 @@
 -- RecipeOps 献立（kondatecalendar プロジェクト）
--- 1日1行。朝昼晩の料理は meals JSONB（items[].title / recipe_id）。
+-- 1日1行。朝昼晩の料理は meals JSONB（items[].title / recipe_id、servings）。
 -- Supabase SQL Editor で1回実行してよい（create if not exists）。
 
 create table if not exists public.meal_days (
@@ -10,7 +10,7 @@ create table if not exists public.meal_days (
   tag text not null default '',
   tag_color text not null default 'slate',
   pfc jsonb,
-  meals jsonb not null default '{"breakfast":{"items":[]},"lunch":{"items":[]},"dinner":{"items":[]}}'::jsonb,
+  meals jsonb not null default '{"breakfast":{"items":[],"servings":2},"lunch":{"items":[],"servings":2},"dinner":{"items":[],"servings":2}}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint meal_days_pfc_object_chk
