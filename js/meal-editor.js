@@ -20,6 +20,7 @@ KitchenGit.MealEditor = (function () {
 
   function notifySaved() {
     if (hooks.onChange) hooks.onChange();
+    if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
   }
 
   function toast(message, kind) {
@@ -49,6 +50,11 @@ KitchenGit.MealEditor = (function () {
     return (state.mealEditorItems || []).filter((item) => (item.title || '').trim());
   }
 
+  function syncMemoFromInput(state) {
+    const input = document.getElementById('meal-edit-memo-input');
+    if (input) state.mealEditorMemo = input.value || '';
+  }
+
   function itemsFromRecipes(state) {
     const M = Meals();
     const recipes = recipesOf(state);
@@ -58,6 +64,46 @@ KitchenGit.MealEditor = (function () {
       if (!recipe) return null;
       return { title: recipe.name || title, recipeId: recipe.id };
     }).filter(Boolean);
+  }
+
+  function renderTabUi(state) {
+    const tab = state.mealEditorTab || 'recipe';
+    const recipeBtn = document.getElementById('meal-edit-tab-recipe');
+    const memoBtn = document.getElementById('meal-edit-tab-memo');
+    const recipePanel = document.getElementById('meal-edit-panel-recipe');
+    const memoPanel = document.getElementById('meal-edit-panel-memo');
+    const activeCls = 'bg-white text-slate-900 shadow-sm border border-slate-900/10';
+    const inactiveCls = 'text-slate-500';
+    if (recipeBtn) recipeBtn.className = `py-2 rounded-xl text-[11px] font-bold transition-colors ${tab === 'recipe' ? activeCls : inactiveCls}`;
+    if (memoBtn) memoBtn.className = `py-2 rounded-xl text-[11px] font-bold transition-colors ${tab === 'memo' ? activeCls + ' text-emerald-700' : inactiveCls}`;
+    if (recipePanel) recipePanel.classList.toggle('hidden', tab !== 'recipe');
+    if (memoPanel) memoPanel.classList.toggle('hidden', tab !== 'memo');
+  }
+
+  function renderQuickTags(state) {
+    const M = Meals();
+    const wrap = document.getElementById('meal-edit-quick-tags');
+    if (!wrap) return;
+    const activeTag = state.mealEditorMemoTag || '';
+    wrap.innerHTML = M.MEMO_QUICK_TAGS.map((tag) => {
+      const selected = activeTag === tag.label;
+      const cls = selected
+        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+        : 'bg-white border-slate-200 text-slate-700 active-scale';
+      return `
+        <button type="button" onclick='applyQuickTag(${M.encodeJsString(tag.label)})' class="px-2.5 py-1.5 rounded-full border text-[11px] font-bold ${cls}">
+          ${tag.emoji} ${M.escapeHtml(tag.label)}
+        </button>
+      `;
+    }).join('');
+  }
+
+  function renderMemoPanel(state) {
+    const input = document.getElementById('meal-edit-memo-input');
+    if (input && document.activeElement !== input) {
+      input.value = state.mealEditorMemo || '';
+    }
+    renderQuickTags(state);
   }
 
   function renderItems(state) {
@@ -105,6 +151,10 @@ KitchenGit.MealEditor = (function () {
     const wrap = document.getElementById('meal-edit-recipes-wrap');
     const list = document.getElementById('meal-edit-recipes');
     if (!wrap || !list) return;
+    if ((state.mealEditorTab || 'recipe') !== 'recipe') {
+      wrap.classList.add('hidden');
+      return;
+    }
     const recipes = recipesOf(state);
     wrap.classList.remove('hidden');
     if (!recipes.length) {
@@ -140,21 +190,38 @@ KitchenGit.MealEditor = (function () {
     }).join('');
   }
 
+  function renderEditor(state) {
+    renderTabUi(state);
+    renderItems(state);
+    renderRecipes(state);
+    renderMemoPanel(state);
+  }
+
   function open(state, dateStr, slotKey) {
     const M = Meals();
     const dayData = M.findDayInState(state, dateStr);
     if (!dayData) return;
     const meta = M.MEAL_SLOTS.find((m) => m.key === slotKey) || M.MEAL_SLOTS[0];
+    const slot = M.slotOf(dayData, slotKey);
     state.selectedDate = dateStr;
     state.mealEditorDate = dateStr;
     state.mealEditorSlot = slotKey;
-    const existing = M.mealItems(M.slotOf(dayData, slotKey));
-    state.mealEditorItems = existing.length ? M.cloneMealItems(existing) : [];
+    if (M.isMemoSlot(slot)) {
+      state.mealEditorTab = 'memo';
+      state.mealEditorMemo = slot.memo || '';
+      state.mealEditorMemoTag = slot.memoTag || null;
+      state.mealEditorItems = [];
+    } else {
+      state.mealEditorTab = 'recipe';
+      state.mealEditorMemo = '';
+      state.mealEditorMemoTag = null;
+      const existing = M.mealItems(slot);
+      state.mealEditorItems = existing.length ? M.cloneMealItems(existing) : [];
+    }
     const heading = document.getElementById('meal-edit-heading');
     if (heading) heading.textContent = `${displayDateOf(dayData)} (${dayData.day}) の${meta.label}`;
     setEditorError('');
-    renderItems(state);
-    renderRecipes(state);
+    renderEditor(state);
     document.getElementById('meal-edit-backdrop').classList.remove('hidden');
     document.getElementById('meal-edit-sheet').classList.remove('hidden');
   }
@@ -170,17 +237,24 @@ KitchenGit.MealEditor = (function () {
     state.mealEditorDate = null;
     state.mealEditorSlot = null;
     state.mealEditorItems = [];
+    state.mealEditorTab = 'recipe';
+    state.mealEditorMemo = '';
+    state.mealEditorMemoTag = null;
   }
 
   function snapshotEditor(state) {
+    syncMemoFromInput(state);
     return {
       dateStr: state.mealEditorDate,
       slotKey: state.mealEditorSlot,
-      items: Meals().cloneMealItems(selectedItems(state))
+      tab: state.mealEditorTab || 'recipe',
+      items: Meals().cloneMealItems(selectedItems(state)),
+      memo: (state.mealEditorMemo || '').trim(),
+      memoTag: state.mealEditorMemoTag || null
     };
   }
 
-  async function commitSlot(state, dateStr, slotKey, items, emptyMessage) {
+  async function commitRecipeSlot(state, dateStr, slotKey, items, emptyMessage) {
     const M = Meals();
     const dayData = M.findDayInState(state, dateStr);
     if (!dayData || !slotKey) {
@@ -198,6 +272,43 @@ KitchenGit.MealEditor = (function () {
     toast(items.length ? '献立を保存しました' : emptyMessage);
   }
 
+  async function commitMemoSlot(state, dateStr, slotKey, payload, emptyMessage) {
+    const M = Meals();
+    const dayData = M.findDayInState(state, dateStr);
+    if (!dayData || !slotKey) {
+      toast('献立を保存できませんでした', 'error');
+      return;
+    }
+    M.writeMealMemo(dayData, slotKey, payload);
+    if (hooks.touchDay) hooks.touchDay(dayData);
+    close(state, { force: true });
+    notifySaved();
+    if (hooks.persistDay) {
+      const ok = await hooks.persistDay(dayData);
+      if (!ok) return;
+    }
+    const saved = (payload.memo || payload.memoTag);
+    toast(saved ? '外食・メモを保存しました' : emptyMessage);
+  }
+
+  async function commitClearSlot(state, dateStr, slotKey) {
+    const M = Meals();
+    const dayData = M.findDayInState(state, dateStr);
+    if (!dayData || !slotKey) {
+      toast('献立を保存できませんでした', 'error');
+      return;
+    }
+    M.clearMealSlotData(dayData, slotKey);
+    if (hooks.touchDay) hooks.touchDay(dayData);
+    close(state, { force: true });
+    notifySaved();
+    if (hooks.persistDay) {
+      const ok = await hooks.persistDay(dayData);
+      if (!ok) return;
+    }
+    toast('献立をクリアしました');
+  }
+
   function bindGlobals(state, options) {
     hooks = options || {};
 
@@ -209,6 +320,27 @@ KitchenGit.MealEditor = (function () {
     };
     window.closeMealEditorFromBackdrop = function () {
       close(state);
+    };
+    window.switchMealEditorTab = function (tab) {
+      syncMemoFromInput(state);
+      state.mealEditorTab = tab === 'memo' ? 'memo' : 'recipe';
+      setEditorError('');
+      renderEditor(state);
+    };
+    window.applyQuickTag = function (label) {
+      const tag = (label || '').trim();
+      if (!tag) return;
+      state.mealEditorMemoTag = tag;
+      const current = (state.mealEditorMemo || '').trim();
+      if (!current) {
+        state.mealEditorMemo = `${tag}：`;
+      }
+      renderMemoPanel(state);
+      const input = document.getElementById('meal-edit-memo-input');
+      if (input) {
+        input.value = state.mealEditorMemo;
+        input.focus();
+      }
     };
     window.openRegisterFromMealEditor = function () {
       close(state, { force: true });
@@ -239,14 +371,25 @@ KitchenGit.MealEditor = (function () {
     window.saveMealSlot = async function () {
       if (!beginAction()) return;
       const snap = snapshotEditor(state);
+      if (snap.tab === 'memo') {
+        if (!snap.memo && !snap.memoTag) {
+          setEditorError('記録内容またはクイックタグを入力してください');
+          return;
+        }
+        await commitMemoSlot(state, snap.dateStr, snap.slotKey, {
+          memo: snap.memo,
+          memoTag: snap.memoTag
+        }, '献立をクリアしました');
+        return;
+      }
       state.mealEditorItems = snap.items;
       const items = itemsFromRecipes(state);
-      await commitSlot(state, snap.dateStr, snap.slotKey, items, '献立を保存しました');
+      await commitRecipeSlot(state, snap.dateStr, snap.slotKey, items, '献立を保存しました');
     };
     window.clearMealSlot = async function () {
       if (!beginAction()) return;
       const snap = snapshotEditor(state);
-      await commitSlot(state, snap.dateStr, snap.slotKey, [], '献立をクリアしました');
+      await commitClearSlot(state, snap.dateStr, snap.slotKey);
     };
     window.openMatchedRecipeFromMeal = function (index) {
       const M = Meals();
@@ -257,6 +400,13 @@ KitchenGit.MealEditor = (function () {
       close(state, { force: true });
       if (hooks.onOpenRecipe) hooks.onOpenRecipe(recipe, title);
     };
+
+    const memoInput = document.getElementById('meal-edit-memo-input');
+    if (memoInput) {
+      memoInput.addEventListener('input', function () {
+        state.mealEditorMemo = this.value || '';
+      });
+    }
   }
 
   return {

@@ -287,13 +287,20 @@ KitchenGit.Calendar = (function () {
     `;
   }
 
-  function pfcBlockHtml(dayData) {
-    if (!dayData.pfc) return '';
+  function recipesOf(state) {
+    return (hooks.getRecipes && hooks.getRecipes()) || state.recipes || [];
+  }
+
+  function pfcBlockHtml(state, dayData) {
+    const M = Meals();
+    const computed = M.computeDayPfc(dayData, recipesOf(state));
+    const pfc = computed || dayData.pfc;
+    if (!pfc) return '';
     return `
       <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1">
-        <span>P: <strong class="text-rose-600 font-bold">${dayData.pfc.p}g</strong></span>
-        <span>F: <strong class="text-amber-600 font-bold">${dayData.pfc.f}g</strong></span>
-        <span>C: <strong class="text-sky-600 font-bold">${dayData.pfc.c}g</strong></span>
+        <span>P: <strong class="text-rose-600 font-bold">${pfc.p}g</strong></span>
+        <span>F: <strong class="text-amber-600 font-bold">${pfc.f}g</strong></span>
+        <span>C: <strong class="text-sky-600 font-bold">${pfc.c}g</strong></span>
       </div>
     `;
   }
@@ -361,12 +368,28 @@ KitchenGit.Calendar = (function () {
     const M = Meals();
     const dateStr = (options && options.date) || dayData.date;
     const slot = M.slotOf(dayData, meta.key);
+    const filled = M.isMealFilled(slot);
+    const isMemo = M.isMemoSlot(slot);
     const items = M.mealItems(slot);
-    const filled = items.length > 0;
-    const prepChip = filled && isPrepMealSlot(state, slot)
+    const prepChip = filled && !isMemo && isPrepMealSlot(state, slot)
       ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
       : '';
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
+
+    if (isMemo) {
+      const label = M.slotDisplayLabel(slot);
+      return `
+        <div onclick="${openFn}" class="bg-amber-50 border border-amber-200 rounded-2xl p-2 flex items-start justify-between gap-2 cursor-pointer active:bg-amber-100">
+          <div class="flex items-start gap-2 min-w-0 pr-1">
+            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0 mt-0.5">${meta.label}</span>
+            <p class="text-xs font-bold text-amber-900 truncate">${M.escapeHtml(label)}</p>
+          </div>
+          <div class="flex items-center gap-1 shrink-0 mt-0.5">
+            <i class="fa-solid fa-chevron-right text-[11px] text-amber-400"></i>
+          </div>
+        </div>
+      `;
+    }
 
     const titlesHtml = filled
       ? items.map((item) => `<p class="text-xs font-bold text-slate-900 truncate">${M.escapeHtml(item.title)}</p>`).join('')
@@ -412,7 +435,7 @@ KitchenGit.Calendar = (function () {
       const selected = dayData.date === state.selectedDate;
       const expanded = isDayExpanded(state, dayData.date);
       const bodyHtml = expanded
-        ? `${renderMealSlots(state, dayData, { compact: true, date: dayData.date })}${pfcBlockHtml(dayData)}`
+        ? `${renderMealSlots(state, dayData, { compact: true, date: dayData.date })}${pfcBlockHtml(state, dayData)}`
         : '';
       return `
         <div id="${W.dayDomId(dayData.date)}" class="bg-white rounded-3xl p-3.5 shadow-sm border ${
@@ -443,18 +466,21 @@ KitchenGit.Calendar = (function () {
       render(state);
       await hydrateWeek(state, state.weekStart);
       render(state);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.goToThisWeek = async function () {
       goToThisWeek(state);
       render(state);
       await hydrateWeek(state, state.weekStart);
       render(state);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.aiSuggestRemaining = async function () {
       const target = applyAiSuggestion(state);
       render(state);
       if (target) await persistDay(state, target);
       if (target) scrollToDay(target.date);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.openRegisterFromCalendar = function () {
       if (hooks.onRegisterRecipe) hooks.onRegisterRecipe();
@@ -468,6 +494,7 @@ KitchenGit.Calendar = (function () {
       }
       render(state);
       await persistDay(state, dayData);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
     window.renderCalendar = function () {
       render(state);
@@ -492,7 +519,8 @@ KitchenGit.Calendar = (function () {
       onRegisterRecipe: hooks.onRegisterRecipe,
       persistDay: (dayData) => persistDay(state, dayData),
       touchDay: (dayData) => touchDay(state, dayData),
-      onChange: () => render(state)
+      onChange: () => render(state),
+      onShoppingRefresh: hooks.onShoppingRefresh
     });
   }
 

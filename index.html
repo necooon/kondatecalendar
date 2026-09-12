@@ -478,13 +478,33 @@
       </button>
     </div>
     <div class="space-y-3 text-xs">
-      <div>
-        <label class="font-bold text-slate-700 block mb-1">この枠の料理</label>
-        <div id="meal-edit-items" class="space-y-1.5"></div>
+      <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-2xl" role="tablist">
+        <button type="button" id="meal-edit-tab-recipe" onclick="switchMealEditorTab('recipe')" class="py-2 rounded-xl text-[11px] font-bold transition-colors bg-white text-slate-900 shadow-sm border border-slate-900/10">自炊レシピ</button>
+        <button type="button" id="meal-edit-tab-memo" onclick="switchMealEditorTab('memo')" class="py-2 rounded-xl text-[11px] font-bold transition-colors text-slate-500">外食・メモを記録</button>
       </div>
-      <div id="meal-edit-recipes-wrap">
-        <label class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
-        <div id="meal-edit-recipes" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+      <div id="meal-edit-panel-recipe" class="space-y-3">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">この枠の料理</label>
+          <div id="meal-edit-items" class="space-y-1.5"></div>
+        </div>
+        <div id="meal-edit-recipes-wrap">
+          <label class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
+          <div id="meal-edit-recipes" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+        </div>
+      </div>
+      <div id="meal-edit-panel-memo" class="space-y-3 hidden">
+        <div>
+          <label for="meal-edit-memo-input" class="font-bold text-slate-700 block mb-1">記録内容（お店の名前や食べたもの）</label>
+          <textarea id="meal-edit-memo-input" rows="3" placeholder="例：〇〇レストラン、サイゼリヤ、テイクアウト寿司など" class="w-full border border-slate-200 rounded-2xl px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none"></textarea>
+        </div>
+        <div>
+          <p class="font-bold text-slate-700 mb-1.5">よく使うクイックタグ</p>
+          <div id="meal-edit-quick-tags" class="flex flex-wrap gap-1.5"></div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2.5 flex gap-2">
+          <span class="text-sm shrink-0">💡</span>
+          <p class="text-[11px] text-amber-900 leading-relaxed">外食・メモを設定すると、この枠の食材は自動的に「買い物リスト」から除外されます。</p>
+        </div>
       </div>
       <p id="meal-edit-error" class="hidden text-rose-600 font-bold"></p>
       <div class="pt-1 flex gap-2">
@@ -556,6 +576,7 @@
   <script src="js/meals-db.js"></script>
   <script src="js/meal-editor.js"></script>
   <script src="js/calendar.js"></script>
+  <script src="js/shopping.js"></script>
   <script>
     const appState = {
       activeTab: 'calendar',
@@ -574,6 +595,9 @@
       mealEditorDate: null,
       mealEditorSlot: null,
       mealEditorItems: [],
+      mealEditorTab: 'recipe',
+      mealEditorMemo: '',
+      mealEditorMemoTag: null,
       isShoppingMode: false,
       cookingStep: 1,
       timerSeconds: 0,
@@ -583,20 +607,17 @@
       toastTimer: null,
       calendarDays: [],
       expandedDays: {},
-
-      shoppingItems: [
-        { id: 1, category: '野菜・きのこ', name: '秋茄子', amount: '3本', usage: '火曜炒め物', excluded: false },
-        { id: 2, category: '野菜・きのこ', name: '大葉', amount: '10枚', usage: '火曜・金曜', excluded: false },
-        { id: 3, category: '野菜・きのこ', name: '玉ねぎ', amount: '2個', usage: '金曜カレー', excluded: true },
-        { id: 4, category: '野菜・きのこ', name: '生姜', amount: '1かけ', usage: '火曜炒め物 (v1.2)', excluded: false },
-        { id: 5, category: '精肉・鮮魚', name: '鶏むね肉 (皮なし)', amount: '600g', usage: '火曜炒め・日曜チキン', excluded: false },
-        { id: 6, category: '精肉・鮮魚', name: '生鮭 切り身', amount: '2切れ', usage: '月曜ホイル焼き', excluded: false },
-        { id: 7, category: '精肉・鮮魚', name: '豚ヒレ肉', amount: '150g', usage: '水曜 (1人分)', excluded: false },
-        { id: 8, category: '精肉・鮮魚', name: '合挽き肉', amount: '300g', usage: '金曜カレー', excluded: true },
-        { id: 9, category: '調味料・その他', name: 'ポン酢しょうゆ', amount: '1本', usage: '在庫切れ補充', excluded: false },
-        { id: 10, category: '調味料・その他', name: '木綿豆腐', amount: '1丁', usage: '水曜 (1人分)', excluded: false }
-      ]
+      shoppingItems: []
     };
+
+    function refreshShoppingList() {
+      appState.shoppingItems = KitchenGit.Shopping.buildFromWeek({
+        calendarDays: appState.calendarDays,
+        recipes: appState.recipes,
+        weekStart: appState.weekStart
+      });
+      renderShoppingList();
+    }
 
     KitchenGit.Calendar.init(appState, {
       getRecipes() { return appState.recipes; },
@@ -625,7 +646,8 @@
         if (fallback) showRecipeDetail(fallback.id);
         switchTab('recipe');
       },
-      showToast
+      showToast,
+      onShoppingRefresh: refreshShoppingList
     });
     KitchenGit.Calendar.bindGlobals(appState);
 
@@ -674,8 +696,9 @@
 
         let itemsHtml = '';
         catItems.forEach(item => {
+          const safeId = encodeURIComponent(item.id);
           itemsHtml += `
-            <div onclick="toggleExcludeItem(${item.id})" class="flex items-center justify-between p-2 rounded-xl transition-all cursor-pointer ${
+            <div onclick="toggleExcludeItem('${safeId}')" class="flex items-center justify-between p-2 rounded-xl transition-all cursor-pointer ${
               item.excluded ? 'opacity-40 line-through text-slate-400 bg-slate-50' : 'active:bg-slate-50 text-slate-800'
             }">
               <div class="flex items-center gap-2.5">
@@ -717,10 +740,12 @@
       badge.classList.toggle('hidden', remainingTotal === 0);
     }
 
-    function toggleExcludeItem(id) {
+    function toggleExcludeItem(encodedId) {
+      const id = decodeURIComponent(encodedId);
       const it = appState.shoppingItems.find(i => i.id === id);
       if (it) {
         it.excluded = !it.excluded;
+        KitchenGit.Shopping.setExcluded(it.key || it.id, it.excluded);
         renderShoppingList();
       }
     }
@@ -1553,6 +1578,7 @@
         setCloudStatus('SQL未実行', false);
       }
       renderRecipeList();
+      refreshShoppingList();
       const mealSheet = document.getElementById('meal-edit-sheet');
       if (mealSheet && !mealSheet.classList.contains('hidden')) {
         KitchenGit.MealEditor.renderRecipes(appState);
@@ -1562,11 +1588,12 @@
     async function loadMealDays() {
       await KitchenGit.Calendar.loadFromCloud(appState);
       KitchenGit.Calendar.render(appState);
+      refreshShoppingList();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       renderCalendar();
-      renderShoppingList();
+      refreshShoppingList();
       loadRecipes();
       loadMealDays();
       refreshLucide();
