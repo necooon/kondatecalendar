@@ -152,6 +152,14 @@
           </button>
         </div>
 
+        <div class="flex items-center justify-between gap-2 pt-0.5">
+          <span class="text-[11px] text-slate-500">タップで日ごとを開閉</span>
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="expandAllDays()" class="active-scale text-[11px] font-bold text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-50">すべて開く</button>
+            <button type="button" onclick="collapseAllDays()" class="active-scale text-[11px] font-bold text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-100">すべて閉じる</button>
+          </div>
+        </div>
+
       </div>
 
       <!-- 1週間まとめ（月〜日の縦スクロール） -->
@@ -581,6 +589,7 @@
       wakeLock: null,
       toastTimer: null,
       calendarDays: [],
+      expandedDays: {},
 
       shoppingItems: [
         { id: 1, category: '野菜・きのこ', name: '秋茄子', amount: '3本', usage: '火曜炒め物', excluded: false },
