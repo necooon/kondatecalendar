@@ -67,7 +67,6 @@ KitchenGit.Calendar = (function () {
         id: row.id,
         tag: row.tag,
         tagColor: row.tagColor,
-        servings: row.servings,
         isBusinessTrip: row.isBusinessTrip,
         pfc: row.pfc,
         meals: row.meals
@@ -91,7 +90,6 @@ KitchenGit.Calendar = (function () {
     if (!target || !source || target === source) return;
     target.tag = source.tag;
     target.tagColor = source.tagColor;
-    target.servings = source.servings;
     target.isBusinessTrip = source.isBusinessTrip;
     target.pfc = source.pfc;
     target.meals = source.meals;
@@ -242,20 +240,28 @@ KitchenGit.Calendar = (function () {
     return target;
   }
 
-  function toggleServings(state, dateStr) {
+  function toggleSlotServings(state, dateStr, slotKey) {
+    const M = Meals();
     if (dateStr) state.selectedDate = dateStr;
-    const dayData = Meals().findDay(state.calendarDays, state.selectedDate);
-    if (!dayData) return null;
-    dayData.servings = dayData.servings === 2 ? 1 : 2;
-    if (dayData.isBusinessTrip) {
-      dayData.tag = dayData.servings === 1 ? '出張 1人分' : '出張解除 2人分';
-      dayData.tagColor = dayData.servings === 1 ? 'amber' : 'blue';
-    } else if (dayData.tag === '空き枠' || dayData.tag.startsWith('AI提案')) {
-      // keep tag
-    } else if (dayData.tag === '出張解除 2人分' || dayData.tag === '出張 1人分') {
-      dayData.tag = dayData.servings === 1 ? '1人分' : '2人分';
-    }
-    return dayData;
+    const dayData = M.findDay(state.calendarDays, dateStr || state.selectedDate);
+    if (!dayData || !slotKey) return null;
+    M.toggleSlotServings(dayData, slotKey);
+    return { dayData, slotKey };
+  }
+
+  function slotServingsButtonHtml(dateStr, meta, slot) {
+    const M = Meals();
+    const servings = M.slotServings(slot);
+    return `
+      <button type="button" onclick="event.stopPropagation(); toggleSlotServings('${M.escapeHtml(dateStr)}','${meta.key}')" class="active-scale text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all flex items-center gap-0.5 shrink-0 ${
+        servings === 1
+          ? 'bg-amber-500 text-white border-amber-500'
+          : 'bg-white text-slate-600 border-slate-200'
+      }" aria-label="${M.escapeHtml(meta.label)} ${servings}人分">
+        <i class="fa-solid ${servings === 1 ? 'fa-user' : 'fa-user-group'} text-[8px]"></i>
+        <span>${servings}</span>
+      </button>
+    `;
   }
 
   function emptyWeekCtaHtml() {
@@ -289,19 +295,9 @@ KitchenGit.Calendar = (function () {
   function dayCardHeaderHtml(dayData) {
     const escapeHtml = Meals().escapeHtml;
     return `
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5 flex-wrap min-w-0">
-          <span class="text-xs font-bold text-slate-900">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
-          ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
-        </div>
-        <button type="button" onclick="toggleDayServings('${escapeHtml(dayData.date)}')" class="active-scale text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 shrink-0 ${
-          dayData.servings === 1
-            ? 'bg-amber-500 text-white border-amber-500'
-            : 'bg-slate-100 text-slate-700 border-slate-200'
-        }">
-          <i class="fa-solid ${dayData.servings === 1 ? 'fa-user' : 'fa-user-group'} text-[9px]"></i>
-          <span>${dayData.servings}人分</span>
-        </button>
+      <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+        <span class="text-xs font-bold text-slate-900">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
+        ${dayData.isBusinessTrip ? '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">出張日</span>' : ''}
       </div>
     `;
   }
@@ -325,7 +321,10 @@ KitchenGit.Calendar = (function () {
             <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
             <p class="text-xs font-bold text-emerald-800 truncate">未設定</p>
           </div>
-          <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shrink-0">AI</button>
+          <div class="flex items-center gap-1 shrink-0">
+            ${slotServingsButtonHtml(dateStr, meta, slot)}
+            <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shrink-0">AI</button>
+          </div>
         </div>
       `;
     }
@@ -342,6 +341,7 @@ KitchenGit.Calendar = (function () {
         </div>
         <div class="flex items-center gap-1 shrink-0 mt-0.5">
           ${prepChip}
+          ${slotServingsButtonHtml(dateStr, meta, slot)}
           <i class="fa-solid fa-chevron-right text-[11px] text-slate-300"></i>
         </div>
       </div>
@@ -425,13 +425,15 @@ KitchenGit.Calendar = (function () {
     window.openRegisterFromCalendar = function () {
       if (hooks.onRegisterRecipe) hooks.onRegisterRecipe();
     };
-    window.toggleDayServings = async function (dateStr) {
-      const dayData = toggleServings(state, dateStr);
-      if (dayData && Meals().isChickenDinner(dayData) && hooks.onChickenServingsChange) {
-        hooks.onChickenServingsChange(dayData);
+    window.toggleSlotServings = async function (dateStr, slotKey) {
+      const result = toggleSlotServings(state, dateStr, slotKey);
+      if (!result) return;
+      const { dayData, slotKey: key } = result;
+      if (key === 'dinner' && Meals().isChickenDinner(dayData) && hooks.onChickenServingsChange) {
+        hooks.onChickenServingsChange(dayData, key);
       }
       render(state);
-      if (dayData) await persistDay(state, dayData);
+      await persistDay(state, dayData);
     };
     window.renderCalendar = function () {
       render(state);

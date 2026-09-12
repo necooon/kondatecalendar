@@ -104,7 +104,6 @@ KitchenGit.Week = (function () {
       day: WEEKDAYS[index],
       tag: '未登録',
       tagColor: 'slate',
-      servings: 2,
       isBusinessTrip: false,
       pfc: null,
       meals: emptyMeals()

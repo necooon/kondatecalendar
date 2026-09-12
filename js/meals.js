@@ -1,10 +1,12 @@
 window.KitchenGit = window.KitchenGit || {};
 
 /**
- * Meal-slot data: 1 slot holds `{ items: [{ title, recipeId }] }`.
+ * Meal-slot data: 1 slot holds `{ items: [{ title, recipeId }], servings: number }`.
  * Legacy `{ title }` is read via mealItems() and rewritten on save.
  */
 KitchenGit.Meals = (function () {
+  const DEFAULT_SERVINGS = 2;
+
   const MEAL_SLOTS = [
     { key: 'breakfast', label: '朝', badge: 'bg-amber-100 text-amber-800' },
     { key: 'lunch', label: '昼', badge: 'bg-sky-100 text-sky-800' },
@@ -26,7 +28,26 @@ KitchenGit.Meals = (function () {
   }
 
   function emptyMealSlot() {
-    return { items: [] };
+    return { items: [], servings: DEFAULT_SERVINGS };
+  }
+
+  function slotServings(slot, fallback) {
+    const n = slot && Number(slot.servings);
+    if (n > 0) return n;
+    const fb = Number(fallback);
+    return fb > 0 ? fb : DEFAULT_SERVINGS;
+  }
+
+  function setSlotServings(dayData, slotKey, servings) {
+    const slot = ensureMealSlot(dayData, slotKey);
+    const n = Number(servings);
+    slot.servings = n > 0 ? n : DEFAULT_SERVINGS;
+    return slot.servings;
+  }
+
+  function toggleSlotServings(dayData, slotKey) {
+    const slot = ensureMealSlot(dayData, slotKey);
+    return setSlotServings(dayData, slotKey, slotServings(slot) === 2 ? 1 : 2);
   }
 
   function emptyMeals() {
@@ -150,11 +171,15 @@ KitchenGit.Meals = (function () {
   }
 
   return {
+    DEFAULT_SERVINGS,
     MEAL_SLOTS,
     escapeHtml,
     encodeJsString,
     emptyMealSlot,
     emptyMeals,
+    slotServings,
+    setSlotServings,
+    toggleSlotServings,
     emptyEditorItems,
     cloneMealItems,
     mealItems,

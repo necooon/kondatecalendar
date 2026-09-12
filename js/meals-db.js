@@ -2,8 +2,9 @@ window.KitchenGit = window.KitchenGit || {};
 
 /**
  * DB JSONB の正（types/supabase.ts の meal_days.Row と対応）:
- * - meals: { breakfast|lunch|dinner: { items: { title, recipe_id }[] } }
+ * - meals: { breakfast|lunch|dinner: { items: { title, recipe_id }[], servings: number } }
  * - pfc: { p, f, c } | null
+ * - servings (列): 後方互換用。保存時は各食の最大人数を書き込む。
  *
  * UI は camelCase（recipeId / tagColor / isBusinessTrip）。
  *
@@ -17,73 +18,85 @@ window.KitchenGit = window.KitchenGit || {};
  * @property {string} [day]
  * @property {string} tag
  * @property {string} tagColor
- * @property {number} servings
  * @property {boolean} isBusinessTrip
  * @property {{ p: number, f: number, c: number } | null} pfc
- * @property {{ breakfast: { items: MealDayItem[] }, lunch: { items: MealDayItem[] }, dinner: { items: MealDayItem[] } }} meals
+ * @property {{ breakfast: { items: MealDayItem[], servings: number }, lunch: { items: MealDayItem[], servings: number }, dinner: { items: MealDayItem[], servings: number } }} meals
  */
+
+function demoSlot(items, servings) {
+  const M = KitchenGit.Meals;
+  const slot = M.emptyMealSlot();
+  slot.servings = servings != null ? servings : M.DEFAULT_SERVINGS;
+  if (typeof items === 'string') {
+    if (items) slot.items = [{ title: items, recipeId: null }];
+  } else if (Array.isArray(items)) {
+    slot.items = items.map((item) => ({
+      title: typeof item === 'string' ? item : item.title,
+      recipeId: item.recipeId || null
+    }));
+  }
+  return slot;
+}
 
 KitchenGit.demoMealDays = function demoMealDays() {
   return [
     {
-      tag: '定番ルーティン', tagColor: 'blue', servings: 2, isBusinessTrip: false, pfc: { p: 34, f: 12, c: 40 },
+      tag: '定番ルーティン', tagColor: 'blue', isBusinessTrip: false, pfc: { p: 34, f: 12, c: 40 },
       meals: {
-        breakfast: { title: 'ヨーグルトとバナナ' },
-        lunch: { title: 'ほうれん草ナムル弁当' },
-        dinner: { title: '焼き鮭とキノコのホイル焼き' }
+        breakfast: demoSlot('ヨーグルトとバナナ', 2),
+        lunch: demoSlot('ほうれん草ナムル弁当', 2),
+        dinner: demoSlot('焼き鮭とキノコのホイル焼き', 2)
       }
     },
     {
-      tag: '最新 v1.2', tagColor: 'purple', servings: 2, isBusinessTrip: false, pfc: { p: 38, f: 8, c: 42 },
+      tag: '最新 v1.2', tagColor: 'purple', isBusinessTrip: false, pfc: { p: 38, f: 8, c: 42 },
       meals: {
-        breakfast: { title: '納豆ごはん' },
-        lunch: { title: 'ハーブサラダチキン弁当' },
-        dinner: { title: '鶏むね肉と秋茄子のさっぱり炒め' }
+        breakfast: demoSlot('納豆ごはん', 2),
+        lunch: demoSlot('ハーブサラダチキン弁当', 2),
+        dinner: demoSlot('鶏むね肉と秋茄子のさっぱり炒め', 2)
       }
     },
     {
-      tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 32, f: 9, c: 35 },
+      tag: '出張 1人分', tagColor: 'amber', isBusinessTrip: true, pfc: { p: 32, f: 9, c: 35 },
       meals: {
-        breakfast: { title: 'ホテル朝食' },
-        lunch: { title: 'サラダチキン弁当（出張）' },
-        dinner: { title: '豚ヒレと豆腐のスタミナ炒め' }
+        breakfast: demoSlot('ホテル朝食', 1),
+        lunch: demoSlot('サラダチキン弁当（出張）', 1),
+        dinner: demoSlot('豚ヒレと豆腐のスタミナ炒め', 1)
       }
     },
     {
-      tag: '出張 1人分', tagColor: 'amber', servings: 1, isBusinessTrip: true, pfc: { p: 29, f: 14, c: 30 },
+      tag: '出張 1人分', tagColor: 'amber', isBusinessTrip: true, pfc: { p: 29, f: 14, c: 30 },
       meals: {
-        breakfast: { title: 'ホテル朝食' },
-        lunch: { title: '鶏むねそぼろ弁当' },
-        dinner: {
-          items: [
-            { title: '秋刀魚の塩焼き' },
-            { title: '具だくさん豚汁' }
-          ]
-        }
+        breakfast: demoSlot('ホテル朝食', 1),
+        lunch: demoSlot('鶏むねそぼろ弁当', 1),
+        dinner: demoSlot([
+          { title: '秋刀魚の塩焼き' },
+          { title: '具だくさん豚汁' }
+        ], 1)
       }
     },
     {
-      tag: '2週に1回', tagColor: 'emerald', servings: 2, isBusinessTrip: false, pfc: { p: 36, f: 11, c: 65 },
+      tag: '2週に1回', tagColor: 'emerald', isBusinessTrip: false, pfc: { p: 36, f: 11, c: 65 },
       meals: {
-        breakfast: { title: '納豆ごはん' },
-        lunch: { title: 'ナムルとサラダチキン' },
-        dinner: { title: '特製スパイスキーマカレー' }
+        breakfast: demoSlot('納豆ごはん', 2),
+        lunch: demoSlot('ナムルとサラダチキン', 2),
+        dinner: demoSlot('特製スパイスキーマカレー', 2)
       }
     },
     {
-      tag: '空き枠', tagColor: 'slate', servings: 2, isBusinessTrip: false, pfc: null,
+      tag: '空き枠', tagColor: 'slate', isBusinessTrip: false, pfc: null,
       meals: {
-        breakfast: { title: 'ホットケーキ' },
-        lunch: { title: '残りキーマカレー' },
-        dinner: { title: '' }
+        breakfast: demoSlot('ホットケーキ', 2),
+        lunch: demoSlot('残りキーマカレー', 2),
+        dinner: demoSlot('', 2)
       }
     },
     {
-      tag: '作り置き', tagColor: 'rose', servings: 2, isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 },
+      tag: '作り置き', tagColor: 'rose', isBusinessTrip: false, pfc: { p: 40, f: 10, c: 45 },
       meals: {
-        breakfast: { title: 'トーストと卵' },
-        lunch: { title: '作り置き仕込みの軽食' },
-        dinner: { title: '週末作り置き ＆ 軽食' }
+        breakfast: demoSlot('トーストと卵', 2),
+        lunch: demoSlot('作り置き仕込みの軽食', 1),
+        dinner: demoSlot('週末作り置き ＆ 軽食', 2)
       }
     }
   ];
@@ -123,43 +136,60 @@ KitchenGit.MealsDB = (function () {
     return String(value).slice(0, 10);
   }
 
+  function legacyDayServings(dayData, rowFallback) {
+    const M = Meals();
+    const fromSlots = M.MEAL_SLOTS.map((meta) => M.slotServings(M.slotOf(dayData, meta.key), rowFallback));
+    const max = Math.max(...fromSlots, 0);
+    if (max > 0) return max;
+    const legacy = Number(dayData && dayData.servings);
+    if (legacy > 0) return legacy;
+    const row = Number(rowFallback);
+    return row > 0 ? row : M.DEFAULT_SERVINGS;
+  }
+
   function mealsToDb(meals) {
     const M = Meals();
     const out = M.emptyMeals();
     M.MEAL_SLOTS.forEach((meta) => {
+      const slot = (meals && meals[meta.key]) || {};
       out[meta.key] = {
-        items: M.mealItems(meals && meals[meta.key]).map((item) => ({
+        items: M.mealItems(slot).map((item) => ({
           title: item.title,
           recipe_id: item.recipeId || null
-        }))
+        })),
+        servings: M.slotServings(slot)
       };
     });
     return out;
   }
 
-  function mealsFromDb(raw) {
+  function mealsFromDb(raw, rowFallback) {
     const M = Meals();
+    const fallback = Number(rowFallback) > 0 ? Number(rowFallback) : M.DEFAULT_SERVINGS;
     const out = M.emptyMeals();
     M.MEAL_SLOTS.forEach((meta) => {
+      const slot = (raw && raw[meta.key]) || {};
       out[meta.key] = {
-        items: M.mealItems(raw && raw[meta.key]).map((item) => ({
+        items: M.mealItems(slot).map((item) => ({
           title: item.title,
           recipeId: item.recipeId || null
-        }))
+        })),
+        servings: M.slotServings(slot, fallback)
       };
     });
     return out;
   }
 
   function snapshotPayload(dayData) {
+    const meals = mealsToDb(dayData.meals);
     return {
       date: isoDate(dayData.date),
-      servings: Number(dayData.servings) > 0 ? Number(dayData.servings) : 2,
+      servings: legacyDayServings(dayData),
       is_business_trip: !!dayData.isBusinessTrip,
       tag: dayData.tag || '',
       tag_color: dayData.tagColor || 'slate',
       pfc: dayData.pfc || null,
-      meals: mealsToDb(dayData.meals)
+      meals
     };
   }
 
@@ -172,10 +202,9 @@ KitchenGit.MealsDB = (function () {
       day: W.WEEKDAYS[W.weekdayIndex(date)] || '',
       tag: row.tag || '',
       tagColor: row.tag_color || 'slate',
-      servings: row.servings || 2,
       isBusinessTrip: !!row.is_business_trip,
       pfc: row.pfc || null,
-      meals: mealsFromDb(row.meals)
+      meals: mealsFromDb(row.meals, row.servings)
     };
   }
 

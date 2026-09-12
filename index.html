@@ -608,7 +608,8 @@
       onChickenServingsChange(dayData) {
         const r = appState.recipes.find(x => (x.name || '').includes('鶏むね肉と秋茄子'));
         if (!r) return;
-        appState.servings = dayData.servings;
+        const dinnerSlot = KitchenGit.Meals.slotOf(dayData, 'dinner');
+        appState.servings = KitchenGit.Meals.slotServings(dinnerSlot);
         const servingsText = document.getElementById('recipe-servings-text');
         if (servingsText) servingsText.innerText = `${appState.servings}人分`;
         applySelectedRecipe(r.id);
@@ -1021,7 +1022,7 @@
         const recipe = selectedRecipe();
         if (recipe && (recipe.name || '').includes('鶏むね肉と秋茄子')) {
           const chickenDay = appState.calendarDays.find(d => KitchenGit.Meals.isChickenDinner(d));
-          if (chickenDay) chickenDay.servings = next;
+          if (chickenDay) KitchenGit.Meals.setSlotServings(chickenDay, 'dinner', next);
         }
         renderRecipeView();
       }
