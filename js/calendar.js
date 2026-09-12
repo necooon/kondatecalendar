@@ -363,26 +363,10 @@ KitchenGit.Calendar = (function () {
     const slot = M.slotOf(dayData, meta.key);
     const items = M.mealItems(slot);
     const filled = items.length > 0;
-    const showAi = meta.key === 'dinner' && !filled;
     const prepChip = filled && isPrepMealSlot(state, slot)
       ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
       : '';
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
-
-    if (showAi) {
-      return `
-        <div onclick="${openFn}" class="bg-emerald-50 border border-emerald-100 rounded-2xl p-2 flex items-center justify-between gap-2 cursor-pointer active:bg-emerald-100">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0">${meta.label}</span>
-            <p class="text-xs font-bold text-emerald-800 truncate">未設定</p>
-          </div>
-          <div class="flex items-center gap-1 shrink-0">
-            ${slotServingsButtonHtml(dateStr, meta, slot)}
-            <button type="button" onclick="event.stopPropagation(); aiSuggestRemaining()" class="active-scale bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shrink-0">AI</button>
-          </div>
-        </div>
-      `;
-    }
 
     const titlesHtml = filled
       ? items.map((item) => `<p class="text-xs font-bold text-slate-900 truncate">${M.escapeHtml(item.title)}</p>`).join('')
