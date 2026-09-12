@@ -356,17 +356,9 @@ KitchenGit.Calendar = (function () {
     const W = Week();
     const title = document.getElementById('week-plan-title');
     const range = document.getElementById('week-range-label');
-    const badge = document.getElementById('week-relative-badge');
     const thisBtn = document.getElementById('goto-this-week-btn');
     if (title) title.textContent = W.relativeWeekTitle(state.weekStart);
     if (range) range.textContent = W.formatWeekRangeLabel(state.weekStart);
-    const rel = W.relativeWeekBadge(state.weekStart);
-    if (badge) {
-      badge.textContent = rel;
-      badge.className = rel === '今週'
-        ? 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800'
-        : 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700';
-    }
     if (thisBtn) thisBtn.classList.toggle('hidden', W.weekDelta(state.weekStart) === 0);
   }
 
