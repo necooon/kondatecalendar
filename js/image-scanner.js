@@ -40,43 +40,8 @@ KitchenGit.ImageScanner = (function () {
 
   let lastProcessedFile = null;
 
-  /**
-   * クライアント側でのコントラスト強調・明瞭化処理
-   * 料理本や手書きメモの薄暗さ・紙の影をクリアにし、印刷文字やペン文字を引き締めてOCR精度を大幅に高める
-   */
-  function applyContrastEnhancement(ctx, width, height, options = {}) {
-    try {
-      const contrast = options.contrast !== undefined ? options.contrast : 1.22;
-      const brightnessLift = options.brightnessLift !== undefined ? options.brightnessLift : 6;
-
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-      const len = data.length;
-
-      // 256階調の高速コントラストLook-Up Table (LUT) を事前作成
-      const lut = new Uint8Array(256);
-      for (let i = 0; i < 256; i++) {
-        let v = ((i - 128) * contrast) + 128 + brightnessLift;
-        if (v < 0) v = 0;
-        if (v > 255) v = 255;
-        lut[i] = Math.round(v);
-      }
-
-      // RGBピクセルにLUTを適用（透明度Alphaは維持）
-      for (let i = 0; i < len; i += 4) {
-        data[i] = lut[data[i]];         // Red
-        data[i + 1] = lut[data[i + 1]]; // Green
-        data[i + 2] = lut[data[i + 2]]; // Blue
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-    } catch (err) {
-      console.warn('[ImageScanner] Contrast enhancement fallback:', err);
-    }
-  }
-
-  // Client-side image resize & contrast enhancement to ensure fast upload & optimal OCR accuracy
-  async function resizeImage(fileOrBlob, maxDimension = 1100, quality = 0.80) {
+  // Client-side image resize & natural compression for optimal transmission
+  async function resizeImage(fileOrBlob, maxDimension = 1100, quality = 0.85) {
     // Check if the input is HEIC/HEIF
     const isHeic = (fileOrBlob.type && (fileOrBlob.type.toLowerCase().includes('heic') || fileOrBlob.type.toLowerCase().includes('heif'))) ||
       /\.(heic|heif)$/i.test(fileOrBlob.name || '');
@@ -89,7 +54,7 @@ KitchenGit.ImageScanner = (function () {
         const conv = await window.heic2any({
           blob: fileOrBlob,
           toType: 'image/jpeg',
-          quality: 0.82
+          quality: 0.85
         });
         processedBlob = Array.isArray(conv) ? conv[0] : conv;
       } catch (convErr) {
@@ -127,9 +92,6 @@ KitchenGit.ImageScanner = (function () {
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
             if (typeof bitmap.close === 'function') bitmap.close();
-
-            // Apply contrast & clarity enhancement for OCR accuracy
-            applyContrastEnhancement(ctx, canvas.width, canvas.height);
 
             const dataUrl = canvas.toDataURL('image/jpeg', quality);
             resolve({
@@ -176,9 +138,6 @@ KitchenGit.ImageScanner = (function () {
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Apply contrast & clarity enhancement for OCR accuracy
-      applyContrastEnhancement(ctx, canvas.width, canvas.height);
-
       const dataUrl = canvas.toDataURL('image/jpeg', quality);
       resolve({
         dataUrl,
@@ -189,54 +148,16 @@ KitchenGit.ImageScanner = (function () {
     };
     img.onerror = () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
-      // If image decode fails (e.g. raw HEIC without client decoder), read base64 directly and delegate to server converter
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const rawDataUrl = e.target.result;
-        const fallbackImg = new Image();
-        fallbackImg.onload = () => {
-          let { width, height } = fallbackImg;
-          if (width > maxDimension || height > maxDimension) {
-            if (width > height) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            } else {
-              width = Math.round((width * maxDimension) / height);
-              height = maxDimension;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, width);
-          canvas.height = Math.max(1, height);
-          const ctx = canvas.getContext('2d');
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(fallbackImg, 0, 0, canvas.width, canvas.height);
-
-          // Apply contrast & clarity enhancement for OCR accuracy
-          applyContrastEnhancement(ctx, canvas.width, canvas.height);
-
-          const dataUrl = canvas.toDataURL('image/jpeg', quality);
-          resolve({
-            dataUrl,
-            width: canvas.width,
-            height: canvas.height,
-            mimeType: 'image/jpeg'
-          });
-        };
-        fallbackImg.onerror = () => {
-          // If browser cannot decode HEIC in Canvas/Image, send raw DataURL to server (server will convert it via heic-convert)
-          console.log('[ImageScanner] Browser image decode failed (likely HEIC). Delegating conversion to server...');
-          resolve({
-            dataUrl: rawDataUrl,
-            width: 960,
-            height: 1280,
-            mimeType: fileOrBlob.type || 'image/heic'
-          });
-        };
-        fallbackImg.src = rawDataUrl;
+      reader.onload = (re) => {
+        resolve({
+          dataUrl: re.target.result,
+          width: 0,
+          height: 0,
+          mimeType: fileOrBlob.type || 'image/jpeg'
+        });
       };
-      reader.onerror = () => reject(new Error('カメラ写真の読み取りに失敗しました。'));
+      reader.onerror = () => reject(new Error('画像の読み込みに失敗しました。'));
       reader.readAsDataURL(fileOrBlob);
     };
 
@@ -245,7 +166,7 @@ KitchenGit.ImageScanner = (function () {
     } else {
       const reader = new FileReader();
       reader.onload = (e) => { img.src = e.target.result; };
-      reader.onerror = () => reject(new Error('カメラ写真の読み取りに失敗しました。'));
+      reader.onerror = () => reject(new Error('画像の読み取りに失敗しました。'));
       reader.readAsDataURL(fileOrBlob);
     }
   }
@@ -434,9 +355,8 @@ KitchenGit.ImageScanner = (function () {
     let elapsedInterval = null;
 
     try {
-      // Client-side preprocessing: resize (max 1100px) & contrast enhancement to ensure crisp text & optimal OCR accuracy
-      updateProgressStatus('画像の前処理中（リサイズ & コントラスト強調）...', 25);
-      const resized = await resizeImage(file, 1100, 0.80);
+      updateProgressStatus('画像を最適化中...', 25);
+      const resized = await resizeImage(file, 1100, 0.85);
       setScanningState(resized.dataUrl);
 
       abortController = new AbortController();
