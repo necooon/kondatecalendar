@@ -6,9 +6,25 @@ const app = express();
 const PORT = 3000;
 const HOST = '0.0.0.0';
 
-// Allow image uploads up to 20MB in JSON base64
-app.use(express.json({ limit: '20mb' }));
-app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+// Allow image uploads up to 30MB in JSON base64
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+
+// Handle body-parser errors (e.g. payload too large or invalid JSON) and always respond with JSON
+app.use((err, req, res, next) => {
+  if (err) {
+    console.error('Request parsing error:', err.message || err);
+    const status = err.status || err.statusCode || 400;
+    const isTooLarge = err.type === 'entity.too.large' || (err.message && err.message.includes('too large'));
+    return res.status(status).json({
+      ok: false,
+      error: isTooLarge
+        ? '画像データサイズが大きすぎます。別の画像を選択するか、解像度を下げてください。'
+        : (err.message || 'リクエストデータの読み取りに失敗しました。')
+    });
+  }
+  next();
+});
 
 // Serve static assets from the project root directory
 app.use(express.static(path.join(__dirname)));
@@ -221,6 +237,23 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
 // Fallback to index.html for SPA/client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Final error handler for all unhandled server errors (ensures JSON response for API paths)
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  const status = err.status || err.statusCode || 500;
+  const isApi = req.path && req.path.startsWith('/api/');
+  if (isApi) {
+    return res.status(status).json({
+      ok: false,
+      error: err.message || 'サーバー内部でエラーが発生しました。'
+    });
+  }
+  return res.status(status).send(err.message || 'Internal Server Error');
 });
 
 app.listen(PORT, HOST, () => {

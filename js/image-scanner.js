@@ -15,7 +15,7 @@ KitchenGit.ImageScanner = (function () {
   }
 
   // Client-side image resize & compression to ensure fast upload & avoid payload limits
-  function resizeImage(fileOrBlob, maxDimension = 1280, quality = 0.82) {
+  function resizeImage(fileOrBlob, maxDimension = 1080, quality = 0.80) {
     return new Promise((resolve, reject) => {
       // 1. Try createImageBitmap with imageOrientation: 'from-image' (crucial for mobile cameras / EXIF rotation)
       if (typeof window.createImageBitmap === 'function') {
@@ -271,8 +271,8 @@ KitchenGit.ImageScanner = (function () {
     }
 
     try {
-      // Resize to 1280px max dimension: crisp enough for reading Japanese recipe text, 2-3x faster upload & processing
-      const resized = await resizeImage(file, 1280, 0.82);
+      // Resize to 1080px max dimension: crisp enough for reading Japanese recipe text, 3-4x faster upload & processing
+      const resized = await resizeImage(file, 1080, 0.80);
       setScanningState(resized.dataUrl);
 
       abortController = new AbortController();
@@ -291,13 +291,13 @@ KitchenGit.ImageScanner = (function () {
         if (isScanning) updateProgressStatus('AIがレシピ情報を整理して整形中...', 92);
       }, 5500);
 
-      // Client-side 35s timeout to prevent indefinite waiting
+      // Client-side 45s timeout to prevent premature abort during high AI demand
       const timeoutId = setTimeout(() => {
         if (abortController) {
           abortController.abort();
           setErrorState('解析がタイムアウトしました。通信環境をご確認いただくか、別の画像でお試しください。');
         }
-      }, 35000);
+      }, 45000);
 
       const response = await fetch('/api/gemini/extract-recipe', {
         method: 'POST',
@@ -314,16 +314,33 @@ KitchenGit.ImageScanner = (function () {
       clearTimeout(progressTimer2);
       clearTimeout(progressTimer3);
 
-      let result;
+      let rawText = '';
       try {
-        result = await response.json();
-      } catch (jsonErr) {
-        const textErr = await response.text().catch(() => '');
-        throw new Error(textErr || 'サーバーからの応答の読み込みに失敗しました。');
+        rawText = await response.text();
+      } catch (readErr) {
+        throw new Error('サーバーからの応答の読み込みに失敗しました。');
       }
 
-      if (!response.ok || !result.ok) {
-        throw new Error(result.error || '画像の解析に失敗しました。');
+      let result = null;
+      if (rawText) {
+        try {
+          result = JSON.parse(rawText);
+        } catch (jsonErr) {
+          // If response is HTML (e.g. 502/504 gateway error or 413)
+          if (rawText.includes('504') || rawText.includes('Gateway Timeout')) {
+            throw new Error('サーバーの通信がタイムアウトしました。もう一度お試しください。');
+          } else if (rawText.includes('502') || rawText.includes('Bad Gateway')) {
+            throw new Error('サーバー接続が一時的に切断されました。もう一度お試しください。');
+          } else if (rawText.includes('413') || rawText.includes('Payload Too Large')) {
+            throw new Error('写真の容量が大きすぎます。別の画像を選択するか、小さめの解像度でお試しください。');
+          }
+          throw new Error('サーバーからの応答の読み込みに失敗しました。');
+        }
+      }
+
+      if (!response.ok || !result || !result.ok) {
+        const errorMsg = (result && result.error) ? result.error : `サーバーエラー (${response.status})`;
+        throw new Error(errorMsg);
       }
 
       updateProgressStatus('解析完了！データを反映しています...', 100);
