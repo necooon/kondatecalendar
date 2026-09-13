@@ -141,24 +141,34 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
       }
     };
 
-    const modelsToTry = ['gemini-3.6-flash', 'gemini-3.8-flash'];
+    // Prioritize fast, high-availability models with per-call timeout
+    const modelsToTry = ['gemini-3.5-flash', 'gemini-3.6-flash'];
     let lastError = null;
     let response = null;
 
     for (const modelName of modelsToTry) {
       try {
-        response = await ai.models.generateContent({
+        console.log(`[RecipeOps] Requesting recipe extraction via ${modelName}...`);
+        // Wrap generateContent in a 25s timeout to prevent hanging
+        const apiPromise = ai.models.generateContent({
           model: modelName,
           contents: {
             parts: [imagePart, textPart]
           },
           config
         });
+
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Model ${modelName} timed out after 25s`)), 25000)
+        );
+
+        response = await Promise.race([apiPromise, timeoutPromise]);
         if (response && response.text) {
+          console.log(`[RecipeOps] Successfully received response from ${modelName}`);
           break;
         }
       } catch (e) {
-        console.warn(`Attempt with ${modelName} failed:`, e.message || e);
+        console.warn(`[RecipeOps] Attempt with ${modelName} failed:`, e.message || e);
         lastError = e;
       }
     }
