@@ -15,11 +15,13 @@ KitchenGit.ImageScanner = (function () {
   }
 
   // Client-side image resize & compression to ensure fast upload & avoid payload limits
-  function resizeImage(fileOrBlob, maxDimension = 1600, quality = 0.85) {
+  function resizeImage(fileOrBlob, maxDimension = 1280, quality = 0.82) {
     return new Promise((resolve, reject) => {
-      // 1. Try createImageBitmap if available for high performance & wide format support
+      // 1. Try createImageBitmap with imageOrientation: 'from-image' (crucial for mobile cameras / EXIF rotation)
       if (typeof window.createImageBitmap === 'function') {
-        createImageBitmap(fileOrBlob)
+        const options = { imageOrientation: 'from-image' };
+        createImageBitmap(fileOrBlob, options)
+          .catch(() => createImageBitmap(fileOrBlob)) // Fallback if imageOrientation option is unsupported
           .then((bitmap) => {
             let width = bitmap.width;
             let height = bitmap.height;
@@ -47,7 +49,6 @@ KitchenGit.ImageScanner = (function () {
             });
           })
           .catch(() => {
-            // Fallback to FileReader + HTMLImageElement
             fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject);
           });
         return;
@@ -85,10 +86,10 @@ KitchenGit.ImageScanner = (function () {
           mimeType: 'image/jpeg'
         });
       };
-      img.onerror = () => reject(new Error('画像の読み込みに失敗しました。別の形式（JPEG, PNG等）をお試しください。'));
+      img.onerror = () => reject(new Error('カメラ写真のデコードに失敗しました。ファイル選択から写真を選択してお試しください。'));
       img.src = e.target.result;
     };
-    reader.onerror = () => reject(new Error('ファイルの読み取りに失敗しました。'));
+    reader.onerror = () => reject(new Error('カメラ写真の読み取りに失敗しました。'));
     reader.readAsDataURL(fileOrBlob);
   }
 
@@ -333,7 +334,8 @@ KitchenGit.ImageScanner = (function () {
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.error('Image scanning failed:', err);
-      setErrorState(err.message || '画像の解析に失敗しました。もう一度試すか、手動で入力してください。');
+      const friendlyMessage = err.message || '画像の解析に失敗しました。もう一度試すか、手動で入力してください。';
+      setErrorState(friendlyMessage);
     }
   }
 
@@ -608,7 +610,9 @@ KitchenGit.ImageScanner = (function () {
     if (fileInput) {
       fileInput.addEventListener('change', function (e) {
         if (this.files && this.files[0]) {
-          processFile(this.files[0]);
+          const file = this.files[0];
+          this.value = ''; // Reset input to allow selecting same file again if desired
+          processFile(file);
         }
       });
     }
@@ -616,7 +620,9 @@ KitchenGit.ImageScanner = (function () {
     if (cameraInput) {
       cameraInput.addEventListener('change', function (e) {
         if (this.files && this.files[0]) {
-          processFile(this.files[0]);
+          const file = this.files[0];
+          this.value = ''; // Reset input to allow retaking photo without change event blocking
+          processFile(file);
         }
       });
     }

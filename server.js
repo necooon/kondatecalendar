@@ -137,7 +137,7 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
             }
           }
         },
-        required: ['name', 'servingsBase', 'ingredients', 'steps']
+        required: ['name']
       }
     };
 
@@ -174,6 +174,10 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
     }
 
     if (!response || !response.text) {
+      const detail = lastError ? (lastError.message || String(lastError)) : '';
+      if (detail.includes('503') || detail.includes('high demand')) {
+        throw new Error('AIサービスが混雑しています。数秒待ってからもう一度お試しください。');
+      }
       throw lastError || new Error('Geminiモデルから応答を取得できませんでした。');
     }
 
@@ -200,6 +204,11 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
         throw new Error(`AIの応答をJSONとして解析できませんでした: ${parseErr.message}`);
       }
     }
+
+    // Ensure fallback defaults if model returned partial fields
+    if (!recipeData.ingredients) recipeData.ingredients = [];
+    if (!recipeData.steps) recipeData.steps = [];
+    if (!recipeData.servingsBase) recipeData.servingsBase = 2;
 
     return res.json({ ok: true, recipe: recipeData });
   } catch (err) {
