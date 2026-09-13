@@ -4,7 +4,7 @@ const { GoogleGenAI, Type } = require('@google/genai');
 const heicConvert = require('heic-convert');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
 // Allow image uploads up to 30MB in JSON base64

@@ -2,10 +2,6 @@
 
 iPhone向けの献立・買い物・レシピ管理アプリです。レシピの味変を Git のコミットのように残し、人数（1人/2人）や作り置き、買い物リストを1画面で扱います。
 
-公開 URL: https://necooon.github.io/kondatecalendar/
-
-ビルドは不要です。`index.html` をブラウザで開くか、上の GitHub Pages を使ってください。
-
 ## 画面
 
 | タブ | できること |
@@ -18,24 +14,43 @@ iPhone向けの献立・買い物・レシピ管理アプリです。レシピ�
 
 ## クラウド（レシピ・献立）
 
-専用の Supabase プロジェクト（kondatecalendar）にレシピと献立を保存します。`public.recipes` は材料・手順の HEAD スナップショットに加え、`versions` JSONB で味コミット履歴を持ちます。`public.meal_days` は日付ごとの朝・昼・晩（`meals` JSONB、各食に `items` と `servings`）と PFC を持ちます。初回だけ SQL Editor でスキーマを実行してください。
+専用の Supabase プロジェクトにレシピと献立を保存します。`public.recipes` は材料・手順の HEAD スナップショットに加え、`versions` JSONB で味コミット履歴を持ちます。`public.meal_days` は日付ごとの朝・昼・晩（`meals` JSONB、各食に `items` と `servings`）と PFC を持ちます。初回だけ SQL Editor でスキーマを実行してください。
 
-1. [Supabase SQL Editor](https://supabase.com/dashboard/project/aqrlponulqzjmfisvhlu/sql) を開く
+1. Supabase SQL Editor を開く
 2. [`supabase/recipes.sql`](supabase/recipes.sql) の内容を実行する
 3. [`supabase/meals.sql`](supabase/meals.sql) の内容を実行する
 
 レシピが空のときはデモの「鶏むね肉と秋茄子のさっぱり炒め」をシードします。献立が空のときは今週のデモ献立をシードします。テーブルがまだ無い場合はオフラインのデモ表示になり、登録内容はこの画面にだけ残ります。
 
-TypeScript の Database 型は [`types/supabase.ts`](types/supabase.ts) です（ランタイムはバニラ JS）。
+TypeScript の Database 型は [`types/supabase.ts`](types/supabase.ts) です。
+
+## Google Cloud Run へのデプロイ
+
+このアプリケーションは、GitHub Pages（静的ホスティング）から **Google Cloud Run**（Node.js Express サーバーによるフルスタック実行）へ移行しました。これにより、Gemini API をセキュアにサーバーサイドで呼び出すことができます。
+
+### 1. デプロイ手順
+
+Cloud Run にデプロイするには、プロジェクトルートにある `Dockerfile` を使用してビルド・デプロイを行います。
+
+```bash
+# Google Cloud CLI を使用して Cloud Run へデプロイ
+gcloud run deploy recipe-ops \
+  --source . \
+  --region asia-northeast1 \
+  --allow-unauthenticated \
+  --set-env-vars GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### 2. 環境変数
+- `GEMINI_API_KEY`: 画像からのレシピ自動読み取り機能に利用する Gemini API キーを設定します。
 
 ## iPhone で使う
 
-1. Safari でこのページを開く
+1. Safari で Cloud Run の公開 URL を開く
 2. 共有 → **ホーム画面に追加**
 3. スタンドアロンの PWA として起動する（ノッチ／ホームバーはセーフエリア対応）
 
-GitHub Pages は `main` への push で自動デプロイされます。
-
 ## 技術
 
-静的 HTML / Tailwind CSS（CDN）/ バニラ JavaScript / Supabase です。
+Node.js (Express) / Tailwind CSS（CDN）/ バニラ JavaScript / Supabase / Google Cloud Run / Gemini API です。
+
