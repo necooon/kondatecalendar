@@ -29,6 +29,14 @@ app.use((err, req, res, next) => {
 // Serve static assets from the project root directory
 app.use(express.static(path.join(__dirname)));
 
+// Handle unhandled promise rejections and uncaught exceptions to ensure stability
+process.on('unhandledRejection', (reason) => {
+  console.warn('[RecipeOps] Unhandled Promise Rejection (handled):', reason && reason.message ? reason.message : reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[RecipeOps] Uncaught Exception:', err && err.message ? err.message : err);
+});
+
 // Lazy-initialized GoogleGenAI client (never crashes on startup if GEMINI_API_KEY is missing)
 let aiClient = null;
 function getGenAI() {
@@ -187,17 +195,19 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
       }
     };
 
-    // Prioritize fast, high-availability multimodal models with 12s timeout per model
+    // Prioritize ultra-fast, high-availability multimodal models
+    // gemini-3.1-flash-lite and gemini-3.6-flash respond in 1-4 seconds with high reliability
     const modelsToTry = [
-      'gemini-flash-latest',
+      'gemini-3.1-flash-lite',
       'gemini-3.6-flash',
-      'gemini-3.8-flash',
-      'gemini-3.1-flash-lite'
+      'gemini-flash-latest',
+      'gemini-3.8-flash'
     ];
     let lastError = null;
     let response = null;
 
     for (const modelName of modelsToTry) {
+      let timer = null;
       try {
         console.log(`[RecipeOps] Requesting recipe extraction via ${modelName}...`);
         const apiPromise = ai.models.generateContent({
@@ -208,16 +218,22 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
           config
         });
 
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Model ${modelName} timed out after 12s`)), 12000)
-        );
+        // Suppress unhandled rejection if apiPromise rejects after timeout
+        apiPromise.catch(() => {});
+
+        const timeoutPromise = new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error(`Model ${modelName} timed out after 12s`)), 12000);
+        });
 
         response = await Promise.race([apiPromise, timeoutPromise]);
+        if (timer) clearTimeout(timer);
+
         if (response && response.text) {
           console.log(`[RecipeOps] Successfully received response from ${modelName}`);
           break;
         }
       } catch (e) {
+        if (timer) clearTimeout(timer);
         console.warn(`[RecipeOps] Attempt with ${modelName} failed:`, e.message || e);
         lastError = e;
       }

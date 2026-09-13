@@ -38,6 +38,8 @@ KitchenGit.ImageScanner = (function () {
     bindEvents();
   }
 
+  let lastProcessedFile = null;
+
   // Client-side image resize & compression to ensure fast upload & avoid payload limits
   function resizeImage(fileOrBlob, maxDimension = 1080, quality = 0.80) {
     return new Promise((resolve, reject) => {
@@ -83,38 +85,82 @@ KitchenGit.ImageScanner = (function () {
   }
 
   function fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          } else {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
+    let objectUrl = null;
+    try {
+      objectUrl = URL.createObjectURL(fileOrBlob);
+    } catch (_) {}
+
+    const img = new Image();
+    img.onload = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
         }
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, width);
-        canvas.height = Math.max(1, height);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve({
-          dataUrl,
-          width: canvas.width,
-          height: canvas.height,
-          mimeType: 'image/jpeg'
-        });
-      };
-      img.onerror = () => reject(new Error('カメラ写真のデコードに失敗しました。ファイル選択から写真を選択してお試しください。'));
-      img.src = e.target.result;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, width);
+      canvas.height = Math.max(1, height);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve({
+        dataUrl,
+        width: canvas.width,
+        height: canvas.height,
+        mimeType: 'image/jpeg'
+      });
     };
-    reader.onerror = () => reject(new Error('カメラ写真の読み取りに失敗しました。'));
-    reader.readAsDataURL(fileOrBlob);
+    img.onerror = () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      // If object URL failed, try FileReader as last resort
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fallbackImg = new Image();
+        fallbackImg.onload = () => {
+          let { width, height } = fallbackImg;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, width);
+          canvas.height = Math.max(1, height);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(fallbackImg, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve({
+            dataUrl,
+            width: canvas.width,
+            height: canvas.height,
+            mimeType: 'image/jpeg'
+          });
+        };
+        fallbackImg.onerror = () => reject(new Error('カメラ写真のデコードに失敗しました。ファイル選択から写真を選択してお試しください。'));
+        fallbackImg.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('カメラ写真の読み取りに失敗しました。'));
+      reader.readAsDataURL(fileOrBlob);
+    };
+
+    if (objectUrl) {
+      img.src = objectUrl;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.onerror = () => reject(new Error('カメラ写真の読み取りに失敗しました。'));
+      reader.readAsDataURL(fileOrBlob);
+    }
   }
 
   function openModal(options = {}) {
@@ -286,6 +332,8 @@ KitchenGit.ImageScanner = (function () {
 
   async function processFile(file) {
     if (!file) return;
+    lastProcessedFile = file;
+
     // Allow any image type or files with common image extensions even if MIME is generic (e.g. on mobile / HEIC)
     const isImage = (file.type && file.type.startsWith('image/')) ||
       /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(file.name || '');
@@ -294,54 +342,78 @@ KitchenGit.ImageScanner = (function () {
       return;
     }
 
+    let timedOut = false;
+    let timeoutId = null;
+    let progressTimer1 = null;
+    let progressTimer2 = null;
+    let progressTimer3 = null;
+
     try {
       // Resize to 1080px max dimension: crisp enough for reading Japanese recipe text, 3-4x faster upload & processing
-      const resized = await resizeImage(file, 1080, 0.80);
+      const resized = await resizeImage(file, 1080, 0.78);
       setScanningState(resized.dataUrl);
 
       abortController = new AbortController();
       const signal = abortController.signal;
 
       // Progress animation sequence with dynamic feedback
-      const progressTimer1 = setTimeout(() => {
+      progressTimer1 = setTimeout(() => {
         if (isScanning) updateProgressStatus('Gemini AIが文字・材料・分量を読み取り中...', 60);
       }, 1000);
 
-      const progressTimer2 = setTimeout(() => {
+      progressTimer2 = setTimeout(() => {
         if (isScanning) updateProgressStatus('調理手順とタイマー時間を解析中...', 80);
       }, 2500);
 
-      const progressTimer3 = setTimeout(() => {
+      progressTimer3 = setTimeout(() => {
         if (isScanning) updateProgressStatus('AIがレシピ情報を整理して整形中...', 92);
       }, 5500);
 
-      // Client-side 45s timeout to prevent premature abort during high AI demand
-      const timeoutId = setTimeout(() => {
+      // Client-side 60s timeout
+      timeoutId = setTimeout(() => {
+        timedOut = true;
         if (abortController) {
           abortController.abort();
-          setErrorState('解析がタイムアウトしました。通信環境をご確認いただくか、別の画像でお試しください。');
         }
-      }, 45000);
+        setErrorState('解析がタイムアウトしました。通信環境の良い場所でもう一度お試しください。');
+      }, 60000);
 
-      const response = await fetch('/api/gemini/extract-recipe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: resized.dataUrl,
-          mimeType: resized.mimeType
-        }),
-        signal
-      });
-
-      clearTimeout(timeoutId);
-      clearTimeout(progressTimer1);
-      clearTimeout(progressTimer2);
-      clearTimeout(progressTimer3);
+      let response;
+      try {
+        response = await fetch('/api/gemini/extract-recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: resized.dataUrl,
+            mimeType: resized.mimeType
+          }),
+          signal
+        });
+      } catch (fetchErr) {
+        if (timedOut) return;
+        if (fetchErr.name === 'AbortError' || signal.aborted) return;
+        throw new Error('サーバーに接続できませんでした。通信環境をご確認の上、もう一度お試しください。');
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+        if (progressTimer1) clearTimeout(progressTimer1);
+        if (progressTimer2) clearTimeout(progressTimer2);
+        if (progressTimer3) clearTimeout(progressTimer3);
+      }
 
       let rawText = '';
       try {
         rawText = await response.text();
       } catch (readErr) {
+        if (timedOut) return;
+        if (readErr.name === 'AbortError' || signal.aborted) return;
+        console.warn('Response text read failed:', readErr);
+        if (response && response.status === 504) {
+          throw new Error('サーバー通信がタイムアウトしました。もう一度お試しください。');
+        } else if (response && response.status === 503) {
+          throw new Error('AIサービスが混雑しています。数秒待ってから再度お試しください。');
+        } else if (response && response.status === 413) {
+          throw new Error('画像の容量が大きすぎます。別の画像を選択するか、小さめの解像度でお試しください。');
+        }
         throw new Error('サーバーからの応答の読み込みに失敗しました。電波状況をご確認の上、もう一度お試しください。');
       }
 
@@ -386,10 +458,19 @@ KitchenGit.ImageScanner = (function () {
       const parsedRecipe = normalizeRecipeData(result.recipe);
       setResultState(parsedRecipe);
     } catch (err) {
-      if (err.name === 'AbortError') return;
+      if (timedOut) return;
+      if (err.name === 'AbortError' || abortController?.signal?.aborted) return;
       console.error('Image scanning failed:', err);
       const friendlyMessage = err.message || '画像の解析に失敗しました。もう一度試すか、手動で入力してください。';
       setErrorState(friendlyMessage);
+    }
+  }
+
+  function retryLast() {
+    if (lastProcessedFile) {
+      processFile(lastProcessedFile);
+    } else {
+      resetScannerUI();
     }
   }
 
@@ -769,6 +850,7 @@ KitchenGit.ImageScanner = (function () {
     close: closeModal,
     reset: resetScannerUI,
     processFile,
+    retryLast,
     applyToRegisterForm,
     directSaveRecipe,
     loadSampleRecipeImage
