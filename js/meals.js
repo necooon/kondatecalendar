@@ -239,6 +239,35 @@ KitchenGit.Meals = (function () {
     return mealItems(slot).some((item) => titleMatchesPrep(item.title, prepItem));
   }
 
+  function recipeMatchesQuery(recipe, query) {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return true;
+    const name = (recipe.name || '').toLowerCase();
+    const tag = (recipe.tag || '').toLowerCase();
+    const tags = Array.isArray(recipe.tags) ? recipe.tags.join(' ').toLowerCase() : '';
+    const branch = (recipe.branch || '').toLowerCase();
+    if (name.includes(q) || tag.includes(q) || tags.includes(q) || branch.includes(q)) return true;
+    const RecipeModel = KitchenGit.RecipeModel;
+    if (!RecipeModel) return false;
+    const head = RecipeModel.pickHead(recipe);
+    const ingredients = (head.version || {}).ingredients || [];
+    return ingredients.some((ing) => String(ing.name || '').toLowerCase().includes(q));
+  }
+
+  function filterRecipesByQuery(recipes, query) {
+    return (recipes || []).filter((recipe) => recipeMatchesQuery(recipe, query));
+  }
+
+  function foodItemMatchesQuery(food, query) {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return true;
+    return String(food.name || '').toLowerCase().includes(q);
+  }
+
+  function filterFoodItemsByQuery(foodItems, query) {
+    return (foodItems || []).filter((food) => foodItemMatchesQuery(food, query));
+  }
+
   function findRecipeForTitle(recipes, title) {
     const q = (title || '').trim();
     if (!q) return null;
@@ -323,6 +352,9 @@ KitchenGit.Meals = (function () {
     computeDayPfc,
     titleMatchesPrep,
     slotMatchesPrep,
+    recipeMatchesQuery,
+    filterRecipesByQuery,
+    filterFoodItemsByQuery,
     findRecipeForTitle,
     findRecipeForItem,
     findFoodItemForItem,

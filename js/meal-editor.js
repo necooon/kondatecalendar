@@ -3,7 +3,6 @@ window.KitchenGit = window.KitchenGit || {};
 KitchenGit.MealEditor = (function () {
   const Meals = () => KitchenGit.Meals;
   const Week = () => KitchenGit.Week;
-  const RecipeModel = () => KitchenGit.RecipeModel;
   const BACKDROP_GUARD_MS = 500;
   const ACTION_LOCK_MS = 400;
 
@@ -19,28 +18,8 @@ KitchenGit.MealEditor = (function () {
     return (hooks.getFoodItems && hooks.getFoodItems()) || state.foodItems || [];
   }
 
-  function normalizeSearchQuery(q) {
-    return String(q || '').trim().toLowerCase();
-  }
-
   function searchQueryOf(state) {
-    return normalizeSearchQuery(state.mealEditorSearchQuery);
-  }
-
-  function recipeMatchesSearch(recipe, query) {
-    if (!query) return true;
-    const name = (recipe.name || '').toLowerCase();
-    if (name.includes(query)) return true;
-    const head = RecipeModel().pickHead(recipe);
-    const ingredients = (head.version || {}).ingredients || [];
-    return ingredients.some((ing) =>
-      String(ing.name || '').toLowerCase().includes(query)
-    );
-  }
-
-  function foodItemMatchesSearch(food, query) {
-    if (!query) return true;
-    return String(food.name || '').toLowerCase().includes(query);
+    return state.mealEditorSearchQuery || '';
   }
 
   function displayDateOf(dayData) {
@@ -236,11 +215,11 @@ KitchenGit.MealEditor = (function () {
       `;
       return;
     }
-    const filtered = recipes.filter((recipe) => recipeMatchesSearch(recipe, query));
+    const filtered = M.filterRecipesByQuery(recipes, query);
     if (!filtered.length) {
       list.innerHTML = `
         <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          「${M.escapeHtml(state.mealEditorSearchQuery || '')}」に一致するレシピはありません
+          「${M.escapeHtml(query.trim())}」に一致するレシピはありません
         </p>
       `;
       return;
@@ -279,11 +258,11 @@ KitchenGit.MealEditor = (function () {
       `;
       return;
     }
-    const filtered = foodItems.filter((food) => foodItemMatchesSearch(food, query));
+    const filtered = M.filterFoodItemsByQuery(foodItems, query);
     if (!filtered.length) {
       list.innerHTML = `
         <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          「${M.escapeHtml(state.mealEditorSearchQuery || '')}」に一致する材料・単品はありません
+          「${M.escapeHtml(query.trim())}」に一致する材料・単品はありません
         </p>
       `;
       return;
