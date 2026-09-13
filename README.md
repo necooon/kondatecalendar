@@ -24,16 +24,29 @@ iPhone向けの献立・買い物・レシピ管理アプリです。レシピ�
 
 TypeScript の Database 型は [`types/supabase.ts`](types/supabase.ts) です。
 
-## Google Cloud Run へのデプロイ
+## Google Cloud Run へのデプロイ & GitHub Actions 自動デプロイ
 
 このアプリケーションは、GitHub Pages（静的ホスティング）から **Google Cloud Run**（Node.js Express サーバーによるフルスタック実行）へ移行しました。これにより、Gemini API をセキュアにサーバーサイドで呼び出すことができます。
 
-### 1. デプロイ手順
+### 1. GitHub Actions による自動デプロイの設定
 
-Cloud Run にデプロイするには、プロジェクトルートにある `Dockerfile` を使用してビルド・デプロイを行います。
+`main` ブランチへのプッシュ・マージ時に、自動で Cloud Run へデプロイされるよう GitHub Actions (`.github/workflows/deploy-cloud-run.yml`) を設定しています。
+
+GitHub リポジトリの **Settings > Secrets and variables > Actions** に以下の Secrets を登録してください：
+
+1. `GCP_PROJECT_ID`: Google Cloud のプロジェクト ID
+2. `GCP_SA_KEY`: Cloud Run / Cloud Build デプロイ権限を持つサービスアカウントの JSON キー（Base64 または JSON 文字列）
+
+必要な権限（IAM）:
+- Cloud Run 管理者 (`roles/run.admin`)
+- ストレージ管理者 / Artifact Registry 管理者
+- サービスアカウントユーザー (`roles/iam.serviceAccountUser`)
+
+### 2. 手動デプロイ（Google Cloud CLI）
+
+ローカルから直接デプロイする場合：
 
 ```bash
-# Google Cloud CLI を使用して Cloud Run へデプロイ
 gcloud run deploy recipe-ops \
   --source . \
   --region asia-northeast1 \
@@ -41,7 +54,7 @@ gcloud run deploy recipe-ops \
   --set-env-vars GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-### 2. 環境変数
+### 3. 環境変数
 - `GEMINI_API_KEY`: 画像からのレシピ自動読み取り機能に利用する Gemini API キーを設定します。
 
 ## iPhone で使う
