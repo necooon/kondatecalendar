@@ -210,8 +210,18 @@ KitchenGit.MealEditor = (function () {
       `;
       return;
     }
+    const query = state.mealEditorRecipeSearch || '';
+    const filtered = M.filterRecipesByQuery(recipes, query);
+    if (!filtered.length) {
+      list.innerHTML = `
+        <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
+          ${query.trim() ? '該当するレシピがありません。' : '献立は登録済みのレシピから選び、カレンダーに追加します。'}
+        </p>
+      `;
+      return;
+    }
     const addedKeys = new Set(itemKeys(selectedItems(state)));
-    list.innerHTML = recipes.map((recipe) => {
+    list.innerHTML = filtered.map((recipe) => {
       const added = addedKeys.has(`recipe:${recipe.id}`) || addedKeys.has(`name:${(recipe.name || '').toLowerCase()}`);
       const cls = added
         ? 'w-full text-left bg-emerald-50 border border-emerald-200 rounded-2xl px-3 py-2 font-bold text-emerald-800'
@@ -303,6 +313,9 @@ KitchenGit.MealEditor = (function () {
     if (heading) heading.textContent = `${displayDateOf(dayData)} (${dayData.day}) の${meta.label}`;
     const input = document.getElementById('meal-edit-food-input');
     if (input) input.value = '';
+    const searchInput = document.getElementById('meal-edit-recipe-search');
+    if (searchInput) searchInput.value = '';
+    state.mealEditorRecipeSearch = '';
     setEditorError('');
     renderEditor(state);
     document.getElementById('meal-edit-backdrop').classList.remove('hidden');
@@ -323,6 +336,7 @@ KitchenGit.MealEditor = (function () {
     state.mealEditorTab = 'recipe';
     state.mealEditorMemo = '';
     state.mealEditorMemoTag = null;
+    state.mealEditorRecipeSearch = '';
   }
 
   function snapshotEditor(state) {
@@ -522,6 +536,14 @@ KitchenGit.MealEditor = (function () {
     if (memoInput) {
       memoInput.addEventListener('input', function () {
         state.mealEditorMemo = this.value || '';
+      });
+    }
+
+    const recipeSearch = document.getElementById('meal-edit-recipe-search');
+    if (recipeSearch) {
+      recipeSearch.addEventListener('input', function () {
+        state.mealEditorRecipeSearch = this.value || '';
+        renderRecipes(state);
       });
     }
   }

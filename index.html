@@ -488,7 +488,8 @@
           <div id="meal-edit-items" class="space-y-1.5"></div>
         </div>
         <div id="meal-edit-recipes-wrap">
-          <label class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
+          <label for="meal-edit-recipe-search" class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
+          <input type="search" id="meal-edit-recipe-search" placeholder="レシピ名で検索..." autocomplete="off" class="w-full bg-slate-100 border border-slate-200 rounded-2xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none mb-2">
           <div id="meal-edit-recipes" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
         </div>
         <div id="meal-edit-food-wrap">
@@ -608,6 +609,7 @@
       mealEditorTab: 'recipe',
       mealEditorMemo: '',
       mealEditorMemoTag: null,
+      mealEditorRecipeSearch: '',
       isShoppingMode: false,
       cookingStep: 1,
       timerSeconds: 0,
