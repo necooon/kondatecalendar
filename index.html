@@ -850,7 +850,7 @@
     </div>
 
     <!-- 4. エラー表示エリア -->
-    <div id="scanner-error-area" class="hidden space-y-4 py-3 text-center">
+    <div id="scanner-error-area" class="hidden space-y-3 py-3 text-center">
       <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
@@ -858,7 +858,23 @@
         <h4 class="text-sm font-bold text-slate-900">画像の解析に失敗しました</h4>
         <p id="scanner-error-message" class="text-xs text-slate-500 px-4 leading-relaxed"></p>
       </div>
-      <div class="flex flex-col gap-2">
+
+      <!-- 詳細ログ展開エリア -->
+      <div class="text-left px-1">
+        <button type="button" onclick="const box = document.getElementById('scanner-error-log-box'); box.classList.toggle('hidden'); this.querySelector('span').textContent = box.classList.contains('hidden') ? '詳細なサーバーログを表示' : 'ログを隠す';" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 mx-auto py-1 px-3 rounded-xl bg-slate-100 active-scale">
+          <i class="fa-solid fa-terminal text-[10px] text-slate-500"></i>
+          <span>詳細なサーバーログを表示</span>
+        </button>
+        <div id="scanner-error-log-box" class="hidden mt-2 p-3 bg-zinc-900 text-emerald-400 font-mono text-[10px] rounded-2xl max-h-40 overflow-y-auto whitespace-pre-wrap break-all border border-zinc-800">
+          [RecipeOps Client & Server Diagnostics]
+          - Timestamp: <span id="scanner-log-time">2026-09-13</span>
+          - Endpoint: /api/gemini/extract-recipe
+          - Client State: AbortController ready, image resized (max 1100px)
+          - Last Server Response: <span id="scanner-log-raw">No response or network error captured</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2 pt-1">
         <div class="flex gap-2">
           <button type="button" onclick="KitchenGit.ImageScanner.retryLast()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 rounded-2xl active-scale shadow-sm">
             もう一度解析する
