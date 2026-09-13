@@ -239,6 +239,20 @@ KitchenGit.Meals = (function () {
     return mealItems(slot).some((item) => titleMatchesPrep(item.title, prepItem));
   }
 
+  function recipeMatchesQuery(recipe, query) {
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return true;
+    const name = (recipe.name || '').toLowerCase();
+    const tag = (recipe.tag || '').toLowerCase();
+    const tags = Array.isArray(recipe.tags) ? recipe.tags.join(' ').toLowerCase() : '';
+    const branch = (recipe.branch || '').toLowerCase();
+    return name.includes(q) || tag.includes(q) || tags.includes(q) || branch.includes(q);
+  }
+
+  function filterRecipesByQuery(recipes, query) {
+    return (recipes || []).filter((recipe) => recipeMatchesQuery(recipe, query));
+  }
+
   function findRecipeForTitle(recipes, title) {
     const q = (title || '').trim();
     if (!q) return null;
@@ -323,6 +337,8 @@ KitchenGit.Meals = (function () {
     computeDayPfc,
     titleMatchesPrep,
     slotMatchesPrep,
+    recipeMatchesQuery,
+    filterRecipesByQuery,
     findRecipeForTitle,
     findRecipeForItem,
     findFoodItemForItem,
