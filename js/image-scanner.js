@@ -749,20 +749,53 @@ KitchenGit.ImageScanner = (function () {
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
-    // Run the generated sample recipe image through the exact same processing pipeline as camera photos
-    if (typeof canvas.toBlob === 'function') {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          processFile(blob);
-        } else {
-          setScanningState(dataUrl);
-          setTimeout(() => setResultState(normalizeRecipeData(SAMPLE_RECIPE_DATA)), 600);
+    // Show scanner animation with the sample image
+    setScanningState(dataUrl);
+    updateProgressStatus('サンプル画像を解析中...', 35);
+
+    let resolved = false;
+    // Guaranteed fallback: after scanning animation, display the structured recipe data
+    const timer = setTimeout(() => {
+      if (!resolved && isScanning) {
+        resolved = true;
+        updateProgressStatus('解析完了！データを反映しています...', 100);
+        setTimeout(() => {
+          setResultState(normalizeRecipeData(SAMPLE_RECIPE_DATA));
+        }, 300);
+      }
+    }, 1800);
+
+    // Also attempt real API extraction in parallel
+    fetch('/api/gemini/extract-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image: dataUrl,
+        mimeType: 'image/jpeg'
+      })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!resolved && isScanning) {
+          resolved = true;
+          clearTimeout(timer);
+          updateProgressStatus('解析完了！データを反映しています...', 100);
+          const recipe = (data && data.ok && data.recipe && data.recipe.name) ? data.recipe : SAMPLE_RECIPE_DATA;
+          setTimeout(() => {
+            setResultState(normalizeRecipeData(recipe));
+          }, 300);
         }
-      }, 'image/jpeg', 0.85);
-    } else {
-      setScanningState(dataUrl);
-      setTimeout(() => setResultState(normalizeRecipeData(SAMPLE_RECIPE_DATA)), 600);
-    }
+      })
+      .catch(() => {
+        if (!resolved && isScanning) {
+          resolved = true;
+          clearTimeout(timer);
+          updateProgressStatus('解析完了！データを反映しています...', 100);
+          setTimeout(() => {
+            setResultState(normalizeRecipeData(SAMPLE_RECIPE_DATA));
+          }, 300);
+        }
+      });
   }
 
   function bindEvents() {
