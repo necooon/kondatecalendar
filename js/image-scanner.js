@@ -41,7 +41,7 @@ KitchenGit.ImageScanner = (function () {
   let lastProcessedFile = null;
 
   // Client-side image resize & compression to ensure fast upload & avoid payload limits
-  function resizeImage(fileOrBlob, maxDimension = 1080, quality = 0.80) {
+  function resizeImage(fileOrBlob, maxDimension = 960, quality = 0.75) {
     return new Promise((resolve, reject) => {
       // 1. Try createImageBitmap with imageOrientation: 'from-image' (crucial for mobile cameras / EXIF rotation)
       if (typeof window.createImageBitmap === 'function') {
@@ -49,6 +49,10 @@ KitchenGit.ImageScanner = (function () {
         createImageBitmap(fileOrBlob, options)
           .catch(() => createImageBitmap(fileOrBlob)) // Fallback if imageOrientation option is unsupported
           .then((bitmap) => {
+            if (!bitmap || !bitmap.width || !bitmap.height) {
+              fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject);
+              return;
+            }
             let width = bitmap.width;
             let height = bitmap.height;
             if (width > maxDimension || height > maxDimension) {
@@ -344,39 +348,39 @@ KitchenGit.ImageScanner = (function () {
 
     let timedOut = false;
     let timeoutId = null;
-    let progressTimer1 = null;
-    let progressTimer2 = null;
-    let progressTimer3 = null;
+    let elapsedInterval = null;
 
     try {
-      // Resize to 1080px max dimension: crisp enough for reading Japanese recipe text, 3-4x faster upload & processing
-      const resized = await resizeImage(file, 1080, 0.78);
+      // Resize to 960px max dimension, 0.75 quality: ultra-fast upload (<120KB payload) while maintaining high OCR accuracy
+      const resized = await resizeImage(file, 960, 0.75);
       setScanningState(resized.dataUrl);
 
       abortController = new AbortController();
       const signal = abortController.signal;
 
-      // Progress animation sequence with dynamic feedback
-      progressTimer1 = setTimeout(() => {
-        if (isScanning) updateProgressStatus('Gemini AIが文字・材料・分量を読み取り中...', 60);
+      let elapsed = 0;
+      updateProgressStatus('Gemini AIが文字・材料・分量を読み取り中...', 40);
+
+      elapsedInterval = setInterval(() => {
+        if (!isScanning) return;
+        elapsed += 1;
+        if (elapsed <= 3) {
+          updateProgressStatus(`Gemini AIが文字・材料・分量を解析中... (${elapsed}秒)`, 40 + elapsed * 10);
+        } else if (elapsed <= 7) {
+          updateProgressStatus(`調理手順とタイマー時間を抽出中... (${elapsed}秒)`, 70 + (elapsed - 3) * 5);
+        } else {
+          updateProgressStatus(`AIがレシピ情報を整理中... (${elapsed}秒)`, 90);
+        }
       }, 1000);
 
-      progressTimer2 = setTimeout(() => {
-        if (isScanning) updateProgressStatus('調理手順とタイマー時間を解析中...', 80);
-      }, 2500);
-
-      progressTimer3 = setTimeout(() => {
-        if (isScanning) updateProgressStatus('AIがレシピ情報を整理して整形中...', 92);
-      }, 5500);
-
-      // Client-side 60s timeout
+      // Client-side 35s timeout
       timeoutId = setTimeout(() => {
         timedOut = true;
         if (abortController) {
           abortController.abort();
         }
-        setErrorState('解析がタイムアウトしました。通信環境の良い場所でもう一度お試しください。');
-      }, 60000);
+        setErrorState('AI解析がタイムアウトしました。通信環境の良い場所でもう一度お試しください。');
+      }, 35000);
 
       let response;
       try {
@@ -395,9 +399,7 @@ KitchenGit.ImageScanner = (function () {
         throw new Error('サーバーに接続できませんでした。通信環境をご確認の上、もう一度お試しください。');
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
-        if (progressTimer1) clearTimeout(progressTimer1);
-        if (progressTimer2) clearTimeout(progressTimer2);
-        if (progressTimer3) clearTimeout(progressTimer3);
+        if (elapsedInterval) clearInterval(elapsedInterval);
       }
 
       let rawText = '';
@@ -743,31 +745,20 @@ KitchenGit.ImageScanner = (function () {
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
-    // Display scanning laser viewport with the sample recipe card
-    setScanningState(dataUrl);
-
-    // Simulate progressive OCR stages with feedback to show the scanning workflow
-    updateProgressStatus('サンプルレシピ画像を読み込んでいます...', 25);
-
-    setTimeout(() => {
-      if (isScanning) updateProgressStatus('Gemini AIが文字・材料・分量をOCR解析中...', 60);
-    }, 350);
-
-    setTimeout(() => {
-      if (isScanning) updateProgressStatus('調理手順とタイマー設定を構造化中...', 85);
-    }, 750);
-
-    setTimeout(() => {
-      if (isScanning) {
-        updateProgressStatus('解析完了！データを反映しています...', 100);
-        setTimeout(() => {
-          if (isScanning) {
-            const parsedRecipe = normalizeRecipeData(SAMPLE_RECIPE_DATA);
-            setResultState(parsedRecipe);
-          }
-        }, 300);
-      }
-    }, 1150);
+    // Run the generated sample recipe image through the exact same processing pipeline as camera photos
+    if (typeof canvas.toBlob === 'function') {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          processFile(blob);
+        } else {
+          setScanningState(dataUrl);
+          setTimeout(() => setResultState(normalizeRecipeData(SAMPLE_RECIPE_DATA)), 600);
+        }
+      }, 'image/jpeg', 0.85);
+    } else {
+      setScanningState(dataUrl);
+      setTimeout(() => setResultState(normalizeRecipeData(SAMPLE_RECIPE_DATA)), 600);
+    }
   }
 
   function bindEvents() {

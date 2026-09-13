@@ -196,17 +196,16 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
     };
 
     // Prioritize ultra-fast, high-availability multimodal models
-    // gemini-3.1-flash-lite and gemini-3.6-flash respond in 1-4 seconds with high reliability
+    // gemini-3.1-flash-lite (1-3s) and gemini-3.6-flash (2-4s) provide fastest response with highest reliability
     const modelsToTry = [
-      'gemini-3.1-flash-lite',
-      'gemini-3.6-flash',
-      'gemini-flash-latest',
-      'gemini-3.8-flash'
+      { name: 'gemini-3.1-flash-lite', timeoutMs: 8000 },
+      { name: 'gemini-3.6-flash', timeoutMs: 9000 },
+      { name: 'gemini-flash-latest', timeoutMs: 8000 }
     ];
     let lastError = null;
     let response = null;
 
-    for (const modelName of modelsToTry) {
+    for (const { name: modelName, timeoutMs } of modelsToTry) {
       let timer = null;
       try {
         console.log(`[RecipeOps] Requesting recipe extraction via ${modelName}...`);
@@ -222,7 +221,7 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
         apiPromise.catch(() => {});
 
         const timeoutPromise = new Promise((_, reject) => {
-          timer = setTimeout(() => reject(new Error(`Model ${modelName} timed out after 12s`)), 12000);
+          timer = setTimeout(() => reject(new Error(`Model ${modelName} timed out after ${Math.round(timeoutMs / 1000)}s`)), timeoutMs);
         });
 
         response = await Promise.race([apiPromise, timeoutPromise]);
