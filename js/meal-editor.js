@@ -18,6 +18,10 @@ KitchenGit.MealEditor = (function () {
     return (hooks.getFoodItems && hooks.getFoodItems()) || state.foodItems || [];
   }
 
+  function searchQueryOf(state) {
+    return state.mealEditorSearchQuery || '';
+  }
+
   function displayDateOf(dayData) {
     return dayData ? Week().formatMd(dayData.date) : '';
   }
@@ -198,6 +202,7 @@ KitchenGit.MealEditor = (function () {
       return;
     }
     const recipes = recipesOf(state);
+    const query = searchQueryOf(state);
     wrap.classList.remove('hidden');
     if (!recipes.length) {
       list.innerHTML = `
@@ -210,12 +215,11 @@ KitchenGit.MealEditor = (function () {
       `;
       return;
     }
-    const query = state.mealEditorRecipeSearch || '';
     const filtered = M.filterRecipesByQuery(recipes, query);
     if (!filtered.length) {
       list.innerHTML = `
         <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          ${query.trim() ? '該当するレシピがありません。' : '献立は登録済みのレシピから選び、カレンダーに追加します。'}
+          「${M.escapeHtml(query.trim())}」に一致するレシピはありません
         </p>
       `;
       return;
@@ -245,6 +249,7 @@ KitchenGit.MealEditor = (function () {
     }
     wrap.classList.remove('hidden');
     const foodItems = foodItemsOf(state);
+    const query = searchQueryOf(state);
     if (!foodItems.length) {
       list.innerHTML = `
         <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
@@ -253,8 +258,17 @@ KitchenGit.MealEditor = (function () {
       `;
       return;
     }
+    const filtered = M.filterFoodItemsByQuery(foodItems, query);
+    if (!filtered.length) {
+      list.innerHTML = `
+        <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
+          「${M.escapeHtml(query.trim())}」に一致する材料・単品はありません
+        </p>
+      `;
+      return;
+    }
     const addedKeys = new Set(itemKeys(selectedItems(state)));
-    list.innerHTML = foodItems.map((food) => {
+    list.innerHTML = filtered.map((food) => {
       const added = addedKeys.has(`item:${food.id}`) || addedKeys.has(`name:${(food.name || '').toLowerCase()}`);
       const cls = added
         ? 'w-full text-left bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2 font-bold text-amber-800'
@@ -313,9 +327,9 @@ KitchenGit.MealEditor = (function () {
     if (heading) heading.textContent = `${displayDateOf(dayData)} (${dayData.day}) の${meta.label}`;
     const input = document.getElementById('meal-edit-food-input');
     if (input) input.value = '';
-    const searchInput = document.getElementById('meal-edit-recipe-search');
+    state.mealEditorSearchQuery = '';
+    const searchInput = document.getElementById('meal-edit-search-input');
     if (searchInput) searchInput.value = '';
-    state.mealEditorRecipeSearch = '';
     setEditorError('');
     renderEditor(state);
     document.getElementById('meal-edit-backdrop').classList.remove('hidden');
@@ -336,7 +350,7 @@ KitchenGit.MealEditor = (function () {
     state.mealEditorTab = 'recipe';
     state.mealEditorMemo = '';
     state.mealEditorMemoTag = null;
-    state.mealEditorRecipeSearch = '';
+    state.mealEditorSearchQuery = '';
   }
 
   function snapshotEditor(state) {
@@ -539,11 +553,12 @@ KitchenGit.MealEditor = (function () {
       });
     }
 
-    const recipeSearch = document.getElementById('meal-edit-recipe-search');
-    if (recipeSearch) {
-      recipeSearch.addEventListener('input', function () {
-        state.mealEditorRecipeSearch = this.value || '';
+    const searchInput = document.getElementById('meal-edit-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        state.mealEditorSearchQuery = this.value || '';
         renderRecipes(state);
+        renderFoodItems(state);
       });
     }
   }
