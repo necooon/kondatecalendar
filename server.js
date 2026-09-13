@@ -55,10 +55,40 @@ app.get('/api/gemini/status', (req, res) => {
   res.json({ ok: true, configured });
 });
 
-// Extract structured recipe data from an image using multimodal Gemini 3.8 Flash
+// Sample recipe data returned instantly for demo / sample testing
+const SAMPLE_RECIPE_DATA = {
+  name: '豚バラとキャベツの甘辛味噌炒め',
+  servingsBase: 2,
+  tag: 'おすすめ定番 #主菜',
+  note: 'キャベツは強火で手早く炒めると水分が出ずシャキッと仕上がります。お好みで一味唐辛子を振っても美味しく召し上がれます。',
+  ingredients: [
+    { name: '豚バラ薄切り肉', baseAmount: 200, unit: 'g', note: '4cm幅にカット' },
+    { name: 'キャベツ', baseAmount: 0.25, unit: '個', note: 'ざく切り (約200g)' },
+    { name: '長ねぎ', baseAmount: 0.5, unit: '本', note: '斜め薄切り' },
+    { name: 'ごま油', baseAmount: 1, unit: '大さじ', note: '炒め用' },
+    { name: 'みそ', baseAmount: 2, unit: '大さじ', note: '合わせ調味料' },
+    { name: 'みりん', baseAmount: 1, unit: '大さじ', note: '合わせ調味料' },
+    { name: 'しょうゆ', baseAmount: 1, unit: '小さじ', note: '合わせ調味料' },
+    { name: 'おろしにんにく', baseAmount: 0.5, unit: '小さじ', note: '合わせ調味料' }
+  ],
+  steps: [
+    { title: '下準備', instruction: '豚肉は4cm幅に切り、キャベツはざく切り、長ねぎは斜め薄切りにする。', timerSeconds: 0 },
+    { title: '炒める', instruction: 'フライパンにごま油を中火で熱し、豚肉を色が変わるまで約2分炒める。', timerSeconds: 120 },
+    { title: '野菜を加える', instruction: 'キャベツと長ねぎを加え、強火で全体がしんなりするまで約3分炒め合わせる。', timerSeconds: 180 },
+    { title: '仕上げ', instruction: 'みそ、みりん、しょうゆ、にんにくを合わせた調味料を回し入れ、強火で一気に炒め絡める。', timerSeconds: 0 }
+  ]
+};
+
+// Extract structured recipe data from an image using multimodal Gemini
 app.post('/api/gemini/extract-recipe', async (req, res) => {
   try {
-    const { image, mimeType } = req.body;
+    const { image, mimeType, isSample } = req.body;
+
+    // Fast-path for sample recipe test
+    if (isSample) {
+      return res.json({ ok: true, recipe: SAMPLE_RECIPE_DATA });
+    }
+
     if (!image) {
       return res.status(400).json({ ok: false, error: '画像データが提供されていません。' });
     }
@@ -157,15 +187,19 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
       }
     };
 
-    // Prioritize fast, high-availability models with per-call timeout
-    const modelsToTry = ['gemini-3.5-flash', 'gemini-3.6-flash'];
+    // Prioritize fast, high-availability multimodal models with 12s timeout per model
+    const modelsToTry = [
+      'gemini-flash-latest',
+      'gemini-3.6-flash',
+      'gemini-3.8-flash',
+      'gemini-3.1-flash-lite'
+    ];
     let lastError = null;
     let response = null;
 
     for (const modelName of modelsToTry) {
       try {
         console.log(`[RecipeOps] Requesting recipe extraction via ${modelName}...`);
-        // Wrap generateContent in a 25s timeout to prevent hanging
         const apiPromise = ai.models.generateContent({
           model: modelName,
           contents: {
@@ -175,7 +209,7 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
         });
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Model ${modelName} timed out after 25s`)), 25000)
+          setTimeout(() => reject(new Error(`Model ${modelName} timed out after 12s`)), 12000)
         );
 
         response = await Promise.race([apiPromise, timeoutPromise]);
@@ -190,16 +224,35 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
     }
 
     if (!response || !response.text) {
-      const detail = lastError ? (lastError.message || String(lastError)) : '';
-      if (detail.includes('503') || detail.includes('high demand')) {
-        throw new Error('AIサービスが混雑しています。数秒待ってからもう一度お試しください。');
+      let detail = lastError ? (lastError.message || String(lastError)) : '';
+      try {
+        const parsed = JSON.parse(detail);
+        if (parsed && parsed.error && parsed.error.message) {
+          detail = parsed.error.message;
+        }
+      } catch (_) {}
+
+      if (detail.includes('503') || detail.includes('high demand') || detail.includes('UNAVAILABLE')) {
+        return res.status(503).json({
+          ok: false,
+          error: 'AIサービスが一時的に混雑しています。数秒待ってからもう一度お試しください。'
+        });
       }
-      throw lastError || new Error('Geminiモデルから応答を取得できませんでした。');
+      if (detail.includes('INVALID_ARGUMENT') || detail.includes('Unable to process input image')) {
+        return res.status(400).json({
+          ok: false,
+          error: '画像の形式またはサイズに対応できませんでした。別の画像を選択してください。'
+        });
+      }
+      return res.status(500).json({
+        ok: false,
+        error: detail || 'Geminiモデルから応答を取得できませんでした。'
+      });
     }
 
     let outputText = (response.text || '').trim();
     if (!outputText) {
-      throw new Error('Geminiモデルから応答が空でした。');
+      return res.status(500).json({ ok: false, error: 'Geminiモデルからの応答が空でした。' });
     }
 
     // Strip markdown fences if present
@@ -217,7 +270,10 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
       if (firstBrace !== -1 && lastBrace > firstBrace) {
         recipeData = JSON.parse(outputText.slice(firstBrace, lastBrace + 1));
       } else {
-        throw new Error(`AIの応答をJSONとして解析できませんでした: ${parseErr.message}`);
+        return res.status(500).json({
+          ok: false,
+          error: `AIの応答をJSONとして解析できませんでした: ${parseErr.message}`
+        });
       }
     }
 
@@ -229,7 +285,19 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
     return res.json({ ok: true, recipe: recipeData });
   } catch (err) {
     console.error('Gemini recipe extraction error:', err);
-    const message = err.message || 'レシピの画像解析中にエラーが発生しました。';
+    let message = err.message || 'レシピの画像解析中にエラーが発生しました。';
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed && parsed.error && parsed.error.message) {
+        message = parsed.error.message;
+      }
+    } catch (_) {}
+
+    if (message.includes('503') || message.includes('high demand') || message.includes('UNAVAILABLE')) {
+      message = 'AIサービスが一時的に混雑しています。数秒待ってからもう一度お試しください。';
+    } else if (message.includes('INVALID_ARGUMENT') || message.includes('Unable to process input image')) {
+      message = '画像の形式またはサイズに対応できませんでした。別の画像を選択してください。';
+    }
     return res.status(500).json({ ok: false, error: message });
   }
 });

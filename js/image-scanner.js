@@ -8,6 +8,30 @@ KitchenGit.ImageScanner = (function () {
   let isScanning = false;
   let abortController = null;
 
+  // Pre-configured structured data for sample recipe OCR demo
+  const SAMPLE_RECIPE_DATA = {
+    name: '豚バラとキャベツの甘辛味噌炒め',
+    servingsBase: 2,
+    tag: 'おすすめ定番 #主菜',
+    note: 'キャベツは強火で手早く炒めると水分が出ずシャキッと仕上がります。お好みで一味唐辛子を振っても美味しく召し上がれます。',
+    ingredients: [
+      { name: '豚バラ薄切り肉', baseAmount: 200, unit: 'g', note: '4cm幅にカット' },
+      { name: 'キャベツ', baseAmount: 0.25, unit: '個', note: 'ざく切り (約200g)' },
+      { name: '長ねぎ', baseAmount: 0.5, unit: '本', note: '斜め薄切り' },
+      { name: 'ごま油', baseAmount: 1, unit: '大さじ', note: '炒め用' },
+      { name: 'みそ', baseAmount: 2, unit: '大さじ', note: '合わせ調味料' },
+      { name: 'みりん', baseAmount: 1, unit: '大さじ', note: '合わせ調味料' },
+      { name: 'しょうゆ', baseAmount: 1, unit: '小さじ', note: '合わせ調味料' },
+      { name: 'おろしにんにく', baseAmount: 0.5, unit: '小さじ', note: '合わせ調味料' }
+    ],
+    steps: [
+      { title: '下準備', instruction: '豚肉は4cm幅に切り、キャベツはざく切り、長ねぎは斜め薄切りにする。', timerSeconds: 0 },
+      { title: '炒める', instruction: 'フライパンにごま油を中火で熱し、豚肉を色が変わるまで約2分炒める。', timerSeconds: 120 },
+      { title: '野菜を加える', instruction: 'キャベツと長ねぎを加え、強火で全体がしんなりするまで約3分炒め合わせる。', timerSeconds: 180 },
+      { title: '仕上げ', instruction: 'みそ、みりん、しょうゆ、にんにくを合わせた調味料を回し入れ、強火で一気に炒め絡める。', timerSeconds: 0 }
+    ]
+  };
+
   function init(state, options = {}) {
     appState = state;
     hooks = options;
@@ -318,7 +342,7 @@ KitchenGit.ImageScanner = (function () {
       try {
         rawText = await response.text();
       } catch (readErr) {
-        throw new Error('サーバーからの応答の読み込みに失敗しました。');
+        throw new Error('サーバーからの応答の読み込みに失敗しました。電波状況をご確認の上、もう一度お試しください。');
       }
 
       let result = null;
@@ -326,20 +350,33 @@ KitchenGit.ImageScanner = (function () {
         try {
           result = JSON.parse(rawText);
         } catch (jsonErr) {
-          // If response is HTML (e.g. 502/504 gateway error or 413)
-          if (rawText.includes('504') || rawText.includes('Gateway Timeout')) {
-            throw new Error('サーバーの通信がタイムアウトしました。もう一度お試しください。');
-          } else if (rawText.includes('502') || rawText.includes('Bad Gateway')) {
+          // If response is HTML or text error
+          if (response.status === 504 || rawText.includes('504') || /gateway\s*time-?out/i.test(rawText)) {
+            throw new Error('サーバー通信がタイムアウトしました。もう一度お試しください。');
+          } else if (response.status === 503 || rawText.includes('503') || /service\s*unavailable/i.test(rawText) || /high\s*demand/i.test(rawText)) {
+            throw new Error('AIサービスが一時的に混雑しています。数秒待ってから再度お試しください。');
+          } else if (response.status === 502 || rawText.includes('502') || /bad\s*gateway/i.test(rawText)) {
             throw new Error('サーバー接続が一時的に切断されました。もう一度お試しください。');
-          } else if (rawText.includes('413') || rawText.includes('Payload Too Large')) {
-            throw new Error('写真の容量が大きすぎます。別の画像を選択するか、小さめの解像度でお試しください。');
+          } else if (response.status === 413 || rawText.includes('413') || /too\s*large/i.test(rawText)) {
+            throw new Error('画像の容量が大きすぎます。別の画像を選択するか、小さめの解像度でお試しください。');
           }
-          throw new Error('サーバーからの応答の読み込みに失敗しました。');
+          throw new Error('サーバーからの応答の解析に失敗しました。もう一度お試しください。');
         }
       }
 
       if (!response.ok || !result || !result.ok) {
-        const errorMsg = (result && result.error) ? result.error : `サーバーエラー (${response.status})`;
+        let errorMsg = (result && result.error) ? result.error : `サーバーエラー (${response.status})`;
+        try {
+          const parsed = JSON.parse(errorMsg);
+          if (parsed && parsed.error && parsed.error.message) {
+            errorMsg = parsed.error.message;
+          }
+        } catch (_) {}
+        if (errorMsg.includes('503') || errorMsg.includes('high demand') || errorMsg.includes('UNAVAILABLE')) {
+          errorMsg = 'AIサービスが混雑しています。少し待ってから再度お試しください。';
+        } else if (errorMsg.includes('INVALID_ARGUMENT') || errorMsg.includes('Unable to process input image')) {
+          errorMsg = '画像の形式またはサイズに対応できませんでした。別の画像でお試しください。';
+        }
         throw new Error(errorMsg);
       }
 
@@ -496,6 +533,12 @@ KitchenGit.ImageScanner = (function () {
       if (typeof window.switchTab === 'function') {
         window.switchTab('recipe');
       }
+      if (typeof window.renderRecipeList === 'function') {
+        window.renderRecipeList();
+      }
+      if (hooks.onRecipeAdded) {
+        try { hooks.onRecipeAdded(saved); } catch (e) { console.error(e); }
+      }
       if (hooks.showToast) {
         hooks.showToast(`「${name}」をレシピに追加しました！`);
       }
@@ -510,6 +553,12 @@ KitchenGit.ImageScanner = (function () {
       }
       if (typeof window.switchTab === 'function') {
         window.switchTab('recipe');
+      }
+      if (typeof window.renderRecipeList === 'function') {
+        window.renderRecipeList();
+      }
+      if (hooks.onRecipeAdded) {
+        try { hooks.onRecipeAdded(saved); } catch (e) { console.error(e); }
       }
       if (hooks.showToast) {
         hooks.showToast(`「${name}」を追加しました`);
@@ -611,12 +660,33 @@ KitchenGit.ImageScanner = (function () {
     ctx.font = '19px sans-serif';
     ctx.fillText('キャベツは強火で手早く炒めると水分が出ずシャキッと仕上がります。', 70, y + 60);
 
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], 'sample_recipe.jpg', { type: 'image/jpeg' });
-        processFile(file);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+    // Display scanning laser viewport with the sample recipe card
+    setScanningState(dataUrl);
+
+    // Simulate progressive OCR stages with feedback to show the scanning workflow
+    updateProgressStatus('サンプルレシピ画像を読み込んでいます...', 25);
+
+    setTimeout(() => {
+      if (isScanning) updateProgressStatus('Gemini AIが文字・材料・分量をOCR解析中...', 60);
+    }, 350);
+
+    setTimeout(() => {
+      if (isScanning) updateProgressStatus('調理手順とタイマー設定を構造化中...', 85);
+    }, 750);
+
+    setTimeout(() => {
+      if (isScanning) {
+        updateProgressStatus('解析完了！データを反映しています...', 100);
+        setTimeout(() => {
+          if (isScanning) {
+            const parsedRecipe = normalizeRecipeData(SAMPLE_RECIPE_DATA);
+            setResultState(parsedRecipe);
+          }
+        }, 300);
       }
-    }, 'image/jpeg', 0.9);
+    }, 1150);
   }
 
   function bindEvents() {

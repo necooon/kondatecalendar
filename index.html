@@ -858,12 +858,17 @@
         <h4 class="text-sm font-bold text-slate-900">画像の解析に失敗しました</h4>
         <p id="scanner-error-message" class="text-xs text-slate-500 px-4 leading-relaxed"></p>
       </div>
-      <div class="flex gap-2">
-        <button type="button" onclick="KitchenGit.ImageScanner.reset()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-2xl active-scale">
-          もう一度試す
-        </button>
-        <button type="button" onclick="closeImageScannerModal(); openRegisterModal();" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 rounded-2xl active-scale">
-          手動で入力する
+      <div class="flex flex-col gap-2">
+        <div class="flex gap-2">
+          <button type="button" onclick="KitchenGit.ImageScanner.reset()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-2xl active-scale">
+            もう一度試す
+          </button>
+          <button type="button" onclick="closeImageScannerModal(); openRegisterModal();" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 rounded-2xl active-scale">
+            手動で入力する
+          </button>
+        </div>
+        <button type="button" onclick="KitchenGit.ImageScanner.loadSampleRecipeImage()" class="w-full text-center text-emerald-600 hover:text-emerald-700 text-xs font-bold py-2 rounded-xl hover:bg-emerald-50 active-scale">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>サンプル画像で動作を確認する
         </button>
       </div>
     </div>
