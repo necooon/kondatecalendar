@@ -5,6 +5,9 @@
   <!-- iPhoneノッチ・Dynamic Island・ホームバー対応のセーフエリア設定 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>RecipeOps</title>
+  <meta name="description" content="iPhone向けの献立・買い物・レシピ管理アプリ。画像読み取りによるレシピ自動登録や、味変をGitのように管理し、買い物リストまで1画面で扱います。">
+  <meta property="og:title" content="RecipeOps">
+  <meta property="og:description" content="iPhone向けの献立・買い物・レシピ管理アプリ。画像読み取りによるレシピ自動登録や、味変をGitのように管理し、買い物リストまで1画面で扱います。">
 
   <!-- iOS PWAメタタグ（ホーム画面追加でネイティブアプリ化） -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,6 +29,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Google Material Symbols Outlined (朝・昼・晩 アイコン) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
   <script>
     tailwind.config = {
@@ -98,6 +103,41 @@
     }
     .pt-safe {
       padding-top: max(1.25rem, env(safe-area-inset-top, 0px));
+    }
+    /* Google Material Symbols Outlined アイコン表示調整 */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* スキャン中のレーザー走査アニメーション */
+    @keyframes scan-laser {
+      0% { top: 4%; opacity: 0.85; }
+      50% { opacity: 1; }
+      100% { top: 96%; opacity: 0.85; }
+    }
+    .scanner-laser-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #10b981, #34d399, #10b981, transparent);
+      box-shadow: 0 0 14px #10b981;
+      animation: scan-laser 2s ease-in-out infinite alternate;
     }
   </style>
 </head>
@@ -234,10 +274,17 @@
           </div>
         </div>
         <div id="recipe-list" class="space-y-2.5"></div>
-        <button type="button" onclick="openRegisterModal()" class="active-scale w-full bg-emerald-600 text-white text-sm font-bold py-3.5 rounded-2xl shadow-sm shadow-emerald-600/30 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-plus"></i>
-          <span>レシピを追加</span>
-        </button>
+        <div class="space-y-2 pt-1">
+          <button type="button" id="btn-open-image-scanner" onclick="openImageScannerModal()" class="active-scale w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold py-3.5 px-4 rounded-2xl shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2.5">
+            <i class="fa-solid fa-camera text-base"></i>
+            <span>画像からレシピを読み取る</span>
+            <span class="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AI自動解析</span>
+          </button>
+          <button type="button" id="btn-open-register-manual" onclick="openRegisterModal()" class="active-scale w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs font-bold py-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs">
+            <i class="fa-solid fa-pen-to-square text-emerald-600 text-xs"></i>
+            <span>手動でレシピを入力</span>
+          </button>
+        </div>
       </div>
 
       <div id="recipe-detail-pane" class="space-y-3.5 hidden">
@@ -541,9 +588,16 @@
         <div id="meal-edit-recipes-wrap" class="space-y-1.5">
           <div class="flex items-center justify-between">
             <span id="meal-edit-recipes-header" class="text-[11px] font-bold text-slate-700">登録レシピ一覧</span>
-            <button type="button" onclick="openRegisterFromMealEditor()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 active-scale">
-              + 新規登録
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openImageScannerFromMealEditor()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 active-scale flex items-center gap-1">
+                <i class="fa-solid fa-camera text-[10px]"></i>
+                <span>画像から</span>
+              </button>
+              <span class="text-slate-300">|</span>
+              <button type="button" onclick="openRegisterFromMealEditor()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 active-scale">
+                + 手動登録
+              </button>
+            </div>
           </div>
           <div id="meal-edit-recipes" class="space-y-2 max-h-56 overflow-y-auto pr-0.5"></div>
         </div>
@@ -596,6 +650,22 @@
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
     </div>
+    <!-- 画像から自動入力クイックカード -->
+    <div class="mb-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-2xl p-3 flex items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+          <i class="fa-solid fa-camera text-xs"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold text-emerald-950 truncate">写真・画像から自動入力</p>
+          <p class="text-[10px] text-emerald-700 truncate">料理本やメモから材料・手順をAI抽出</p>
+        </div>
+      </div>
+      <button type="button" id="btn-scan-from-register" onclick="closeRegisterModal(); openImageScannerModal();" class="active-scale shrink-0 bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5">
+        <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+        <span>読み取る</span>
+      </button>
+    </div>
     <form id="register-form" class="space-y-3.5 text-xs" onsubmit="event.preventDefault(); saveNewRecipe();">
       <div>
         <label class="font-bold text-slate-700 block mb-1">料理名</label>
@@ -634,6 +704,171 @@
     </form>
   </div>
 
+  <!-- ==================== 画像読み取りスキャナーモーダル ==================== -->
+  <div id="image-scanner-backdrop" onclick="closeImageScannerModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden transition-opacity"></div>
+  <div id="image-scanner-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden max-h-[90vh] overflow-y-auto">
+    <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 leading-tight">画像からレシピを読み取る</h3>
+          <p class="text-[10px] text-slate-400">料理本・スクショ・メモからAIが自動抽出</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeImageScannerModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center active-scale">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- 1. 画像アップロード/撮影エリア -->
+    <div id="scanner-upload-area" class="space-y-3.5">
+      <input type="file" id="scanner-file-input" accept="image/*" class="hidden">
+      <input type="file" id="scanner-camera-input" accept="image/*" capture="environment" class="hidden">
+
+      <div id="scanner-dropzone" class="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-3xl p-6 text-center transition-colors bg-slate-50/50 flex flex-col items-center justify-center gap-3 cursor-pointer" onclick="document.getElementById('scanner-file-input').click()">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-xs">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-slate-800">レシピ写真・スクリーンショット</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">ドラッグ＆ドロップ または タップして選択</p>
+        </div>
+        <p class="text-[10px] text-slate-400 bg-white border border-slate-200/80 px-2.5 py-1 rounded-full font-mono">
+          クリップボード貼り付け (Ctrl+V) にも対応
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <button type="button" onclick="document.getElementById('scanner-camera-input').click()" class="active-scale bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-3 rounded-2xl shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-2 text-xs">
+          <i class="fa-solid fa-camera"></i>
+          <span>カメラで撮影</span>
+        </button>
+        <button type="button" onclick="document.getElementById('scanner-file-input').click()" class="active-scale bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold py-3 px-3 rounded-2xl shadow-xs flex items-center justify-center gap-2 text-xs">
+          <i class="fa-regular fa-image text-emerald-600"></i>
+          <span>写真・ファイル選択</span>
+        </button>
+      </div>
+
+      <div class="pt-1 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-[10px] text-slate-400">画像がない場合は？</span>
+        <button type="button" onclick="KitchenGit.ImageScanner.loadSampleRecipeImage()" class="active-scale text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 py-1 px-2 rounded-xl hover:bg-emerald-50">
+          <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+          <span>サンプル画像で試す</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. 解析中プログレスエリア -->
+    <div id="scanner-progress-area" class="hidden space-y-4 py-2">
+      <div class="relative w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-inner max-h-52 flex items-center justify-center">
+        <img id="scanner-preview-thumb" src="" alt="Preview" class="w-full max-h-52 object-contain opacity-85">
+        <div class="scanner-laser-line"></div>
+        <div class="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xs text-white px-3 py-1 rounded-xl text-[10px] font-mono flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Gemini 3.8 Flash 解析中</span>
+          </span>
+          <i class="fa-solid fa-sparkles text-emerald-400"></i>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span id="scanner-progress-text" class="font-bold text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-spinner fa-spin text-emerald-600"></i>
+            <span>画像を最適化中...</span>
+          </span>
+        </div>
+        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div id="scanner-progress-bar" class="h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full w-1/3 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <button type="button" onclick="KitchenGit.ImageScanner.reset()" class="w-full bg-slate-100 text-slate-500 text-xs font-bold py-2.5 rounded-2xl active-scale">
+        キャンセル
+      </button>
+    </div>
+
+    <!-- 3. 解析結果プレビューエリア -->
+    <div id="scanner-result-area" class="hidden space-y-3.5">
+      <div class="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-200/90 rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
+            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+            <span>レシピを抽出しました</span>
+          </span>
+          <span id="scanner-result-summary" class="text-[10px] text-slate-500 font-mono font-bold"></span>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 mb-0.5">料理名（タップして微修正可能）</label>
+          <input type="text" id="scanner-result-title" class="w-full font-bold text-sm text-slate-900 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+        <div class="flex items-center gap-2 pt-0.5">
+          <span id="scanner-result-tag" class="text-[10px] font-bold text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-full shadow-2xs"></span>
+          <span id="scanner-result-servings" class="text-[10px] font-mono font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-full shadow-2xs"></span>
+        </div>
+      </div>
+
+      <!-- 材料プレビュー -->
+      <div>
+        <span class="text-xs font-bold text-slate-700 block mb-1.5">抽出された材料</span>
+        <div id="scanner-result-ingredients" class="max-h-36 overflow-y-auto space-y-1 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 divide-y divide-slate-100"></div>
+      </div>
+
+      <!-- 手順プレビュー -->
+      <div>
+        <span class="text-xs font-bold text-slate-700 block mb-1.5">抽出された手順</span>
+        <div id="scanner-result-steps" class="max-h-36 overflow-y-auto space-y-2 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 divide-y divide-slate-100"></div>
+      </div>
+
+      <!-- コツ・メモプレビュー -->
+      <div id="scanner-result-note-wrap" class="hidden bg-amber-50 border border-amber-200/80 rounded-2xl p-2.5">
+        <span class="text-[10px] font-bold text-amber-800 flex items-center gap-1 mb-0.5">
+          <i class="fa-solid fa-lightbulb"></i>
+          <span>メモ・調理のコツ</span>
+        </span>
+        <p id="scanner-result-note" class="text-xs text-amber-900 leading-relaxed"></p>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="space-y-2 pt-1">
+        <button type="button" onclick="KitchenGit.ImageScanner.applyToRegisterForm()" class="active-scale w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3.5 rounded-2xl shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-sliders"></i>
+          <span>フォームで確認・微調整して保存</span>
+        </button>
+        <button type="button" id="scanner-direct-save-btn" onclick="KitchenGit.ImageScanner.directSaveRecipe()" class="active-scale w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3 rounded-2xl flex items-center justify-center gap-2 shadow-xs">
+          <i class="fa-solid fa-bolt text-amber-400"></i>
+          <span>このままレシピに追加</span>
+        </button>
+        <button type="button" onclick="KitchenGit.ImageScanner.reset()" class="w-full text-slate-500 text-[11px] font-bold py-2 rounded-xl hover:bg-slate-50 active-scale">
+          別の画像を読み直す
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. エラー表示エリア -->
+    <div id="scanner-error-area" class="hidden space-y-4 py-3 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="space-y-1">
+        <h4 class="text-sm font-bold text-slate-900">画像の解析に失敗しました</h4>
+        <p id="scanner-error-message" class="text-xs text-slate-500 px-4 leading-relaxed"></p>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" onclick="KitchenGit.ImageScanner.reset()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-2xl active-scale">
+          もう一度試す
+        </button>
+        <button type="button" onclick="closeImageScannerModal(); openRegisterModal();" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 rounded-2xl active-scale">
+          手動で入力する
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== アプリ状態とJavaScriptロジック ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
@@ -647,6 +882,7 @@
   <script src="js/meal-editor.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/shopping.js"></script>
+  <script src="js/image-scanner.js"></script>
   <script>
     const appState = {
       activeTab: 'calendar',
@@ -1715,6 +1951,41 @@
       loadFoodItems();
       loadMealDays();
       refreshLucide();
+
+      // Initialize ImageScanner
+      if (window.KitchenGit && KitchenGit.ImageScanner) {
+        KitchenGit.ImageScanner.init(appState, {
+          showToast,
+          onRecipeAdded: (recipe) => {
+            renderRecipeList();
+            refreshShoppingList();
+            refreshMealEditorLists();
+          }
+        });
+      }
+
+      // Expose globally for onclick handlers & cross-module calls
+      window.openImageScannerModal = function (options) {
+        if (window.KitchenGit && KitchenGit.ImageScanner) KitchenGit.ImageScanner.open(options);
+      };
+      window.closeImageScannerModal = function () {
+        if (window.KitchenGit && KitchenGit.ImageScanner) KitchenGit.ImageScanner.close();
+      };
+      window.openImageScannerFromMealEditor = function () {
+        if (window.KitchenGit && KitchenGit.MealEditor && KitchenGit.MealEditor.close) {
+          KitchenGit.MealEditor.close(appState, { force: true });
+        }
+        if (window.KitchenGit && KitchenGit.ImageScanner) KitchenGit.ImageScanner.open();
+      };
+      window.fillIngredientRows = fillIngredientRows;
+      window.fillStepRows = fillStepRows;
+      window.openRegisterModal = openRegisterModal;
+      window.closeRegisterModal = closeRegisterModal;
+      window.showToast = showToast;
+      window.showRecipeDetail = showRecipeDetail;
+      window.switchTab = switchTab;
+      window.setCloudStatus = setCloudStatus;
+
       document.getElementById('reg-servings').addEventListener('change', function () {
         const n = Number(this.value);
         if (!n || n < 1) this.value = 1;

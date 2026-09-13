@@ -334,14 +334,17 @@ KitchenGit.Calendar = (function () {
   function mealSlotIndicatorHtml(dayData, meta) {
     const M = Meals();
     const filled = M.isMealFilled(M.slotOf(dayData, meta.key));
-    const dotColors = {
-      breakfast: filled ? 'text-amber-500' : 'text-slate-300',
-      lunch: filled ? 'text-sky-500' : 'text-slate-300',
-      dinner: filled ? 'text-indigo-500' : 'text-slate-300'
+    const iconColors = {
+      breakfast: filled ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-slate-300 bg-slate-50 border-slate-200/60 opacity-50',
+      lunch: filled ? 'text-sky-600 bg-sky-50 border-sky-200' : 'text-slate-300 bg-slate-50 border-slate-200/60 opacity-50',
+      dinner: filled ? 'text-indigo-600 bg-indigo-50 border-indigo-200' : 'text-slate-300 bg-slate-50 border-slate-200/60 opacity-50'
     };
-    const dot = filled ? '●' : '○';
     const status = filled ? '設定済み' : '未設定';
-    return `<span class="text-[10px] font-bold ${dotColors[meta.key] || 'text-slate-400'}" aria-label="${meta.label}${status}">${dot}</span>`;
+    return `<span class="inline-flex items-center justify-center w-4 h-4 rounded-full border ${iconColors[meta.key] || 'text-slate-400'}" title="${meta.label}: ${status}" aria-label="${meta.label}${status}"><span class="material-symbols-outlined text-[10px] leading-none" aria-hidden="true">${meta.icon}</span></span>`;
+  }
+
+  function slotBadgeHtml(meta) {
+    return `<span class="w-6 h-6 rounded-full ${meta.badge} inline-flex items-center justify-center shrink-0 mt-0.5" title="${meta.label}" aria-label="${meta.label}"><span class="material-symbols-outlined text-[15px] leading-none" aria-hidden="true">${meta.icon}</span></span>`;
   }
 
   function dayCardHeaderHtml(state, dayData) {
@@ -375,14 +378,15 @@ KitchenGit.Calendar = (function () {
       ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
       : '';
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
+    const badgeHtml = slotBadgeHtml(meta);
 
     if (isMemo) {
       const label = M.slotDisplayLabel(slot);
       return `
         <div onclick="${openFn}" class="bg-amber-50 border border-amber-200 rounded-2xl p-2 flex items-start justify-between gap-2 cursor-pointer active:bg-amber-100">
           <div class="flex items-start gap-2 min-w-0 pr-1">
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0 mt-0.5">${meta.label}</span>
-            <p class="text-xs font-bold text-amber-900 truncate">${M.escapeHtml(label)}</p>
+            ${badgeHtml}
+            <p class="text-xs font-bold text-amber-900 truncate mt-0.5">${M.escapeHtml(label)}</p>
           </div>
           <div class="flex items-center gap-1 shrink-0 mt-0.5">
             <i class="fa-solid fa-chevron-right text-[11px] text-amber-400"></i>
@@ -398,8 +402,8 @@ KitchenGit.Calendar = (function () {
     return `
       <div onclick="${openFn}" class="bg-slate-50 border border-slate-200/70 rounded-2xl p-2 flex items-start justify-between gap-2 cursor-pointer active:bg-slate-100">
         <div class="flex items-start gap-2 min-w-0 pr-1">
-          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${meta.badge} shrink-0 mt-0.5">${meta.label}</span>
-          <div class="min-w-0 space-y-0.5">${titlesHtml}</div>
+          ${badgeHtml}
+          <div class="min-w-0 space-y-0.5 mt-0.5">${titlesHtml}</div>
         </div>
         <div class="flex items-center gap-1 shrink-0 mt-0.5">
           ${prepChip}

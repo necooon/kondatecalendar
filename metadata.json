@@ -1,7 +1,9 @@
 {
   "name": "RecipeOps",
-  "description": "iPhone向けの献立・買い物・レシピ管理アプリ。レシピの味変をGitのコミットのように残し、人数や作り置き、買い物リストを1画面で扱います。",
-  "requestFramePermissions": [],
+  "description": "iPhone向けの献立・買い物・レシピ管理アプリ。画像読み取りによるレシピ自動登録や、味変をGitのように管理し、買い物リストまで1画面で扱います。",
+  "requestFramePermissions": [
+    "camera"
+  ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

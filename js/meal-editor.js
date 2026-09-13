@@ -444,7 +444,17 @@ KitchenGit.MealEditor = (function () {
       state.mealEditorItems = existing.length ? M.cloneMealItems(existing) : [];
     }
     const heading = document.getElementById('meal-edit-heading');
-    if (heading) heading.textContent = `${displayDateOf(dayData)} (${dayData.day}) の${meta.label}`;
+    if (heading) {
+      heading.innerHTML = `
+        <span class="inline-flex items-center gap-2 flex-wrap">
+          <span>${displayDateOf(dayData)} (${dayData.day})</span>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${meta.badge} text-[11px] font-bold">
+            <span class="material-symbols-outlined text-[14px] leading-none" aria-hidden="true">${meta.icon}</span>
+            <span>${meta.label}</span>
+          </span>
+        </span>
+      `;
+    }
     const input = document.getElementById('meal-edit-food-input');
     if (input) input.value = '';
     state.mealEditorSearchQuery = '';
@@ -576,6 +586,10 @@ KitchenGit.MealEditor = (function () {
     window.openRegisterFromMealEditor = function () {
       close(state, { force: true });
       if (hooks.onRegisterRecipe) hooks.onRegisterRecipe();
+    };
+    window.openImageScannerFromMealEditor = function () {
+      close(state, { force: true });
+      if (window.openImageScannerModal) window.openImageScannerModal();
     };
     window.removeMealEditorItem = function (index) {
       state.mealEditorItems.splice(index, 1);

@@ -20,10 +20,16 @@ KitchenGit.Meals = (function () {
   };
 
   const MEAL_SLOTS = [
-    { key: 'breakfast', label: '朝', badge: 'bg-amber-100 text-amber-800' },
-    { key: 'lunch', label: '昼', badge: 'bg-sky-100 text-sky-800' },
-    { key: 'dinner', label: '晩', badge: 'bg-indigo-100 text-indigo-800' }
+    { key: 'breakfast', label: '朝', icon: 'wb_twilight', badge: 'bg-amber-100 text-amber-800' },
+    { key: 'lunch', label: '昼', icon: 'wb_sunny', badge: 'bg-sky-100 text-sky-800' },
+    { key: 'dinner', label: '晩', icon: 'brightness_2', badge: 'bg-indigo-100 text-indigo-800' }
   ];
+
+  function slotIconHtml(meta, sizeClass) {
+    const iconName = (meta && meta.icon) || '';
+    const sz = sizeClass || 'text-[13px]';
+    return `<span class="material-symbols-outlined ${sz} leading-none select-none" aria-hidden="true">${escapeHtml(iconName)}</span>`;
+  }
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -388,6 +394,7 @@ KitchenGit.Meals = (function () {
     MEMO_QUICK_TAGS,
     MEMO_TAG_EMOJI,
     MEAL_SLOTS,
+    slotIconHtml,
     escapeHtml,
     encodeJsString,
     emptyMealSlot,
