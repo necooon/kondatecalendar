@@ -230,9 +230,9 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
 
     // Prioritize ultra-fast, high-availability multimodal models
     const modelsToTry = [
-      { name: 'gemini-2.5-flash', timeoutMs: 16000 },
-      { name: 'gemini-1.5-flash', timeoutMs: 18000 },
-      { name: 'gemini-3.8-flash', timeoutMs: 22000 }
+      { name: 'gemini-3.6-flash', timeoutMs: 16000 },
+      { name: 'gemini-3.8-flash', timeoutMs: 18000 },
+      { name: 'gemini-flash-latest', timeoutMs: 22000 }
     ];
     let lastError = null;
     let response = null;
