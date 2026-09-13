@@ -17,39 +17,79 @@ KitchenGit.ImageScanner = (function () {
   // Client-side image resize & compression to ensure fast upload & avoid payload limits
   function resizeImage(fileOrBlob, maxDimension = 1600, quality = 0.85) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          let { width, height } = img;
-          if (width > maxDimension || height > maxDimension) {
-            if (width > height) {
-              height = Math.round((height * maxDimension) / width);
-              width = maxDimension;
-            } else {
-              width = Math.round((width * maxDimension) / height);
-              height = maxDimension;
+      // 1. Try createImageBitmap if available for high performance & wide format support
+      if (typeof window.createImageBitmap === 'function') {
+        createImageBitmap(fileOrBlob)
+          .then((bitmap) => {
+            let width = bitmap.width;
+            let height = bitmap.height;
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
             }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', quality);
-          resolve({
-            dataUrl,
-            width,
-            height,
-            mimeType: 'image/jpeg'
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, width);
+            canvas.height = Math.max(1, height);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            if (typeof bitmap.close === 'function') bitmap.close();
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve({
+              dataUrl,
+              width: canvas.width,
+              height: canvas.height,
+              mimeType: 'image/jpeg'
+            });
+          })
+          .catch(() => {
+            // Fallback to FileReader + HTMLImageElement
+            fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject);
           });
-        };
-        img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
-        img.src = e.target.result;
-      };
-      reader.onerror = () => reject(new Error('ファイルの読み取りに失敗しました'));
-      reader.readAsDataURL(fileOrBlob);
+        return;
+      }
+
+      fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject);
     });
+  }
+
+  function fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, width);
+        canvas.height = Math.max(1, height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({
+          dataUrl,
+          width: canvas.width,
+          height: canvas.height,
+          mimeType: 'image/jpeg'
+        });
+      };
+      img.onerror = () => reject(new Error('画像の読み込みに失敗しました。別の形式（JPEG, PNG等）をお試しください。'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('ファイルの読み取りに失敗しました。'));
+    reader.readAsDataURL(fileOrBlob);
   }
 
   function openModal(options = {}) {
@@ -221,7 +261,10 @@ KitchenGit.ImageScanner = (function () {
 
   async function processFile(file) {
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
+    // Allow any image type or files with common image extensions even if MIME is generic (e.g. on mobile / HEIC)
+    const isImage = (file.type && file.type.startsWith('image/')) ||
+      /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(file.name || '');
+    if (!isImage) {
       setErrorState('画像ファイル（JPEG, PNG, WebPなど）を選択してください。');
       return;
     }
@@ -251,7 +294,14 @@ KitchenGit.ImageScanner = (function () {
         signal: abortController.signal
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        const textErr = await response.text().catch(() => '');
+        throw new Error(textErr || 'サーバーからの応答の読み込みに失敗しました。');
+      }
+
       if (!response.ok || !result.ok) {
         throw new Error(result.error || '画像の解析に失敗しました。');
       }

@@ -50,13 +50,18 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
     let base64Data = image;
     let detectedMimeType = mimeType || 'image/jpeg';
 
-    if (typeof image === 'string' && image.startsWith('data:')) {
-      const match = image.match(/^data:([^;]+);base64,(.+)$/);
-      if (match) {
-        detectedMimeType = match[1];
-        base64Data = match[2];
+    if (typeof image === 'string') {
+      const commaIdx = image.indexOf(',');
+      if (image.startsWith('data:') && commaIdx !== -1) {
+        const meta = image.slice(5, commaIdx);
+        const [typePart] = meta.split(';');
+        if (typePart) detectedMimeType = typePart.trim();
+        base64Data = image.slice(commaIdx + 1);
       }
     }
+
+    // Strip newlines/whitespace from base64 data
+    base64Data = String(base64Data).replace(/\s+/g, '');
 
     const ai = getGenAI();
 
@@ -162,12 +167,30 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
       throw lastError || new Error('Geminiモデルから応答を取得できませんでした。');
     }
 
-    const outputText = response.text;
+    let outputText = (response.text || '').trim();
     if (!outputText) {
-      throw new Error('Geminiモデルから応答を取得できませんでした。');
+      throw new Error('Geminiモデルから応答が空でした。');
     }
 
-    const recipeData = JSON.parse(outputText);
+    // Strip markdown fences if present
+    if (outputText.startsWith('```')) {
+      outputText = outputText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    }
+
+    let recipeData;
+    try {
+      recipeData = JSON.parse(outputText);
+    } catch (parseErr) {
+      // Attempt substring JSON extraction if extra characters exist
+      const firstBrace = outputText.indexOf('{');
+      const lastBrace = outputText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        recipeData = JSON.parse(outputText.slice(firstBrace, lastBrace + 1));
+      } else {
+        throw new Error(`AIの応答をJSONとして解析できませんでした: ${parseErr.message}`);
+      }
+    }
+
     return res.json({ ok: true, recipe: recipeData });
   } catch (err) {
     console.error('Gemini recipe extraction error:', err);

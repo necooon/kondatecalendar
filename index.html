@@ -725,7 +725,7 @@
 
     <!-- 1. 画像アップロード/撮影エリア -->
     <div id="scanner-upload-area" class="space-y-3.5">
-      <input type="file" id="scanner-file-input" accept="image/*" class="hidden">
+      <input type="file" id="scanner-file-input" accept="image/*,.heic,.heif" class="hidden">
       <input type="file" id="scanner-camera-input" accept="image/*" capture="environment" class="hidden">
 
       <div id="scanner-dropzone" class="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-3xl p-6 text-center transition-colors bg-slate-50/50 flex flex-col items-center justify-center gap-3 cursor-pointer" onclick="document.getElementById('scanner-file-input').click()">
