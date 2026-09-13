@@ -41,16 +41,36 @@ KitchenGit.ImageScanner = (function () {
   let lastProcessedFile = null;
 
   // Client-side image resize & compression to ensure fast upload & avoid payload limits
-  function resizeImage(fileOrBlob, maxDimension = 960, quality = 0.75) {
+  async function resizeImage(fileOrBlob, maxDimension = 960, quality = 0.75) {
+    // Check if the input is HEIC/HEIF
+    const isHeic = (fileOrBlob.type && (fileOrBlob.type.toLowerCase().includes('heic') || fileOrBlob.type.toLowerCase().includes('heif'))) ||
+      /\.(heic|heif)$/i.test(fileOrBlob.name || '');
+
+    // If HEIC, try client-side conversion via heic2any first
+    let processedBlob = fileOrBlob;
+    if (isHeic && typeof window.heic2any === 'function') {
+      try {
+        updateProgressStatus('iPhone写真 (HEIC) を標準画像に変換中...', 20);
+        const conv = await window.heic2any({
+          blob: fileOrBlob,
+          toType: 'image/jpeg',
+          quality: 0.80
+        });
+        processedBlob = Array.isArray(conv) ? conv[0] : conv;
+      } catch (convErr) {
+        console.warn('heic2any conversion on client warning:', convErr);
+      }
+    }
+
     return new Promise((resolve, reject) => {
       // 1. Try createImageBitmap with imageOrientation: 'from-image' (crucial for mobile cameras / EXIF rotation)
       if (typeof window.createImageBitmap === 'function') {
         const options = { imageOrientation: 'from-image' };
-        createImageBitmap(fileOrBlob, options)
-          .catch(() => createImageBitmap(fileOrBlob)) // Fallback if imageOrientation option is unsupported
+        createImageBitmap(processedBlob, options)
+          .catch(() => createImageBitmap(processedBlob)) // Fallback if imageOrientation option is unsupported
           .then((bitmap) => {
             if (!bitmap || !bitmap.width || !bitmap.height) {
-              fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject);
+              fallbackResize(processedBlob, maxDimension, quality, resolve, reject);
               return;
             }
             let width = bitmap.width;
@@ -79,12 +99,12 @@ KitchenGit.ImageScanner = (function () {
             });
           })
           .catch(() => {
-            fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject);
+            fallbackResize(processedBlob, maxDimension, quality, resolve, reject);
           });
         return;
       }
 
-      fallbackResize(fileOrBlob, maxDimension, quality, resolve, reject);
+      fallbackResize(processedBlob, maxDimension, quality, resolve, reject);
     });
   }
 
@@ -122,9 +142,10 @@ KitchenGit.ImageScanner = (function () {
     };
     img.onerror = () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
-      // If object URL failed, try FileReader as last resort
+      // If image decode fails (e.g. raw HEIC without client decoder), read base64 directly and delegate to server converter
       const reader = new FileReader();
       reader.onload = (e) => {
+        const rawDataUrl = e.target.result;
         const fallbackImg = new Image();
         fallbackImg.onload = () => {
           let { width, height } = fallbackImg;
@@ -150,8 +171,17 @@ KitchenGit.ImageScanner = (function () {
             mimeType: 'image/jpeg'
           });
         };
-        fallbackImg.onerror = () => reject(new Error('カメラ写真のデコードに失敗しました。ファイル選択から写真を選択してお試しください。'));
-        fallbackImg.src = e.target.result;
+        fallbackImg.onerror = () => {
+          // If browser cannot decode HEIC in Canvas/Image, send raw DataURL to server (server will convert it via heic-convert)
+          console.log('[ImageScanner] Browser image decode failed (likely HEIC). Delegating conversion to server...');
+          resolve({
+            dataUrl: rawDataUrl,
+            width: 960,
+            height: 1280,
+            mimeType: fileOrBlob.type || 'image/heic'
+          });
+        };
+        fallbackImg.src = rawDataUrl;
       };
       reader.onerror = () => reject(new Error('カメラ写真の読み取りに失敗しました。'));
       reader.readAsDataURL(fileOrBlob);
@@ -373,14 +403,14 @@ KitchenGit.ImageScanner = (function () {
         }
       }, 1000);
 
-      // Client-side 35s timeout
+      // Client-side 50s timeout
       timeoutId = setTimeout(() => {
         timedOut = true;
         if (abortController) {
           abortController.abort();
         }
         setErrorState('AI解析がタイムアウトしました。通信環境の良い場所でもう一度お試しください。');
-      }, 35000);
+      }, 50000);
 
       let response;
       try {

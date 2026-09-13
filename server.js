@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { GoogleGenAI, Type } = require('@google/genai');
+const heicConvert = require('heic-convert');
 
 const app = express();
 const PORT = 3000;
@@ -117,6 +118,38 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
     // Strip newlines/whitespace from base64 data
     base64Data = String(base64Data).replace(/\s+/g, '');
 
+    // Check if the uploaded image is HEIC/HEIF (common for iPhone camera photos)
+    let buffer = Buffer.from(base64Data, 'base64');
+    const isHeicMime = detectedMimeType.includes('heic') || detectedMimeType.includes('heif');
+    let isHeicBuffer = false;
+    if (buffer.length > 12) {
+      const headerString = buffer.slice(4, 12).toString('ascii');
+      if (headerString.includes('ftyp') || headerString.includes('heic') || headerString.includes('mif1')) {
+        const fullHeader = buffer.slice(4, 24).toString('ascii').toLowerCase();
+        if (fullHeader.includes('heic') || fullHeader.includes('heix') || fullHeader.includes('hevc') || fullHeader.includes('mif1') || fullHeader.includes('msf1')) {
+          isHeicBuffer = true;
+        }
+      }
+    }
+
+    if (isHeicMime || isHeicBuffer) {
+      console.log('[RecipeOps] HEIC/HEIF image detected from camera. Converting to JPEG on server...');
+      try {
+        const convertedBuffer = await heicConvert({
+          buffer,
+          format: 'JPEG',
+          quality: 0.82
+        });
+        buffer = convertedBuffer;
+        base64Data = convertedBuffer.toString('base64');
+        detectedMimeType = 'image/jpeg';
+        console.log('[RecipeOps] Successfully converted HEIC to JPEG (' + Math.round(buffer.length / 1024) + ' KB)');
+      } catch (convErr) {
+        console.warn('[RecipeOps] Server-side HEIC conversion warning:', convErr.message || convErr);
+        // If conversion fails, continue and let Gemini try or throw readable error
+      }
+    }
+
     const ai = getGenAI();
 
     const imagePart = {
@@ -196,11 +229,10 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
     };
 
     // Prioritize ultra-fast, high-availability multimodal models
-    // gemini-3.1-flash-lite (1-3s) and gemini-3.6-flash (2-4s) provide fastest response with highest reliability
     const modelsToTry = [
-      { name: 'gemini-3.1-flash-lite', timeoutMs: 8000 },
-      { name: 'gemini-3.6-flash', timeoutMs: 9000 },
-      { name: 'gemini-flash-latest', timeoutMs: 8000 }
+      { name: 'gemini-3.1-flash-lite', timeoutMs: 16000 },
+      { name: 'gemini-flash-latest', timeoutMs: 18000 },
+      { name: 'gemini-3.8-flash', timeoutMs: 22000 }
     ];
     let lastError = null;
     let response = null;

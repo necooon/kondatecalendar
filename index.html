@@ -725,8 +725,8 @@
 
     <!-- 1. 画像アップロード/撮影エリア -->
     <div id="scanner-upload-area" class="space-y-3.5">
-      <input type="file" id="scanner-file-input" accept="image/*,.heic,.heif" class="hidden">
-      <input type="file" id="scanner-camera-input" accept="image/*" capture="environment" class="hidden">
+      <input type="file" id="scanner-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
+      <input type="file" id="scanner-camera-input" accept="image/jpeg,image/png,image/*" capture="environment" class="hidden">
 
       <div id="scanner-dropzone" class="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-3xl p-6 text-center transition-colors bg-slate-50/50 flex flex-col items-center justify-center gap-3 cursor-pointer" onclick="document.getElementById('scanner-file-input').click()">
         <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-xs">
@@ -890,6 +890,7 @@
   <script src="js/meal-editor.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/shopping.js"></script>
+  <script src="js/vendor/heic2any.min.js"></script>
   <script src="js/image-scanner.js"></script>
   <script>
     const appState = {

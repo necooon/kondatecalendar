@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "heic-convert": "^2.1.0",
+    "heic2any": "^0.0.4"
   }
 }
