@@ -35,8 +35,11 @@ KitchenGit.Meals = (function () {
 
   function encodeJsString(value) {
     return JSON.stringify(value == null ? '' : String(value))
-      .replace(/&/g, '\\u0026')
-      .replace(/</g, '\\u003c');
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   function emptyMealSlot() {
@@ -239,19 +242,78 @@ KitchenGit.Meals = (function () {
     return mealItems(slot).some((item) => titleMatchesPrep(item.title, prepItem));
   }
 
-  function recipeMatchesQuery(recipe, query) {
+  function getRecipeIngredients(recipe) {
+    if (!recipe) return [];
+    const RecipeModel = KitchenGit.RecipeModel;
+    if (RecipeModel && typeof RecipeModel.pickHead === 'function') {
+      const head = RecipeModel.pickHead(recipe);
+      if (head && head.version && Array.isArray(head.version.ingredients) && head.version.ingredients.length) {
+        return head.version.ingredients;
+      }
+    }
+    if (Array.isArray(recipe.ingredients) && recipe.ingredients.length) {
+      return recipe.ingredients;
+    }
+    if (recipe.versions && typeof recipe.versions === 'object') {
+      const keys = Object.keys(recipe.versions);
+      for (const k of keys) {
+        const v = recipe.versions[k];
+        if (v && Array.isArray(v.ingredients) && v.ingredients.length) {
+          return v.ingredients;
+        }
+      }
+    }
+    return [];
+  }
+
+  function recipeMatchesQueryDetails(recipe, query) {
     const q = (query || '').trim().toLowerCase();
-    if (!q) return true;
+    if (!q) {
+      return { matches: true, matchedIngredients: [], tokens: [] };
+    }
+    // Split by half-width or full-width whitespace
+    const tokens = q.split(/[\s　]+/).filter(Boolean);
+    if (!tokens.length) {
+      return { matches: true, matchedIngredients: [], tokens: [] };
+    }
+
     const name = (recipe.name || '').toLowerCase();
     const tag = (recipe.tag || '').toLowerCase();
-    const tags = Array.isArray(recipe.tags) ? recipe.tags.join(' ').toLowerCase() : '';
+    const tags = Array.isArray(recipe.tags)
+      ? recipe.tags.map((t) => String(t || '').toLowerCase())
+      : [String(recipe.tags || '').toLowerCase()];
     const branch = (recipe.branch || '').toLowerCase();
-    if (name.includes(q) || tag.includes(q) || tags.includes(q) || branch.includes(q)) return true;
-    const RecipeModel = KitchenGit.RecipeModel;
-    if (!RecipeModel) return false;
-    const head = RecipeModel.pickHead(recipe);
-    const ingredients = (head.version || {}).ingredients || [];
-    return ingredients.some((ing) => String(ing.name || '').toLowerCase().includes(q));
+    const allIngredients = getRecipeIngredients(recipe);
+    const matchedIngsSet = new Set();
+
+    const allTokensMatch = tokens.every((token) => {
+      let matchedInThisToken = false;
+      if (name.includes(token)) matchedInThisToken = true;
+      if (tag.includes(token)) matchedInThisToken = true;
+      if (tags.some((t) => t.includes(token))) matchedInThisToken = true;
+      if (branch.includes(token)) matchedInThisToken = true;
+
+      allIngredients.forEach((ing) => {
+        const ingName = String(ing.name || '').toLowerCase();
+        const ingNote = String(ing.note || '').toLowerCase();
+        if (ingName.includes(token) || ingNote.includes(token)) {
+          matchedInThisToken = true;
+          matchedIngsSet.add(ing.name);
+        }
+      });
+
+      return matchedInThisToken;
+    });
+
+    return {
+      matches: allTokensMatch,
+      matchedIngredients: Array.from(matchedIngsSet),
+      tokens
+    };
+  }
+
+  function recipeMatchesQuery(recipe, query) {
+    return recipeMatchesQueryDetails(recipe, query).matches;
   }
 
   function filterRecipesByQuery(recipes, query) {
@@ -353,6 +415,8 @@ KitchenGit.Meals = (function () {
     titleMatchesPrep,
     slotMatchesPrep,
     recipeMatchesQuery,
+    recipeMatchesQueryDetails,
+    getRecipeIngredients,
     filterRecipesByQuery,
     filterFoodItemsByQuery,
     findRecipeForTitle,

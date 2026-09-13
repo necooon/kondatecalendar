@@ -128,7 +128,7 @@ KitchenGit.MealEditor = (function () {
         ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
         : 'bg-white border-slate-200 text-slate-700 active-scale';
       return `
-        <button type="button" onclick='applyQuickTag(${M.encodeJsString(tag.label)})' class="px-2.5 py-1.5 rounded-full border text-[11px] font-bold ${cls}">
+        <button type="button" data-tag-label="${M.escapeHtml(tag.label)}" onclick="applyQuickTag(this.dataset.tagLabel)" class="px-2.5 py-1.5 rounded-full border text-[11px] font-bold ${cls}">
           ${tag.emoji} ${M.escapeHtml(tag.label)}
         </button>
       `;
@@ -192,6 +192,31 @@ KitchenGit.MealEditor = (function () {
     }).join('');
   }
 
+  const QUICK_FILTER_CHIPS = ['すべて', '鶏肉', '豚肉', '魚', '豆腐', '卵', '野菜', '定番', '汁物'];
+
+  function escapeRegex(string) {
+    return String(string || '').replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+  }
+
+  function renderQuickChips(state) {
+    const M = Meals();
+    const container = document.getElementById('meal-edit-quick-chips');
+    if (!container) return;
+    const currentQuery = (searchQueryOf(state) || '').trim();
+    container.innerHTML = QUICK_FILTER_CHIPS.map((chip) => {
+      const isAll = chip === 'すべて';
+      const isActive = isAll ? !currentQuery : currentQuery === chip;
+      const cls = isActive
+        ? 'bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-full shadow-2xs border border-emerald-600 active-scale whitespace-nowrap text-[11px]'
+        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/80 px-2.5 py-1 rounded-full active-scale whitespace-nowrap text-[11px]';
+      return `
+        <button type="button" data-chip="${M.escapeHtml(chip)}" onclick="applyMealEditorChip(this.dataset.chip)" class="${cls}">
+          ${M.escapeHtml(chip)}
+        </button>
+      `;
+    }).join('');
+  }
+
   function renderRecipes(state) {
     const M = Meals();
     const wrap = document.getElementById('meal-edit-recipes-wrap');
@@ -202,8 +227,14 @@ KitchenGit.MealEditor = (function () {
       return;
     }
     const recipes = recipesOf(state);
-    const query = searchQueryOf(state);
+    const query = searchQueryOf(state).trim();
     wrap.classList.remove('hidden');
+
+    const clearBtn = document.getElementById('meal-edit-search-clear');
+    if (clearBtn) clearBtn.classList.toggle('hidden', !query);
+
+    renderQuickChips(state);
+
     if (!recipes.length) {
       list.innerHTML = `
         <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-3 space-y-2">
@@ -215,25 +246,114 @@ KitchenGit.MealEditor = (function () {
       `;
       return;
     }
-    const filtered = M.filterRecipesByQuery(recipes, query);
-    if (!filtered.length) {
+
+    const matchesList = [];
+    recipes.forEach((recipe) => {
+      const details = M.recipeMatchesQueryDetails
+        ? M.recipeMatchesQueryDetails(recipe, query)
+        : { matches: M.recipeMatchesQuery(recipe, query), matchedIngredients: [], tokens: [] };
+      if (details.matches) {
+        matchesList.push({ recipe, details });
+      }
+    });
+
+    const countBadge = document.getElementById('meal-edit-search-count-badge');
+    if (countBadge) {
+      countBadge.textContent = query ? `一致 ${matchesList.length}件` : `全 ${recipes.length}件`;
+    }
+
+    const headerEl = document.getElementById('meal-edit-recipes-header');
+    if (headerEl) {
+      headerEl.textContent = query ? `「${query}」の検索結果 (${matchesList.length}件)` : `登録レシピ一覧 (${recipes.length}件)`;
+    }
+
+    if (!matchesList.length) {
       list.innerHTML = `
-        <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          「${M.escapeHtml(query.trim())}」に一致するレシピはありません
-        </p>
+        <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-3.5 text-center space-y-2">
+          <p class="text-[11px] text-slate-600 leading-relaxed font-bold">
+            「${M.escapeHtml(query)}」に一致するレシピはありません
+          </p>
+          <p class="text-[10px] text-slate-400">
+            料理名や材料名（例: 鶏肉, 豚肉, 豆腐, 茄子）を変えて検索するか、条件をクリアしてください。
+          </p>
+          <button type="button" onclick="clearMealEditorSearch()" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-100 active-scale">
+            <i class="fa-solid fa-rotate-left text-[10px]"></i>
+            <span>絞り込みをクリア</span>
+          </button>
+        </div>
       `;
       return;
     }
+
     const addedKeys = new Set(itemKeys(selectedItems(state)));
-    list.innerHTML = filtered.map((recipe) => {
+    list.innerHTML = matchesList.map(({ recipe, details }) => {
       const added = addedKeys.has(`recipe:${recipe.id}`) || addedKeys.has(`name:${(recipe.name || '').toLowerCase()}`);
-      const cls = added
-        ? 'w-full text-left bg-emerald-50 border border-emerald-200 rounded-2xl px-3 py-2 font-bold text-emerald-800'
-        : 'active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800';
+      const allIngredients = M.getRecipeIngredients ? M.getRecipeIngredients(recipe) : [];
+      const ingNames = allIngredients.map((i) => i.name).filter(Boolean);
+      const matchedIngs = details.matchedIngredients || [];
+
+      // Highlight matching keyword tokens in recipe name
+      let displayName = M.escapeHtml(recipe.name);
+      if (query && details.tokens && details.tokens.length) {
+        details.tokens.forEach((tok) => {
+          if (!tok) return;
+          const re = new RegExp(`(${escapeRegex(tok)})`, 'gi');
+          displayName = displayName.replace(re, '<mark class="bg-amber-200 text-amber-950 font-bold px-0.5 rounded">$1</mark>');
+        });
+      }
+
+      let ingredientsPreview = '';
+      if (matchedIngs.length > 0) {
+        ingredientsPreview = `
+          <div class="mt-1.5 flex items-center gap-1 flex-wrap text-[11px]">
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">一致した材料:</span>
+            ${matchedIngs.map((ing) => `
+              <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                <i class="fa-solid fa-check text-[8px] text-emerald-600"></i>${M.escapeHtml(ing)}
+              </span>
+            `).join('')}
+          </div>
+        `;
+      } else if (ingNames.length > 0) {
+        ingredientsPreview = `
+          <p class="mt-1 text-[10.5px] text-slate-500 line-clamp-1">
+            <span class="font-bold text-slate-600">材料:</span> ${M.escapeHtml(ingNames.slice(0, 5).join('、'))}${ingNames.length > 5 ? '…' : ''}
+          </p>
+        `;
+      }
+
+      const tagBadge = recipe.tag
+        ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${M.escapeHtml(recipe.tag)}</span>`
+        : '';
+      const pfcBadge = recipe.pfc && recipe.pfc.kcal
+        ? `<span class="text-[9px] font-mono text-slate-400">${Math.round(recipe.pfc.kcal)} kcal</span>`
+        : '';
+
       return `
-        <button type="button" onclick='pickMealRecipe(${M.encodeJsString(recipe.name)}, ${M.encodeJsString(recipe.id)})' class="${cls}">
-          ${M.escapeHtml(recipe.name)}${added ? ' <span class="text-[10px] font-bold">追加済</span>' : ''}
-        </button>
+        <div class="border ${added ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200/90 hover:border-emerald-300'} rounded-2xl p-2.5 shadow-2xs transition-all">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                ${tagBadge}
+                ${pfcBadge}
+              </div>
+              <h4 class="text-xs font-bold text-slate-900 leading-snug">${displayName}</h4>
+            </div>
+            <div class="shrink-0 flex items-center gap-1">
+              <button type="button" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="viewRecipeFromMealEditor(this.dataset.recipeId)" title="レシピ詳細を見る" class="w-7 h-7 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-xs active-scale">
+                <i class="fa-solid fa-book-open"></i>
+              </button>
+              <button type="button" data-recipe-name="${M.escapeHtml(recipe.name)}" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="pickMealRecipe(this.dataset.recipeName, this.dataset.recipeId)" class="active-scale text-xs font-bold px-3 py-1.5 rounded-xl transition-all ${
+                added
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200'
+              }">
+                ${added ? '<i class="fa-solid fa-check text-[10px] mr-1"></i>追加済' : '＋ この枠に追加'}
+              </button>
+            </div>
+          </div>
+          ${ingredientsPreview}
+        </div>
       `;
     }).join('');
   }
@@ -274,7 +394,7 @@ KitchenGit.MealEditor = (function () {
         ? 'w-full text-left bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2 font-bold text-amber-800'
         : 'active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800';
       return `
-        <button type="button" onclick='pickMealFoodItem(${M.encodeJsString(food.name)}, ${M.encodeJsString(food.id)})' class="${cls}">
+        <button type="button" data-food-name="${M.escapeHtml(food.name)}" data-food-id="${M.escapeHtml(food.id)}" onclick="pickMealFoodItem(this.dataset.foodName, this.dataset.foodId)" class="${cls}">
           ${M.escapeHtml(food.name)}${added ? ' <span class="text-[10px] font-bold">追加済</span>' : ''}
         </button>
       `;
@@ -544,6 +664,36 @@ KitchenGit.MealEditor = (function () {
       const recipe = M.findRecipeForItem(recipes, item);
       close(state, { force: true });
       if (hooks.onOpenRecipe) hooks.onOpenRecipe(recipe, title);
+    };
+
+    window.clearMealEditorSearch = function () {
+      state.mealEditorSearchQuery = '';
+      const input = document.getElementById('meal-edit-search-input');
+      if (input) input.value = '';
+      renderRecipes(state);
+      renderFoodItems(state);
+    };
+
+    window.applyMealEditorChip = function (chip) {
+      if (chip === 'すべて') {
+        state.mealEditorSearchQuery = '';
+      } else if ((state.mealEditorSearchQuery || '').trim() === chip) {
+        state.mealEditorSearchQuery = '';
+      } else {
+        state.mealEditorSearchQuery = chip;
+      }
+      const input = document.getElementById('meal-edit-search-input');
+      if (input) input.value = state.mealEditorSearchQuery;
+      renderRecipes(state);
+      renderFoodItems(state);
+    };
+
+    window.viewRecipeFromMealEditor = function (recipeId) {
+      close(state, { force: true });
+      if (typeof window.showRecipeDetail === 'function') {
+        if (typeof window.switchTab === 'function') window.switchTab('recipe');
+        window.showRecipeDetail(recipeId);
+      }
     };
 
     const memoInput = document.getElementById('meal-edit-memo-input');

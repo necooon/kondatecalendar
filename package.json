@@ -1,0 +1,15 @@
+{
+  "name": "recipe-ops",
+  "version": "1.0.0",
+  "description": "RecipeOps - 献立・買い物・レシピ管理",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'Static assets ready'",
+    "lint": "node --check server.js js/meals.js js/meal-editor.js js/calendar.js js/recipes-db.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

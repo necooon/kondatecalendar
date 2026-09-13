@@ -448,8 +448,169 @@ KitchenGit.Calendar = (function () {
     }).join('');
   }
 
+  const CALENDAR_SEARCH_CHIPS = ['すべて', '鶏肉', '豚肉', '魚', '豆腐', '卵', '野菜', '定番', '汁物'];
+
+  function renderCalendarSearchChips(state) {
+    const container = document.getElementById('calendar-search-chips');
+    if (!container) return;
+    const currentQuery = (state.calendarRecipeSearchQuery || '').trim();
+    container.innerHTML = CALENDAR_SEARCH_CHIPS.map((chip) => {
+      const isAll = chip === 'すべて';
+      const isActive = isAll ? !currentQuery : currentQuery === chip;
+      const cls = isActive
+        ? 'bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-full shadow-2xs border border-emerald-600 active-scale whitespace-nowrap text-[11px]'
+        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/80 px-2.5 py-1 rounded-full active-scale whitespace-nowrap text-[11px]';
+      return `
+        <button type="button" data-chip="${Meals().escapeHtml(chip)}" onclick="applyCalendarSearchChip(this.dataset.chip)" class="${cls}">
+          ${Meals().escapeHtml(chip)}
+        </button>
+      `;
+    }).join('');
+  }
+
+  function renderCalendarSearch(state) {
+    const M = Meals();
+    const W = Week();
+    const clearBtn = document.getElementById('calendar-recipe-search-clear');
+    const resultsPanel = document.getElementById('calendar-search-results');
+    const countBadge = document.getElementById('calendar-search-count-badge');
+    if (!resultsPanel) return;
+
+    renderCalendarSearchChips(state);
+
+    const query = (state.calendarRecipeSearchQuery || '').trim();
+    if (clearBtn) clearBtn.classList.toggle('hidden', !query);
+
+    if (!query) {
+      resultsPanel.classList.add('hidden');
+      resultsPanel.innerHTML = '';
+      if (countBadge) countBadge.textContent = '';
+      return;
+    }
+
+    const recipes = hooks.getRecipes ? hooks.getRecipes() : (state.recipes || []);
+    const matchesList = [];
+    recipes.forEach((recipe) => {
+      const details = M.recipeMatchesQueryDetails
+        ? M.recipeMatchesQueryDetails(recipe, query)
+        : { matches: M.recipeMatchesQuery(recipe, query), matchedIngredients: [], tokens: [] };
+      if (details.matches) {
+        matchesList.push({ recipe, details });
+      }
+    });
+
+    if (countBadge) {
+      countBadge.textContent = `${matchesList.length}件ヒット`;
+    }
+
+    resultsPanel.classList.remove('hidden');
+
+    if (!matchesList.length) {
+      resultsPanel.innerHTML = `
+        <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-3 text-center space-y-1.5">
+          <p class="text-xs font-bold text-slate-700">「${M.escapeHtml(query)}」に一致するレシピはありません</p>
+          <p class="text-[10px] text-slate-400">材料名（例: 鶏肉, 生姜, 豆腐）や料理名で検索してください</p>
+          <button type="button" onclick="clearCalendarRecipeSearch()" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl hover:bg-emerald-100 active-scale mt-1">
+            <i class="fa-solid fa-rotate-left text-[10px]"></i>
+            <span>検索をクリア</span>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    const weekDays = state.calendarDays || ensureWeek(state, state.weekStart);
+
+    resultsPanel.innerHTML = matchesList.map(({ recipe, details }) => {
+      const allIngredients = M.getRecipeIngredients ? M.getRecipeIngredients(recipe) : [];
+      const ingNames = allIngredients.map((i) => i.name).filter(Boolean);
+      const matchedIngs = details.matchedIngredients || [];
+
+      let displayName = M.escapeHtml(recipe.name);
+      if (query && details.tokens && details.tokens.length) {
+        details.tokens.forEach((tok) => {
+          if (!tok) return;
+          const re = new RegExp(`(${String(tok).replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+          displayName = displayName.replace(re, '<mark class="bg-amber-200 text-amber-950 font-bold px-0.5 rounded">$1</mark>');
+        });
+      }
+
+      let ingredientsPreview = '';
+      if (matchedIngs.length > 0) {
+        ingredientsPreview = `
+          <div class="mt-1 flex items-center gap-1 flex-wrap text-[11px]">
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">一致した材料:</span>
+            ${matchedIngs.map((ing) => `
+              <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                <i class="fa-solid fa-check text-[8px] text-emerald-600"></i>${M.escapeHtml(ing)}
+              </span>
+            `).join('')}
+          </div>
+        `;
+      } else if (ingNames.length > 0) {
+        ingredientsPreview = `
+          <p class="mt-1 text-[10.5px] text-slate-500 line-clamp-1">
+            <span class="font-bold text-slate-600">材料:</span> ${M.escapeHtml(ingNames.slice(0, 5).join('、'))}${ingNames.length > 5 ? '…' : ''}
+          </p>
+        `;
+      }
+
+      const tagBadge = recipe.tag
+        ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${M.escapeHtml(recipe.tag)}</span>`
+        : '';
+      const pfcBadge = recipe.pfc && recipe.pfc.kcal
+        ? `<span class="text-[9px] font-mono text-slate-400">${Math.round(recipe.pfc.kcal)} kcal</span>`
+        : '';
+
+      return `
+        <div class="bg-slate-50/80 border border-slate-200 rounded-2xl p-2.5 space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                ${tagBadge}
+                ${pfcBadge}
+              </div>
+              <h4 class="text-xs font-bold text-slate-900 leading-snug">${displayName}</h4>
+              ${ingredientsPreview}
+            </div>
+            <button type="button" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="showRecipeDetailFromCalendar(this.dataset.recipeId)" title="レシピ詳細を見る" class="shrink-0 w-7 h-7 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-100 flex items-center justify-center text-xs active-scale">
+              <i class="fa-solid fa-book-open"></i>
+            </button>
+          </div>
+
+          <!-- 今週の枠へ追加するクイックボタン -->
+          <div class="pt-1.5 border-t border-slate-200/60">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold text-slate-500">今週の夕食枠に追加:</span>
+              <span class="text-[10px] text-slate-400">タップで即時登録</span>
+            </div>
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              ${weekDays.map((day) => {
+                const daySlot = M.slotOf(day, 'dinner');
+                const isFilled = M.isMealFilled(daySlot);
+                const hasThis = M.mealItems(daySlot).some((it) => it.title === recipe.name || it.recipeId === recipe.id);
+                return `
+                  <button type="button" data-date="${M.escapeHtml(day.date)}" data-recipe-id="${M.escapeHtml(recipe.id)}" data-recipe-name="${M.escapeHtml(recipe.name)}" onclick="assignRecipeToDayDinner(this.dataset.date, this.dataset.recipeId, this.dataset.recipeName)" class="shrink-0 text-[10px] font-bold px-2 py-1 rounded-xl transition-all active-scale ${
+                    hasThis
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : isFilled
+                      ? 'bg-white text-slate-700 border border-slate-200 hover:border-emerald-400'
+                      : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                  }">
+                    ${hasThis ? '✓ ' : '+ '}${W.formatMd(day.date)} (${day.day})${hasThis ? '追加済' : ''}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   function render(state) {
     renderWeekNav(state);
+    renderCalendarSearch(state);
     renderWeekOverview(state);
   }
 
@@ -461,6 +622,60 @@ KitchenGit.Calendar = (function () {
   }
 
   function bindGlobals(state) {
+    window.clearCalendarRecipeSearch = function () {
+      state.calendarRecipeSearchQuery = '';
+      const input = document.getElementById('calendar-recipe-search-input');
+      if (input) input.value = '';
+      renderCalendarSearch(state);
+    };
+
+    window.applyCalendarSearchChip = function (chip) {
+      if (chip === 'すべて') {
+        state.calendarRecipeSearchQuery = '';
+      } else if ((state.calendarRecipeSearchQuery || '').trim() === chip) {
+        state.calendarRecipeSearchQuery = '';
+      } else {
+        state.calendarRecipeSearchQuery = chip;
+      }
+      const input = document.getElementById('calendar-recipe-search-input');
+      if (input) input.value = state.calendarRecipeSearchQuery;
+      renderCalendarSearch(state);
+    };
+
+    window.assignRecipeToDayDinner = async function (dateStr, recipeId, recipeName) {
+      const M = Meals();
+      const W = Week();
+      const dayData = M.findDayInState(state, dateStr);
+      if (!dayData) return;
+      const slot = M.ensureMealSlot(dayData, 'dinner');
+      const existing = M.mealItems(slot);
+      const isAlready = existing.some((it) => it.title === recipeName || it.recipeId === recipeId);
+      if (isAlready) {
+        if (hooks.showToast) hooks.showToast('すでにこの枠に登録されています');
+        return;
+      }
+      const newItems = existing.concat([{ title: recipeName, recipeId, type: 'recipe' }]);
+      M.writeMealItems(slot, newItems);
+      touchDay(state, dayData);
+      render(state);
+      await persistDay(state, dayData);
+      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
+      if (hooks.showToast) hooks.showToast(`「${recipeName}」を ${W.formatMd(dateStr)} (${dayData.day}) の夕食に追加しました`);
+    };
+
+    window.showRecipeDetailFromCalendar = function (recipeId) {
+      if (typeof window.switchTab === 'function') window.switchTab('recipe');
+      if (typeof window.showRecipeDetail === 'function') window.showRecipeDetail(recipeId);
+    };
+
+    const calSearchInput = document.getElementById('calendar-recipe-search-input');
+    if (calSearchInput) {
+      calSearchInput.addEventListener('input', function () {
+        state.calendarRecipeSearchQuery = this.value || '';
+        renderCalendarSearch(state);
+      });
+    }
+
     window.shiftWeek = async function (deltaDays) {
       shiftWeek(state, deltaDays);
       render(state);

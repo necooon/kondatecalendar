@@ -155,6 +155,33 @@
 
       </div>
 
+      <!-- カレンダー画面：レシピ・材料検索バー -->
+      <div id="calendar-search-widget" class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-200/60 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-800">レシピ・材料から献立を探す</span>
+          </div>
+          <span id="calendar-search-count-badge" class="text-[10px] font-bold text-slate-400"></span>
+        </div>
+
+        <div class="relative flex items-center">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
+          <input type="text" id="calendar-recipe-search-input" placeholder="料理名・材料で今週のレシピを検索 (例: 豚肉, 生姜, 豆腐)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-colors">
+          <button type="button" id="calendar-recipe-search-clear" onclick="clearCalendarRecipeSearch()" class="hidden absolute right-2.5 w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] hover:bg-slate-300 active-scale">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- クイック材料タグ -->
+        <div id="calendar-search-chips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]"></div>
+
+        <!-- 検索結果パネル（検索時のみ展開） -->
+        <div id="calendar-search-results" class="hidden space-y-2 pt-2 border-t border-slate-100 max-h-72 overflow-y-auto pr-0.5"></div>
+      </div>
+
       <!-- 1週間まとめ（月〜日の縦スクロール） -->
       <div id="week-overview" class="space-y-3">
         <!-- JSで7日分をレンダリング -->
@@ -487,21 +514,51 @@
           <label class="font-bold text-slate-700 block mb-1">この枠の料理</label>
           <div id="meal-edit-items" class="space-y-1.5"></div>
         </div>
-        <div>
-          <label for="meal-edit-search-input" class="font-bold text-slate-700 block mb-1.5">検索</label>
-          <input type="text" id="meal-edit-search-input" placeholder="レシピ名・材料で検索" class="w-full bg-slate-100 border border-slate-200 rounded-2xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+
+        <!-- レシピ検索 & 絞り込みエリア -->
+        <div class="space-y-2 pt-1 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <label for="meal-edit-search-input" class="font-bold text-slate-700 flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-magnifying-glass text-emerald-600 text-[11px]"></i>
+              <span>登録レシピを検索</span>
+            </label>
+            <span id="meal-edit-search-count-badge" class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full"></span>
+          </div>
+
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
+            <input type="text" id="meal-edit-search-input" placeholder="料理名・材料で検索 (例: 鶏肉, 豆腐, 生姜)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-colors">
+            <button type="button" id="meal-edit-search-clear" onclick="clearMealEditorSearch()" class="hidden absolute right-2.5 w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] hover:bg-slate-300 active-scale">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- クイック材料タグ -->
+          <div id="meal-edit-quick-chips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]"></div>
         </div>
-        <div id="meal-edit-recipes-wrap">
-          <label class="font-bold text-slate-700 block mb-1.5">登録レシピから選ぶ</label>
-          <div id="meal-edit-recipes" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+
+        <!-- レシピ一覧 -->
+        <div id="meal-edit-recipes-wrap" class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span id="meal-edit-recipes-header" class="text-[11px] font-bold text-slate-700">登録レシピ一覧</span>
+            <button type="button" onclick="openRegisterFromMealEditor()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 active-scale">
+              + 新規登録
+            </button>
+          </div>
+          <div id="meal-edit-recipes" class="space-y-2 max-h-56 overflow-y-auto pr-0.5"></div>
         </div>
-        <div id="meal-edit-food-wrap">
-          <label class="font-bold text-slate-700 block mb-1.5">材料・単品</label>
+
+        <!-- 材料・単品 -->
+        <div id="meal-edit-food-wrap" class="pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="font-bold text-slate-700 text-xs">材料・単品で登録</label>
+            <span class="text-[10px] text-slate-400">果物・納豆・ご飯など</span>
+          </div>
           <div class="flex gap-2 mb-2">
-            <input type="text" id="meal-edit-food-input" placeholder="例: バナナ" class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <input type="text" id="meal-edit-food-input" placeholder="例: バナナ, 納豆, ご飯" class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
             <button type="button" onclick="addMealFoodItemFromInput()" class="active-scale shrink-0 bg-amber-500 text-white text-[11px] font-bold px-3 py-2 rounded-xl">＋ 追加</button>
           </div>
-          <div id="meal-edit-food-items" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+          <div id="meal-edit-food-items" class="space-y-1.5 max-h-32 overflow-y-auto"></div>
         </div>
       </div>
       <div id="meal-edit-panel-memo" class="space-y-3 hidden">

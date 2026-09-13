@@ -280,14 +280,14 @@ KitchenGit.demoRecipes = function demoRecipes() {
       id: 'demo-chicken',
       name: '鶏むね肉と秋茄子のさっぱり炒め',
       tag: '定番 #02',
-      tags: ['鶏肉', '炒め物', 'さっぱり'],
+      tags: ['鶏肉', '秋茄子', '炒め物', 'さっぱり'],
       branch: 'main',
       servingsBase: 2,
       pfc: { p: 36.4, f: 5.0, c: 6.8, kcal: 217 },
       versions: {
         'v1.2': {
           title: 'v1.2',
-          note: '',
+          note: '大葉増量・生姜千切りに改訂',
           sortOrder: 2,
           branch: 'main',
           hash: 'f48b9c2',
@@ -336,6 +336,167 @@ KitchenGit.demoRecipes = function demoRecipes() {
             { name: '生姜 (すりおろし)', baseAmount: 5, unit: 'g', note: '' },
             { name: 'ポン酢しょうゆ', baseAmount: 2, unit: '大さじ', note: '' },
             { name: 'ごま油', baseAmount: 1, unit: '小さじ', note: '' }
+          ]
+        }
+      }
+    },
+    {
+      id: 'demo-ginger-pork',
+      name: '豚肉と玉ねぎの生姜焼き',
+      tag: '定番 #01',
+      tags: ['豚肉', '玉ねぎ', '生姜', '主菜', '定番'],
+      branch: 'main',
+      servingsBase: 2,
+      pfc: { p: 28.5, f: 18.2, c: 12.0, kcal: 326 },
+      versions: {
+        'v1.0': {
+          title: 'v1.0',
+          note: '甘辛だれ黄金比',
+          sortOrder: 0,
+          branch: 'main',
+          hash: M.shortHash('demo-ginger-pork|v1.0'),
+          author: 'You',
+          committedAt: '2026-09-02T19:00:00+09:00',
+          steps: [
+            { title: '下ごしらえ', instruction: '玉ねぎは薄切りにし、生姜はすりおろして醤油・みりん・酒と合わせます。', timer: null, uses: ['玉ねぎ', '生姜 (すりおろし)'] },
+            { title: '焼く', instruction: 'フライパンに油を熱し、豚肉を色が変わるまで中火で両面焼きます。', timer: 180, uses: ['豚ロース薄切り肉'] },
+            { title: '絡める', instruction: '玉ねぎと合わせ調味料を加え、照りが出るまで強火で絡めます。千切りキャベツを添えて完成。', timer: 120, uses: ['玉ねぎ', 'キャベツ (千切り)'] }
+          ],
+          ingredients: [
+            { name: '豚ロース薄切り肉', baseAmount: 250, unit: 'g', note: '' },
+            { name: '玉ねぎ', baseAmount: 0.5, unit: '個', note: '薄切り' },
+            { name: '生姜 (すりおろし)', baseAmount: 15, unit: 'g', note: '' },
+            { name: 'キャベツ (千切り)', baseAmount: 3, unit: '枚', note: '付け合わせ' },
+            { name: 'しょうゆ', baseAmount: 2, unit: '大さじ', note: '' },
+            { name: 'みりん', baseAmount: 2, unit: '大さじ', note: '' }
+          ]
+        }
+      }
+    },
+    {
+      id: 'demo-mabo-tofu',
+      name: '本格ピリ辛麻婆豆腐',
+      tag: '中華 #01',
+      tags: ['豆腐', '豚肉', '中華', '主菜'],
+      branch: 'main',
+      servingsBase: 2,
+      pfc: { p: 22.0, f: 16.5, c: 8.5, kcal: 270 },
+      versions: {
+        'v1.0': {
+          title: 'v1.0',
+          note: '甜麺醤と豆板醤のコク仕立て',
+          sortOrder: 0,
+          branch: 'main',
+          hash: M.shortHash('demo-mabo-tofu|v1.0'),
+          author: 'You',
+          committedAt: '2026-09-03T20:00:00+09:00',
+          steps: [
+            { title: '豆腐の下茹で', instruction: '木綿豆腐を2cm角に切り、塩少々を入れた湯で1分茹でて水気を切ります。', timer: 60, uses: ['木綿豆腐'] },
+            { title: '肉味噌炒め', instruction: 'ごま油でにんにく、生姜、豚ひき肉を炒め、豆板醤を加えて香りを立たせます。', timer: 150, uses: ['豚ひき肉', 'にんにく', '生姜'] },
+            { title: '煮込み', instruction: 'スープと調味料を加えて煮立たせ、豆腐を入れて2分煮込み、水溶き片栗粉とねぎを加えて仕上げます。', timer: 120, uses: ['木綿豆腐', '長ねぎ'] }
+          ],
+          ingredients: [
+            { name: '木綿豆腐', baseAmount: 1, unit: '丁', note: '300g' },
+            { name: '豚ひき肉', baseAmount: 150, unit: 'g', note: '' },
+            { name: '長ねぎ', baseAmount: 0.5, unit: '本', note: 'みじん切り' },
+            { name: '生姜', baseAmount: 1, unit: '片', note: 'みじん切り' },
+            { name: 'にんにく', baseAmount: 1, unit: '片', note: 'みじん切り' },
+            { name: '豆板醤', baseAmount: 1, unit: '小さじ', note: '' }
+          ]
+        }
+      }
+    },
+    {
+      id: 'demo-salmon',
+      name: '鮭の塩焼きと彩り温野菜',
+      tag: '魚料理 #01',
+      tags: ['魚', '鮭', '和食', '主菜', 'ヘルシー'],
+      branch: 'main',
+      servingsBase: 2,
+      pfc: { p: 26.0, f: 8.5, c: 4.2, kcal: 198 },
+      versions: {
+        'v1.0': {
+          title: 'v1.0',
+          note: 'ふっくら香ばしいグリル焼き',
+          sortOrder: 0,
+          branch: 'main',
+          hash: M.shortHash('demo-salmon|v1.0'),
+          author: 'You',
+          committedAt: '2026-09-04T18:30:00+09:00',
+          steps: [
+            { title: '下ごしらえ', instruction: '生鮭に塩を振って10分置き、出た水分をペーパーで拭き取ります。', timer: 600, uses: ['生鮭の切り身'] },
+            { title: 'グリル', instruction: '魚焼きグリルで皮目を上にして両面こんがり約7分焼きます。', timer: 420, uses: ['生鮭の切り身'] },
+            { title: '添え野菜', instruction: 'ブロッコリーとにんじんを蒸し焼きにし、レモンと一緒に盛り付けます。', timer: 180, uses: ['ブロッコリー', 'にんじん', 'レモン'] }
+          ],
+          ingredients: [
+            { name: '生鮭の切り身', baseAmount: 2, unit: '切れ', note: '' },
+            { name: 'ブロッコリー', baseAmount: 0.5, unit: '株', note: '小房に分ける' },
+            { name: 'にんじん', baseAmount: 0.5, unit: '本', note: '輪切り' },
+            { name: 'レモン', baseAmount: 0.25, unit: '個', note: 'くし形切り' },
+            { name: '塩', baseAmount: 0.5, unit: '小さじ', note: '' }
+          ]
+        }
+      }
+    },
+    {
+      id: 'demo-tamago-soup',
+      name: 'ふわふわ卵とほうれん草のスープ',
+      tag: '副菜 #01',
+      tags: ['卵', 'ほうれん草', '汁物', '副菜', '時短'],
+      branch: 'main',
+      servingsBase: 2,
+      pfc: { p: 7.5, f: 5.2, c: 2.1, kcal: 85 },
+      versions: {
+        'v1.0': {
+          title: 'v1.0',
+          note: 'ふんわりかきたま仕上げ',
+          sortOrder: 0,
+          branch: 'main',
+          hash: M.shortHash('demo-tamago-soup|v1.0'),
+          author: 'You',
+          committedAt: '2026-09-06T11:00:00+09:00',
+          steps: [
+            { title: '煮立てる', instruction: '鍋に水と鶏がらスープの素を入れて沸かし、ざく切りにしたほうれん草を加えます。', timer: 120, uses: ['ほうれん草'] },
+            { title: '仕上げ', instruction: '水溶き片栗粉でとろみをつけ、溶き卵を菜箸に伝わせて回し入れます。火を止めてごま油を垂らします。', timer: 60, uses: ['卵', 'ごま油'] }
+          ],
+          ingredients: [
+            { name: '卵', baseAmount: 2, unit: '個', note: '溶きほぐす' },
+            { name: 'ほうれん草', baseAmount: 0.5, unit: '束', note: '3cm幅' },
+            { name: '鶏がらスープの素', baseAmount: 2, unit: '小さじ', note: '' },
+            { name: 'ごま油', baseAmount: 0.5, unit: '小さじ', note: '風味づけ' }
+          ]
+        }
+      }
+    },
+    {
+      id: 'demo-tonjiru',
+      name: '具だくさん食べる豚汁',
+      tag: '汁物 #02',
+      tags: ['豚肉', '大根', '汁物', '定番', '作り置き'],
+      branch: 'main',
+      servingsBase: 3,
+      pfc: { p: 14.2, f: 11.0, c: 9.8, kcal: 195 },
+      versions: {
+        'v1.0': {
+          title: 'v1.0',
+          note: '根菜の旨味たっぷり定番豚汁',
+          sortOrder: 0,
+          branch: 'main',
+          hash: M.shortHash('demo-tonjiru|v1.0'),
+          author: 'You',
+          committedAt: '2026-09-07T17:00:00+09:00',
+          steps: [
+            { title: '野菜切り', instruction: '大根・にんじんはイチョウ切り、ごぼうはささがき、豚肉は一口大に切ります。', timer: null, uses: ['大根', 'にんじん', 'ごぼう', '豚バラ肉'] },
+            { title: '炒めて煮る', instruction: 'ごま油で豚肉と根菜を炒め、だし汁を加えてアクを取りながら弱火で約10分煮ます。', timer: 600, uses: ['だし汁'] },
+            { title: '味噌溶き', instruction: '長ねぎを加え、火を弱めて味噌を溶き入れます。', timer: 60, uses: ['味噌', '長ねぎ'] }
+          ],
+          ingredients: [
+            { name: '豚バラ肉', baseAmount: 150, unit: 'g', note: '' },
+            { name: '大根', baseAmount: 0.25, unit: '本', note: 'いちょう切り' },
+            { name: 'にんじん', baseAmount: 0.5, unit: '本', note: '半月切り' },
+            { name: 'ごぼう', baseAmount: 0.5, unit: '本', note: 'ささがき' },
+            { name: '長ねぎ', baseAmount: 0.5, unit: '本', note: '小口切り' },
+            { name: '味噌', baseAmount: 3, unit: '大さじ', note: '' }
           ]
         }
       }
