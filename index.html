@@ -418,15 +418,19 @@
           </div>
         </div>
 
-        <!-- アクションボタン (レシピを編集 ＆ 調理モード起動) -->
-        <div class="grid grid-cols-2 gap-2.5">
-          <button type="button" onclick="openCommitModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-2 border border-slate-200/80 shadow-sm">
-            <i class="fa-solid fa-pen-to-square text-emerald-600 text-sm"></i>
-            <span>レシピを編集</span>
+        <!-- アクションボタン (レシピを編集 ＆ 献立に登録 ＆ 調理モード起動) -->
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="openCommitModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold py-3.5 px-1.5 rounded-2xl flex items-center justify-center gap-1 border border-slate-200/80 shadow-sm">
+            <i class="fa-solid fa-pen-to-square text-emerald-600 text-xs"></i>
+            <span>編集</span>
           </button>
-          <button type="button" onclick="openCookingMode()" class="active-scale bg-[#047857] hover:bg-emerald-800 text-white text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/30">
-            <i class="fa-solid fa-bowl-food text-sm"></i>
-            <span>調理モード起動</span>
+          <button type="button" onclick="openRegisterToMealModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold py-3.5 px-1.5 rounded-2xl flex items-center justify-center gap-1 border border-slate-200/80 shadow-sm">
+            <i class="fa-solid fa-calendar-plus text-emerald-600 text-xs"></i>
+            <span>献立に登録</span>
+          </button>
+          <button type="button" onclick="openCookingMode()" class="active-scale bg-[#047857] hover:bg-emerald-800 text-white text-[11px] font-bold py-3.5 px-1.5 rounded-2xl flex items-center justify-center gap-1 shadow-sm shadow-emerald-600/30">
+            <i class="fa-solid fa-bowl-food text-xs"></i>
+            <span>調理</span>
           </button>
         </div>
 
@@ -1059,6 +1063,88 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- ==================== 献立へレシピ登録モーダル ==================== -->
+  <div id="register-to-meal-backdrop" onclick="closeRegisterToMealModal()" class="fixed inset-0 z-50 bg-black/50 hidden"></div>
+  <div id="register-to-meal-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden max-h-[88vh] overflow-y-auto space-y-4">
+    <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+          <i class="fa-solid fa-calendar-plus"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">献立に登録する</h3>
+          <p id="register-to-meal-recipe-title" class="text-xs text-slate-500 truncate max-w-[240px]"></p>
+        </div>
+      </div>
+      <button type="button" onclick="closeRegisterToMealModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- 日付選択（カレンダー形式） -->
+    <div class="space-y-2">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-bold text-slate-700">登録する日を選択</label>
+        <span id="register-to-meal-selected-label" class="text-xs font-bold text-emerald-600"></span>
+      </div>
+      <!-- 月切り替えヘッダー -->
+      <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2">
+        <button type="button" onclick="changeRegisterMealMonth(-1)" class="w-7 h-7 rounded-xl bg-white border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-100 active-scale" title="前月">
+          <i class="fa-solid fa-chevron-left text-xs"></i>
+        </button>
+        <span id="register-to-meal-month-title" class="text-xs font-bold text-slate-900">2026年 9月</span>
+        <button type="button" onclick="changeRegisterMealMonth(1)" class="w-7 h-7 rounded-xl bg-white border border-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-100 active-scale" title="次月">
+          <i class="fa-solid fa-chevron-right text-xs"></i>
+        </button>
+      </div>
+      <!-- 曜日ヘッダー -->
+      <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 pt-1">
+        <span class="text-rose-500">日</span>
+        <span>月</span>
+        <span>火</span>
+        <span>水</span>
+        <span>木</span>
+        <span>金</span>
+        <span class="text-blue-500">土</span>
+      </div>
+      <!-- カレンダーグリッド -->
+      <div id="register-to-meal-calendar-grid" class="grid grid-cols-7 gap-1"></div>
+    </div>
+
+    <!-- 食事の枠選択 -->
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold text-slate-700 block">食事の枠</label>
+      <div class="grid grid-cols-3 gap-2">
+        <button type="button" data-slot="breakfast" onclick="selectRegisterMealSlot('breakfast')" class="register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-slate-50 border-slate-200 text-slate-700">
+          <span class="material-symbols-outlined text-[15px]">wb_twilight</span>朝
+        </button>
+        <button type="button" data-slot="lunch" onclick="selectRegisterMealSlot('lunch')" class="register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-slate-50 border-slate-200 text-slate-700">
+          <span class="material-symbols-outlined text-[15px]">wb_sunny</span>昼
+        </button>
+        <button type="button" data-slot="dinner" onclick="selectRegisterMealSlot('dinner')" class="register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-slate-50 border-slate-200 text-slate-700">
+          <span class="material-symbols-outlined text-[15px]">brightness_2</span>晩
+        </button>
+      </div>
+    </div>
+
+    <!-- 人分 -->
+    <div class="space-y-1.5">
+      <label class="text-xs font-bold text-slate-700 block">何人分</label>
+      <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2">
+        <button type="button" onclick="changeRegisterMealServings(-1)" class="w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold flex items-center justify-center active-scale">-</button>
+        <span id="register-to-meal-servings-text" class="flex-1 text-center text-xs font-bold text-slate-900">2人分</span>
+        <button type="button" onclick="changeRegisterMealServings(1)" class="w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold flex items-center justify-center active-scale">+</button>
+      </div>
+    </div>
+
+    <!-- 登録ボタン -->
+    <button type="button" onclick="commitRegisterToMeal()" class="active-scale w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3.5 rounded-2xl shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2">
+      <i class="fa-solid fa-check text-sm"></i>
+      <span>この献立に追加する</span>
+    </button>
   </div>
 
   <!-- ==================== アプリ状態とJavaScriptロジック ==================== -->
@@ -2306,6 +2392,225 @@
       }
     }
 
+    let registerModalState = {
+      date: null,
+      year: new Date().getFullYear(),
+      month: new Date().getMonth(),
+      slot: 'dinner',
+      servings: 2
+    };
+
+    function openRegisterToMealModal() {
+      const recipe = selectedRecipe();
+      if (!recipe) return;
+      const titleEl = document.getElementById('register-to-meal-recipe-title');
+      if (titleEl) titleEl.innerText = recipe.name;
+
+      const days = appState.calendarDays || [];
+      const targetDateStr = registerModalState.date || appState.selectedDate || (days[0] && days[0].date) || new Date().toISOString().slice(0, 10);
+      registerModalState.date = targetDateStr;
+
+      const dObj = KitchenGit.Week.localDate(targetDateStr);
+      if (!Number.isNaN(dObj.getTime())) {
+        registerModalState.year = dObj.getFullYear();
+        registerModalState.month = dObj.getMonth();
+      } else {
+        const now = new Date();
+        registerModalState.year = now.getFullYear();
+        registerModalState.month = now.getMonth();
+      }
+
+      registerModalState.servings = recipe.servingsBase || appState.servings || 2;
+      registerModalState.slot = 'dinner';
+
+      renderRegisterToMealCalendar();
+      renderRegisterToMealSlot();
+      renderRegisterToMealServings();
+
+      document.getElementById('register-to-meal-backdrop').classList.remove('hidden');
+      document.getElementById('register-to-meal-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeRegisterToMealModal() {
+      document.getElementById('register-to-meal-backdrop').classList.add('hidden');
+      document.getElementById('register-to-meal-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    function changeRegisterMealMonth(delta) {
+      registerModalState.month += delta;
+      if (registerModalState.month > 11) {
+        registerModalState.month = 0;
+        registerModalState.year += 1;
+      } else if (registerModalState.month < 0) {
+        registerModalState.month = 11;
+        registerModalState.year -= 1;
+      }
+      renderRegisterToMealCalendar();
+    }
+
+    function renderRegisterToMealCalendar() {
+      const titleEl = document.getElementById('register-to-meal-month-title');
+      if (titleEl) titleEl.innerText = `${registerModalState.year}年 ${registerModalState.month + 1}月`;
+
+      const selectedLabelEl = document.getElementById('register-to-meal-selected-label');
+      if (selectedLabelEl && registerModalState.date) {
+        const md = KitchenGit.Week.formatMd(registerModalState.date);
+        const dObj = KitchenGit.Week.localDate(registerModalState.date);
+        const wday = ['日', '月', '火', '水', '木', '金', '土'][dObj.getDay()] || '';
+        selectedLabelEl.innerText = `${md} (${wday})`;
+      }
+
+      const container = document.getElementById('register-to-meal-calendar-grid');
+      if (!container) return;
+
+      const year = registerModalState.year;
+      const month = registerModalState.month;
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startDayOfWeek = firstDay.getDay();
+
+      const cells = [];
+      const prevLastDay = new Date(year, month, 0).getDate();
+      for (let i = startDayOfWeek - 1; i >= 0; i--) {
+        const d = prevLastDay - i;
+        const m = month === 0 ? 11 : month - 1;
+        const y = month === 0 ? year - 1 : year;
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        cells.push({ day: d, currentMonth: false, date: dateStr });
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        cells.push({ day: d, currentMonth: true, date: dateStr });
+      }
+
+      let nextDay = 1;
+      while (cells.length % 7 !== 0) {
+        const m = month === 11 ? 0 : month + 1;
+        const y = month === 11 ? year + 1 : year;
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(nextDay).padStart(2, '0')}`;
+        cells.push({ day: nextDay, currentMonth: false, date: dateStr });
+        nextDay++;
+      }
+
+      container.innerHTML = cells.map(cell => {
+        const isSelected = cell.date === registerModalState.date;
+        const isToday = cell.date === KitchenGit.Week.toIsoDate(new Date());
+
+        let cls = 'h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-colors active-scale ';
+        if (isSelected) {
+          cls += 'bg-emerald-600 text-white shadow-sm';
+        } else if (isToday) {
+          cls += 'bg-emerald-50 text-emerald-800 border border-emerald-300';
+        } else if (cell.currentMonth) {
+          cls += 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200';
+        } else {
+          cls += 'bg-slate-50/50 text-slate-300 hover:bg-slate-100 border border-slate-100';
+        }
+
+        return `
+          <button type="button" data-date="${cell.date}" onclick="selectRegisterMealDate(this.dataset.date)" class="${cls}">
+            ${cell.day}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectRegisterMealDate(dateStr) {
+      registerModalState.date = dateStr;
+      const dObj = KitchenGit.Week.localDate(dateStr);
+      if (!Number.isNaN(dObj.getTime())) {
+        registerModalState.year = dObj.getFullYear();
+        registerModalState.month = dObj.getMonth();
+      }
+      renderRegisterToMealCalendar();
+    }
+
+    function selectRegisterMealSlot(slotKey) {
+      registerModalState.slot = slotKey;
+      renderRegisterToMealSlot();
+    }
+
+    function renderRegisterToMealSlot() {
+      const buttons = document.querySelectorAll('.register-slot-btn');
+      buttons.forEach(btn => {
+        const slot = btn.getAttribute('data-slot');
+        if (slot === registerModalState.slot) {
+          btn.className = 'register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs';
+        } else {
+          btn.className = 'register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-slate-50 border-slate-200 text-slate-700';
+        }
+      });
+    }
+
+    function changeRegisterMealServings(delta) {
+      const next = registerModalState.servings + delta;
+      if (next >= 1 && next <= 12) {
+        registerModalState.servings = next;
+        renderRegisterToMealServings();
+      }
+    }
+
+    function renderRegisterToMealServings() {
+      const el = document.getElementById('register-to-meal-servings-text');
+      if (el) el.innerText = `${registerModalState.servings}人分`;
+    }
+
+    async function commitRegisterToMeal() {
+      const recipe = selectedRecipe();
+      if (!recipe) return;
+      const M = KitchenGit.Meals;
+      const W = KitchenGit.Week;
+
+      const dateObj = W.localDate(registerModalState.date);
+      const weekStart = W.toIsoDate(W.startOfWeekSaturday(dateObj));
+      if (!appState.weeksByStart) appState.weeksByStart = {};
+      if (!appState.weeksByStart[weekStart]) {
+        appState.weeksByStart[weekStart] = W.buildEmptyWeekDays(weekStart);
+      }
+
+      let dayData = M.findDayInState(appState, registerModalState.date);
+      if (!dayData) {
+        dayData = W.stampDay(weekStart, W.weekdayIndex(dateObj));
+        appState.weeksByStart[weekStart].push(dayData);
+      }
+      if (!dayData) {
+        showToast('登録先の日付が見つかりませんでした', 'error');
+        return;
+      }
+      const slotKey = registerModalState.slot;
+      const slot = M.ensureMealSlot(dayData, slotKey);
+
+      const existingItems = M.mealItems(slot);
+      const alreadyExists = existingItems.some(i => i.recipeId === recipe.id || i.title === recipe.name);
+      const items = alreadyExists ? existingItems : [...existingItems, { title: recipe.name, recipeId: recipe.id, itemId: null }];
+
+      M.writeMealItems(dayData, slotKey, items);
+      M.setSlotServings(dayData, slotKey, registerModalState.servings);
+
+      closeRegisterToMealModal();
+      showToast(`${recipe.name} を献立に登録しました`);
+
+      try {
+        const DB = KitchenGit.MealsDB;
+        if (DB && DB.isReady()) {
+          await DB.upsertDay(dayData);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      appState.weekStart = weekStart;
+      appState.calendarDays = appState.weeksByStart[weekStart];
+      appState.selectedDate = registerModalState.date;
+
+      renderCalendar();
+      if (typeof refreshShoppingList === 'function') refreshShoppingList();
+    }
+
     async function loadRecipes() {
       const ready = KitchenGit.RecipesDB.init();
       if (!ready) {
@@ -2393,6 +2698,13 @@
       window.fillStepRows = fillStepRows;
       window.openRegisterModal = openRegisterModal;
       window.closeRegisterModal = closeRegisterModal;
+      window.openRegisterToMealModal = openRegisterToMealModal;
+      window.closeRegisterToMealModal = closeRegisterToMealModal;
+      window.changeRegisterMealMonth = changeRegisterMealMonth;
+      window.selectRegisterMealDate = selectRegisterMealDate;
+      window.selectRegisterMealSlot = selectRegisterMealSlot;
+      window.changeRegisterMealServings = changeRegisterMealServings;
+      window.commitRegisterToMeal = commitRegisterToMeal;
       window.showToast = showToast;
       window.showRecipeDetail = showRecipeDetail;
       window.switchTab = switchTab;
