@@ -288,107 +288,121 @@
       </div>
 
       <div id="recipe-detail-pane" class="space-y-3.5 hidden">
-      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3.5">
-        <div class="relative">
-          <button type="button" id="branch-toggle-btn" onclick="toggleBranchMenu()" class="active-scale w-full flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/80 rounded-2xl px-3 py-2">
-            <span class="flex items-center gap-2 min-w-0">
-              <i data-lucide="git-branch" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
-              <span id="recipe-branch-name" class="text-xs font-bold font-mono text-slate-900 truncate">main</span>
-            </span>
-            <span id="recipe-commit-hash" class="text-[10px] font-mono text-slate-500 shrink-0">—————</span>
+        <!-- 上部ナビ (戻る & ブランチ切替) -->
+        <div class="flex items-center justify-between gap-2 px-0.5">
+          <button type="button" onclick="showRecipeList()" class="active-scale text-xs font-bold text-emerald-700 flex items-center gap-1 bg-white px-3 py-2 rounded-2xl border border-slate-200/80 shadow-sm">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>一覧へ
           </button>
-          <div id="branch-menu" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden"></div>
-        </div>
-
-        <button type="button" onclick="showRecipeList()" class="active-scale text-[11px] font-bold text-emerald-700 flex items-center gap-1">
-          <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>一覧へ
-        </button>
-
-        <div>
-          <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-            <span id="recipe-tag-badge" class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">定番 #02</span>
-            <span class="bg-slate-900 text-white text-[10px] font-bold font-mono px-2 py-0.5 rounded-full" id="recipe-active-badge">v1.2</span>
+          <div class="relative flex-1 max-w-[210px]">
+            <button type="button" id="branch-toggle-btn" onclick="toggleBranchMenu()" class="active-scale w-full flex items-center justify-between gap-1.5 bg-white border border-slate-200/80 rounded-2xl px-3 py-2 shadow-sm">
+              <span class="flex items-center gap-1.5 min-w-0">
+                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+                <span id="recipe-branch-name" class="text-xs font-bold font-mono text-slate-900 truncate">main</span>
+              </span>
+              <span id="recipe-commit-hash" class="text-[10px] font-mono text-slate-500 shrink-0">—————</span>
+            </button>
+            <div id="branch-menu" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden"></div>
           </div>
-          <h2 id="recipe-title" class="text-lg font-bold text-slate-900 leading-snug">鶏むね肉と秋茄子のさっぱり炒め</h2>
-          <div id="recipe-hashtags" class="flex flex-wrap gap-1 mt-1.5"></div>
         </div>
 
+        <!-- 料理名 -->
         <div>
-          <div class="flex items-center gap-1.5 mb-1.5 text-[11px] font-bold text-slate-500">
-            <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-emerald-600"></i>
-            <span>1食あたりのPFC</span>
+          <h2 id="recipe-title" class="text-xl font-bold text-slate-900 leading-snug">鶏むね肉と秋茄子のさっぱり炒め</h2>
+        </div>
+
+        <!-- 料理写真 ＆ 所要時間バッジ -->
+        <div class="relative rounded-3xl overflow-hidden shadow-sm border border-slate-200/80 bg-slate-900 aspect-[16/10]">
+          <img id="recipe-photo-img" src="" alt="料理写真" class="w-full h-full object-cover">
+          <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs font-bold border border-white/15">
+            <i class="fa-regular fa-clock text-emerald-400"></i>
+            <span id="recipe-time-badge">調理所要時間: 15分</span>
+          </div>
+        </div>
+
+        <!-- アクションボタン (レシピを編集 ＆ 調理モード起動) -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <button type="button" onclick="openCommitModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-2 border border-slate-200/80 shadow-sm">
+            <i class="fa-solid fa-pen-to-square text-emerald-600 text-sm"></i>
+            <span>レシピを編集</span>
+          </button>
+          <button type="button" onclick="openCookingMode()" class="active-scale bg-[#047857] hover:bg-emerald-800 text-white text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/30">
+            <i class="fa-solid fa-bowl-food text-sm"></i>
+            <span>調理モード起動</span>
+          </button>
+        </div>
+
+        <!-- 栄養成分 (NUTRITION PROFILE) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="info" class="w-4 h-4 text-emerald-600"></i>
+              <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">NUTRITION PROFILE</span>
+            </div>
+            <span class="text-[11px] text-slate-400">1食あたり（推定値）</span>
           </div>
           <div class="grid grid-cols-4 gap-1.5 text-center">
             <div class="bg-slate-50 border border-slate-200/80 rounded-2xl py-2 px-1">
-              <span class="text-[9px] font-bold text-slate-500 block">kcal</span>
+              <span class="text-[9px] font-bold text-slate-500 block">熱量</span>
               <span id="recipe-kcal" class="text-xs font-mono font-bold text-slate-900">—</span>
             </div>
             <div class="bg-rose-50 border border-rose-100 rounded-2xl py-2 px-1">
-              <span class="text-[9px] font-bold text-rose-600 block">P</span>
+              <span class="text-[9px] font-bold text-rose-600 block">Protein</span>
               <span id="recipe-p" class="text-xs font-mono font-bold text-rose-700">—</span>
             </div>
             <div class="bg-amber-50 border border-amber-100 rounded-2xl py-2 px-1">
-              <span class="text-[9px] font-bold text-amber-600 block">F</span>
+              <span class="text-[9px] font-bold text-amber-600 block">Fat</span>
               <span id="recipe-f" class="text-xs font-mono font-bold text-amber-700">—</span>
             </div>
             <div class="bg-sky-50 border border-sky-100 rounded-2xl py-2 px-1">
-              <span class="text-[9px] font-bold text-sky-600 block">C</span>
+              <span class="text-[9px] font-bold text-sky-600 block">Carbs</span>
               <span id="recipe-c" class="text-xs font-mono font-bold text-sky-700">—</span>
             </div>
           </div>
-          <p id="recipe-pfc-note" class="hidden text-[10px] text-amber-700 mt-1.5"></p>
+          <p id="recipe-pfc-note" class="hidden text-[10px] text-amber-700"></p>
         </div>
 
-        <div>
-          <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+        <!-- 材料 (Materials) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="utensils" class="w-4 h-4 text-emerald-600"></i>
+              <h3 class="text-xs font-bold text-slate-800">材料</h3>
+            </div>
+            <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shrink-0">
+              <button type="button" onclick="changeRecipeServings(-1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">−</button>
+              <span id="recipe-servings-text" class="w-12 text-center text-xs font-bold font-mono text-emerald-700">2人分</span>
+              <button type="button" onclick="changeRecipeServings(1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">＋</button>
+            </div>
+          </div>
+          <div id="recipe-ingredients-box" class="space-y-2"></div>
+        </div>
+
+        <!-- 調理手順 (Steps) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+          <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
+            <i data-lucide="list-ordered" class="w-4 h-4 text-emerald-600"></i>
+            <h3 class="text-xs font-bold text-slate-800">調理手順</h3>
+          </div>
+          <div id="recipe-steps-box" class="space-y-2.5"></div>
+        </div>
+
+        <!-- メモ (Notes) -->
+        <div id="recipe-note-card" class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
+          <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
+            <i data-lucide="sticky-note" class="w-4 h-4 text-emerald-600"></i>
+            <h3 class="text-xs font-bold text-slate-800">メモ</h3>
+          </div>
+          <textarea id="recipe-note-input" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y min-h-[4.5rem]" placeholder="メモを入力…"></textarea>
+        </div>
+
+        <!-- バージョン履歴 (Version History) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
+          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
             <i data-lucide="git-commit" class="w-3.5 h-3.5 text-emerald-600"></i>
             バージョン履歴
           </label>
           <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5" id="recipe-version-tabs"></div>
         </div>
-      </div>
-
-      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-          <div class="flex items-center gap-1.5">
-            <i data-lucide="utensils" class="w-4 h-4 text-emerald-600"></i>
-            <h3 class="text-xs font-bold text-slate-800">材料</h3>
-          </div>
-          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shrink-0">
-            <button type="button" onclick="changeRecipeServings(-1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">−</button>
-            <span id="recipe-servings-text" class="w-12 text-center text-xs font-bold font-mono text-emerald-700">2人分</span>
-            <button type="button" onclick="changeRecipeServings(1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">＋</button>
-          </div>
-        </div>
-        <div id="recipe-ingredients-box" class="space-y-2"></div>
-      </div>
-
-      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
-        <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-          <i data-lucide="list-ordered" class="w-4 h-4 text-emerald-600"></i>
-          <h3 class="text-xs font-bold text-slate-800">調理手順</h3>
-        </div>
-        <div id="recipe-steps-box" class="space-y-2.5"></div>
-      </div>
-
-      <div id="recipe-note-card" class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
-        <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-          <i data-lucide="sticky-note" class="w-4 h-4 text-emerald-600"></i>
-          <h3 class="text-xs font-bold text-slate-800">メモ</h3>
-        </div>
-        <textarea id="recipe-note-input" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y min-h-[4.5rem]" placeholder="メモを入力…"></textarea>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2">
-        <button type="button" onclick="openCommitModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 border border-slate-200/80 shadow-sm">
-          <i data-lucide="pen-line" class="w-4 h-4 text-emerald-600"></i>
-          <span>レシピを編集</span>
-        </button>
-        <button type="button" onclick="openCookingMode()" class="active-scale bg-emerald-600 text-white text-xs font-bold py-3.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/30">
-          <i data-lucide="play" class="w-4 h-4"></i>
-          <span>調理モード起動</span>
-        </button>
-      </div>
       </div>
     </section>
 
@@ -1285,6 +1299,37 @@
       renderRecipeView();
     }
 
+    function getRecipeImageUrl(recipe) {
+      if (recipe && recipe.imageUrl) return recipe.imageUrl;
+      const name = (recipe && recipe.name) || '';
+      if (name.includes('鶏むね肉') || name.includes('秋茄子') || name.includes('さっぱり炒め')) {
+        return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+      }
+      if (name.includes('豚肉') || name.includes('生姜焼き')) {
+        return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1';
+      }
+      if (name.includes('麻婆豆腐')) {
+        return 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6';
+      }
+      if (name.includes('鮭')) {
+        return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2';
+      }
+      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+    }
+
+    function getRecipeTimeLabel(recipe, v) {
+      const steps = (v && v.steps) || [];
+      let totalSec = 0;
+      steps.forEach(s => {
+        if (s.timer && Number(s.timer) > 0) totalSec += Number(s.timer);
+      });
+      if (totalSec > 0) {
+        const mins = Math.max(5, Math.round(totalSec / 60) + 3);
+        return `調理所要時間: ${mins}分`;
+      }
+      return '調理所要時間: 15分';
+    }
+
     function renderRecipeView() {
       const recipe = selectedRecipe();
       if (!recipe) return;
@@ -1296,16 +1341,28 @@
       if (!v) return;
 
       document.getElementById('recipe-title').innerText = recipe.name;
-      const tagBadge = document.getElementById('recipe-tag-badge');
-      if (recipe.tag) {
-        tagBadge.classList.remove('hidden');
-        tagBadge.innerText = recipe.tag;
-      } else {
-        tagBadge.classList.add('hidden');
+      const photoImg = document.getElementById('recipe-photo-img');
+      if (photoImg) {
+        photoImg.src = getRecipeImageUrl(recipe);
       }
-      renderHashtags(recipe);
-      renderBranchHeader(recipe, v);
-      document.getElementById('recipe-active-badge').innerText = appState.activeVersion;
+      const timeBadge = document.getElementById('recipe-time-badge');
+      if (timeBadge) {
+        timeBadge.innerText = getRecipeTimeLabel(recipe, v);
+      }
+
+      const tagBadge = document.getElementById('recipe-tag-badge');
+      if (tagBadge) {
+        if (recipe.tag) {
+          tagBadge.classList.remove('hidden');
+          tagBadge.innerText = recipe.tag;
+        } else {
+          tagBadge.classList.add('hidden');
+        }
+      }
+      if (typeof renderHashtags === 'function') renderHashtags(recipe);
+      if (typeof renderBranchHeader === 'function') renderBranchHeader(recipe, v);
+      const activeBadge = document.getElementById('recipe-active-badge');
+      if (activeBadge) activeBadge.innerText = appState.activeVersion;
       document.getElementById('recipe-servings-text').innerText = `${appState.servings}人分`;
 
       const pfc = recipePfcFromIngredients(recipe, v);
@@ -1341,9 +1398,12 @@
         const row = document.createElement('div');
         row.className = 'p-2.5 rounded-2xl border flex items-center justify-between text-xs bg-slate-50 border-slate-200/70';
         row.innerHTML = `
-          <div>
-            <span class="font-bold text-slate-800">${ing.name}</span>
-            ${ing.note ? `<p class="text-[10px] text-slate-400">${ing.note}</p>` : ''}
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
+            <div class="min-w-0">
+              <span class="font-bold text-slate-800">${ing.name}</span>
+              ${ing.note ? `<span class="text-slate-400 ml-1.5">${ing.note}</span>` : ''}
+            </div>
           </div>
           <span class="font-mono font-bold text-slate-900 whitespace-nowrap ml-2">${scaled} ${ing.unit}</span>
         `;
