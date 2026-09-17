@@ -160,8 +160,82 @@
   <!-- ==================== メインコンテンツ領域（iPhoneスクロール対応） ==================== -->
   <main class="flex-1 max-w-md mx-auto w-full px-3.5 pt-3 pb-28 space-y-4">
 
+    <!-- ==================== VIEW 0: ホーム画面 ==================== -->
+    <section id="view-home" class="space-y-4">
+      <!-- 検索バー -->
+      <div class="relative flex items-center">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-sm pointer-events-none"></i>
+        <input type="text" id="home-search-input" placeholder="検索" onkeydown="if(event.key==='Enter'){ switchTab('recipe'); onRecipeSearchInput(this.value); }" class="w-full bg-white border border-slate-200/80 rounded-2xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-colors">
+      </div>
+
+      <!-- お気に入り & 履歴 ボタン -->
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="switchTab('recipe'); selectRecipeTagFilter('定番');" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-2">
+          <i class="fa-regular fa-heart text-rose-500 text-sm"></i>
+          <span>お気に入り</span>
+        </button>
+        <button type="button" onclick="switchTab('calendar')" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-2">
+          <i class="fa-regular fa-clock text-slate-500 text-sm"></i>
+          <span>履歴</span>
+        </button>
+      </div>
+
+      <!-- 今週の献立 バナー -->
+      <div onclick="switchTab('calendar')" class="active-scale cursor-pointer relative rounded-3xl overflow-hidden shadow-sm border border-slate-200/80 bg-gradient-to-r from-slate-200 to-slate-100 p-5 flex items-center justify-between">
+        <div class="space-y-1 z-10">
+          <span class="text-[10px] font-bold tracking-wider text-emerald-700 uppercase">Weekly Plan</span>
+          <h3 class="text-xl font-bold text-slate-900">今週の献立</h3>
+          <p class="text-xs text-slate-600">タップして予定を確認・編集</p>
+        </div>
+        <div class="w-24 h-24 rounded-2xl overflow-hidden shadow-md shrink-0 bg-slate-300">
+          <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" alt="献立イメージ" class="w-full h-full object-cover">
+        </div>
+        <!-- ドットネーション -->
+        <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-900"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+        </div>
+      </div>
+
+      <!-- レシピセクション -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-1.5">
+            <span>レシピ</span>
+            <span class="text-[10px] font-normal text-slate-400">（主菜・副菜・単品対応）</span>
+          </h3>
+          <button type="button" onclick="switchTab('recipe')" class="text-xs font-bold text-emerald-600">すべて見る</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div onclick="switchTab('recipe'); showRecipeDetail('demo-chicken');" class="active-scale cursor-pointer bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200/80">
+            <div class="aspect-[16/11] bg-slate-100">
+              <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" alt="鶏むね肉と秋茄子のさっぱり炒め" class="w-full h-full object-cover">
+            </div>
+            <div class="p-3">
+              <span class="bg-emerald-50 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mb-1">主菜</span>
+              <p class="text-xs font-bold text-slate-900 truncate">鶏むね肉と秋茄子のさっぱり炒め</p>
+              <p class="text-[10px] text-slate-400 font-mono mt-0.5">調理15分 • 2人分</p>
+            </div>
+          </div>
+          <div onclick="switchTab('recipe'); showRecipeDetail('demo-ginger-pork');" class="active-scale cursor-pointer bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200/80">
+            <div class="aspect-[16/11] bg-slate-100">
+              <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1" alt="豚肉と玉ねぎの生姜焼き" class="w-full h-full object-cover">
+            </div>
+            <div class="p-3">
+              <span class="bg-emerald-50 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mb-1">単品・定番</span>
+              <p class="text-xs font-bold text-slate-900 truncate">豚肉と玉ねぎの生姜焼き</p>
+              <p class="text-[10px] text-slate-400 font-mono mt-0.5">調理15分 • 2人分</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== VIEW 1: カレンダー画面 ==================== -->
-    <section id="view-calendar" class="space-y-3.5">
+    <section id="view-calendar" class="space-y-3.5 hidden">
       <!-- 週間カードヘッダー -->
       <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60">
         <div class="mb-3">
@@ -273,6 +347,31 @@
             <span id="recipe-cloud-status" class="text-[10px] font-bold font-mono text-slate-400">読込中</span>
           </div>
         </div>
+
+        <!-- レシピ検索・タグ絞り込みウィジェット -->
+        <div class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-200/60 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                <i class="fa-solid fa-filter"></i>
+              </div>
+              <span class="text-xs font-bold text-slate-800">レシピを検索・絞り込み</span>
+            </div>
+            <span id="recipe-filter-count-badge" class="text-[10px] font-bold text-slate-400"></span>
+          </div>
+
+          <div class="relative flex items-center">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
+            <input type="text" id="recipe-search-input" oninput="onRecipeSearchInput(this.value)" placeholder="料理名・材料・タグで検索 (例: 豚肉, 定番, 生姜)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-colors">
+            <button type="button" id="recipe-search-clear" onclick="clearRecipeSearch()" class="hidden absolute right-2.5 w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] hover:bg-slate-300 active-scale">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- タグ絞り込みチップス -->
+          <div id="recipe-tag-chips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]"></div>
+        </div>
+
         <div id="recipe-list" class="space-y-2.5"></div>
         <div class="space-y-2 pt-1">
           <button type="button" id="btn-open-image-scanner" onclick="openImageScannerModal()" class="active-scale w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold py-3.5 px-4 rounded-2xl shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2.5">
@@ -406,18 +505,73 @@
       </div>
     </section>
 
+    <!-- ==================== VIEW 4: マイページ画面 ==================== -->
+    <section id="view-profile" class="space-y-4 hidden">
+      <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60 text-center space-y-3">
+        <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-700 font-bold text-2xl mx-auto flex items-center justify-center shadow-inner">
+          <i class="fa-solid fa-user text-3xl"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">RecipeOps ユーザー</h2>
+          <p class="text-xs text-slate-500 font-mono mt-0.5">smixxxxx@gmail.com</p>
+        </div>
+        <div class="pt-2 flex justify-center gap-4 text-xs font-bold text-slate-700">
+          <div class="bg-slate-50 rounded-2xl px-4 py-2 border border-slate-200/80">
+            <span class="block text-emerald-600 text-sm font-mono" id="profile-recipe-count">6</span>
+            <span class="text-[10px] text-slate-400">登録レシピ</span>
+          </div>
+          <div class="bg-slate-50 rounded-2xl px-4 py-2 border border-slate-200/80">
+            <span class="block text-indigo-600 text-sm font-mono">v1.0.0</span>
+            <span class="text-[10px] text-slate-400">バージョン</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-2">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">設定・連携</h3>
+        <div class="space-y-1 text-xs">
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
+            <div class="flex items-center gap-2.5">
+              <i class="fa-solid fa-cloud text-emerald-600"></i>
+              <span class="font-bold text-slate-800">Supabase クラウド同期</span>
+            </div>
+            <span class="text-[10px] font-bold font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">接続済</span>
+          </div>
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
+            <div class="flex items-center gap-2.5">
+              <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
+              <span class="font-bold text-slate-800">Gemini AI 画像解析</span>
+            </div>
+            <span class="text-[10px] font-bold font-mono text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-full">利用可能</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <!-- ==================== iOS ボトムタブバー (Bottom Tab Bar) ==================== -->
+  <!-- ==================== iOS ボトムタブバー (5タブ構成) ==================== -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 ios-glass border-t border-slate-200/80 pb-safe">
-    <div class="max-w-md mx-auto px-6 py-2 flex items-center justify-between">
-      <!-- タブ1: カレンダー -->
-      <button type="button" onclick="switchTab('calendar')" id="tab-btn-calendar" class="active-scale flex flex-col items-center gap-1 text-emerald-600">
-        <i class="fa-regular fa-calendar-days text-lg"></i>
-        <span class="text-[10px] font-bold">献立</span>
+    <div class="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
+      <!-- タブ1: ホーム -->
+      <button type="button" onclick="switchTab('home')" id="tab-btn-home" class="active-scale flex flex-col items-center gap-1 text-emerald-600">
+        <i class="fa-solid fa-house text-lg"></i>
+        <span class="text-[10px] font-bold">ホーム</span>
       </button>
 
-      <!-- タブ2: 買い物リスト -->
+      <!-- タブ2: 献立 -->
+      <button type="button" onclick="switchTab('calendar')" id="tab-btn-calendar" class="active-scale flex flex-col items-center gap-1 text-slate-400">
+        <i class="fa-regular fa-calendar-days text-lg"></i>
+        <span class="text-[10px] font-medium">献立</span>
+      </button>
+
+      <!-- タブ3: レシピ管理 -->
+      <button type="button" onclick="switchTab('recipe')" id="tab-btn-recipe" class="active-scale flex flex-col items-center gap-1 text-slate-400">
+        <i class="fa-solid fa-book-bookmark text-lg"></i>
+        <span class="text-[10px] font-medium">レシピ</span>
+      </button>
+
+      <!-- タブ4: 買い物リスト -->
       <button type="button" onclick="switchTab('shopping')" id="tab-btn-shopping" class="active-scale flex flex-col items-center gap-1 text-slate-400">
         <div class="relative">
           <i class="fa-solid fa-cart-shopping text-lg"></i>
@@ -426,10 +580,10 @@
         <span class="text-[10px] font-medium">買い物</span>
       </button>
 
-      <!-- タブ3: レシピ＆バージョン -->
-      <button type="button" onclick="switchTab('recipe')" id="tab-btn-recipe" class="active-scale flex flex-col items-center gap-1 text-slate-400">
-        <i class="fa-solid fa-book-bookmark text-lg"></i>
-        <span class="text-[10px] font-medium">レシピ管理</span>
+      <!-- タブ5: マイページ -->
+      <button type="button" onclick="switchTab('profile')" id="tab-btn-profile" class="active-scale flex flex-col items-center gap-1 text-slate-400">
+        <i class="fa-solid fa-user text-lg"></i>
+        <span class="text-[10px] font-medium">マイページ</span>
       </button>
     </div>
   </nav>
@@ -924,7 +1078,7 @@
   <script src="js/image-scanner.js"></script>
   <script>
     const appState = {
-      activeTab: 'calendar',
+      activeTab: 'home',
       selectedDate: '',
       weekStart: '',
       demoWeekStart: '',
@@ -945,6 +1099,8 @@
       mealEditorMemo: '',
       mealEditorMemoTag: null,
       mealEditorRecipeSearch: '',
+      recipeSearchQuery: '',
+      recipeSelectedTag: '',
       isShoppingMode: false,
       cookingStep: 1,
       timerSeconds: 0,
@@ -1027,9 +1183,18 @@
     function switchTab(tab) {
       appState.activeTab = tab;
 
-      document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
-      document.getElementById('view-shopping').classList.toggle('hidden', tab !== 'shopping');
-      document.getElementById('view-recipe').classList.toggle('hidden', tab !== 'recipe');
+      const viewHome = document.getElementById('view-home');
+      const viewCalendar = document.getElementById('view-calendar');
+      const viewShopping = document.getElementById('view-shopping');
+      const viewRecipe = document.getElementById('view-recipe');
+      const viewProfile = document.getElementById('view-profile');
+
+      if (viewHome) viewHome.classList.toggle('hidden', tab !== 'home');
+      if (viewCalendar) viewCalendar.classList.toggle('hidden', tab !== 'calendar');
+      if (viewShopping) viewShopping.classList.toggle('hidden', tab !== 'shopping');
+      if (viewRecipe) viewRecipe.classList.toggle('hidden', tab !== 'recipe');
+      if (viewProfile) viewProfile.classList.toggle('hidden', tab !== 'profile');
+
       if (tab === 'recipe') {
         if (appState.recipePane === 'detail' && selectedRecipe()) {
           showRecipeDetail(appState.selectedRecipeId);
@@ -1038,15 +1203,18 @@
         }
       }
 
-      ['calendar', 'shopping', 'recipe'].forEach(t => {
+      ['home', 'calendar', 'recipe', 'shopping', 'profile'].forEach(t => {
         const btn = document.getElementById(`tab-btn-${t}`);
+        if (!btn) return;
         const isActive = t === tab;
         if (isActive) {
           btn.className = 'active-scale flex flex-col items-center gap-1 text-emerald-600';
-          btn.querySelector('span:last-child').className = 'text-[10px] font-bold';
+          const span = btn.querySelector('span:last-child');
+          if (span) span.className = 'text-[10px] font-bold';
         } else {
           btn.className = 'active-scale flex flex-col items-center gap-1 text-slate-400';
-          btn.querySelector('span:last-child').className = 'text-[10px] font-medium';
+          const span = btn.querySelector('span:last-child');
+          if (span) span.className = 'text-[10px] font-medium';
         }
       });
 
@@ -1212,29 +1380,188 @@
       return keys[0] || 'v1.0';
     }
 
+    function onRecipeSearchInput(val) {
+      appState.recipeSearchQuery = val;
+      renderRecipeList();
+    }
+
+    function clearRecipeSearch() {
+      appState.recipeSearchQuery = '';
+      appState.recipeSelectedTag = '';
+      const input = document.getElementById('recipe-search-input');
+      if (input) input.value = '';
+      renderRecipeList();
+    }
+
+    function selectRecipeTagFilter(tag) {
+      if (appState.recipeSelectedTag === tag) {
+        appState.recipeSelectedTag = '';
+      } else {
+        appState.recipeSelectedTag = tag;
+      }
+      renderRecipeList();
+    }
+
+    function renderRecipeTagChips() {
+      const box = document.getElementById('recipe-tag-chips');
+      if (!box) return;
+      const tagSet = new Set();
+      (appState.recipes || []).forEach(r => {
+        if (r.tag) {
+          r.tag.split(/[#＃,\s]+/).forEach(t => {
+            const clean = t.trim().replace(/^#/, '');
+            if (clean && !/^\d+$/.test(clean)) tagSet.add(clean);
+          });
+        }
+        if (Array.isArray(r.tags)) {
+          r.tags.forEach(t => {
+            const clean = String(t).trim().replace(/^#/, '');
+            if (clean) tagSet.add(clean);
+          });
+        }
+      });
+      const allTags = Array.from(tagSet);
+      const isAllSelected = !appState.recipeSelectedTag;
+
+      let html = `
+        <button type="button" onclick="selectRecipeTagFilter('')" class="active-scale shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          isAllSelected ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+        }">
+          すべて
+        </button>
+      `;
+      allTags.forEach(tag => {
+        const isSelected = appState.recipeSelectedTag === tag;
+        html += `
+          <button type="button" onclick="selectRecipeTagFilter('${escapeAttr(tag)}')" class="active-scale shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            isSelected ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }">
+            #${tag}
+          </button>
+        `;
+      });
+      box.innerHTML = html;
+    }
+
+    function getFilteredRecipes() {
+      const query = appState.recipeSearchQuery || '';
+      const selectedTag = appState.recipeSelectedTag || '';
+      return (appState.recipes || []).filter(recipe => {
+        const matchesQuery = KitchenGit.Meals.recipeMatchesQuery(recipe, query);
+        if (!matchesQuery) return false;
+        if (!selectedTag) return true;
+        const recipeTags = recipeHashtags(recipe).map(t => t.toLowerCase());
+        const mainTag = (recipe.tag || '').toLowerCase();
+        const targetTag = selectedTag.toLowerCase();
+        return mainTag.includes(targetTag) || recipeTags.some(t => t.includes(targetTag));
+      });
+    }
+
     function renderRecipeList() {
       const box = document.getElementById('recipe-list');
       if (!box) return;
       box.innerHTML = '';
+
+      renderRecipeTagChips();
+
+      const filtered = getFilteredRecipes();
+      const countBadge = document.getElementById('recipe-filter-count-badge');
+      if (countBadge) {
+        countBadge.innerText = `${filtered.length} / ${appState.recipes.length}件`;
+      }
+
+      const clearBtn = document.getElementById('recipe-search-clear');
+      if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !appState.recipeSearchQuery && !appState.recipeSelectedTag);
+      }
+
+      const searchInput = document.getElementById('recipe-search-input');
+      if (searchInput && searchInput.value !== (appState.recipeSearchQuery || '')) {
+        searchInput.value = appState.recipeSearchQuery || '';
+      }
+
       if (!appState.recipes.length) {
         box.innerHTML = '<p class="text-xs text-slate-500 px-1">まだレシピがありません。下のボタンから登録できます。</p>';
         return;
       }
-      appState.recipes.forEach(recipe => {
+
+      if (!filtered.length) {
+        box.innerHTML = '<div class="bg-white rounded-3xl p-6 text-center text-xs text-slate-500 border border-slate-200/80">条件に一致するレシピが見つかりませんでした。</div>';
+        return;
+      }
+
+      filtered.forEach(recipe => {
         const latest = latestVersionKey(recipe);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.onclick = () => showRecipeDetail(recipe.id);
-        btn.className = 'active-scale w-full text-left bg-white rounded-3xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-2';
-        btn.innerHTML = `
-          <div>
-            ${recipe.tag ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">${recipe.tag}</span>` : ''}
-            <p class="text-sm font-bold text-slate-900 mt-1">${recipe.name}</p>
-            <p class="text-[10px] text-slate-400 font-mono mt-0.5">${latest} • ${recipe.branch || 'main'} • ${recipe.servingsBase || 2}人分</p>
+        const tags = recipeHashtags(recipe);
+        const tagsHtml = tags.map(t => `<span class="text-emerald-700 font-bold">#${t}</span>`).join(' ');
+        const versionObj = (recipe.versions && recipe.versions[latest]) || {};
+        const ingredientsList = (versionObj.ingredients || []).slice(0, 3).map(i => i.name).join('、');
+        
+        let imgUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+        if ((recipe.name || '').includes('生姜焼き') || (recipe.name || '').includes('豚')) {
+          imgUrl = 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1';
+        } else if ((recipe.name || '').includes('鶏') || (recipe.name || '').includes('炒め')) {
+          imgUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+        } else if ((recipe.name || '').includes('パスタ') || (recipe.name || '').includes('麺')) {
+          imgUrl = 'https://images.unsplash.com/photo-1621996346565-e3d5d6281295';
+        } else if ((recipe.name || '').includes('サラダ') || (recipe.name || '').includes('副菜')) {
+          imgUrl = 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden mb-4';
+        card.innerHTML = `
+          <!-- Insta Header -->
+          <div class="flex items-center justify-between px-4 py-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs shadow-inner">
+                <i class="fa-solid fa-utensils text-xs"></i>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-900">RecipeOps Chef</p>
+                <p class="text-[9px] text-slate-400 font-mono">${recipe.branch || 'main'} • ${latest}</p>
+              </div>
+            </div>
+            ${recipe.tag ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full">${recipe.tag}</span>` : ''}
           </div>
-          <i class="fa-solid fa-chevron-right text-[11px] text-slate-300"></i>
+
+          <!-- Insta Photo -->
+          <div onclick="showRecipeDetail('${recipe.id}')" class="active-scale cursor-pointer relative bg-slate-900 aspect-[4/3] overflow-hidden">
+            <img src="${imgUrl}" alt="${recipe.name}" class="w-full h-full object-cover">
+            <div class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold">
+              ${recipe.servingsBase || 2}人分
+            </div>
+          </div>
+
+          <!-- Insta Actions Bar -->
+          <div class="px-4 pt-3 pb-2 flex items-center justify-between">
+            <div class="flex items-center gap-4 text-slate-700 text-lg">
+              <button type="button" onclick="const icon = this.querySelector('i'); icon.classList.toggle('fa-solid'); icon.classList.toggle('fa-regular'); icon.classList.toggle('text-rose-500');" class="active-scale">
+                <i class="fa-regular fa-heart"></i>
+              </button>
+              <button type="button" onclick="showRecipeDetail('${recipe.id}')" class="active-scale">
+                <i class="fa-regular fa-comment"></i>
+              </button>
+              <button type="button" onclick="showToast('レシピを保存しました')" class="active-scale">
+                <i class="fa-regular fa-bookmark"></i>
+              </button>
+            </div>
+            <span class="text-[10px] font-mono text-slate-400">Git Hash: ${versionObj.hash || 'abc1234'}</span>
+          </div>
+
+          <!-- Insta Caption / Content -->
+          <div class="px-4 pb-4 space-y-1.5">
+            <h3 onclick="showRecipeDetail('${recipe.id}')" class="active-scale cursor-pointer text-sm font-bold text-slate-900 hover:text-emerald-700 transition-colors">
+              ${recipe.name}
+            </h3>
+            ${ingredientsList ? `<p class="text-xs text-slate-600 line-clamp-1"><strong class="text-slate-800">主な材料:</strong> ${ingredientsList} など</p>` : ''}
+            <div class="flex items-center gap-1.5 text-xs flex-wrap pt-0.5">
+              ${tagsHtml}
+            </div>
+            <p class="text-[10px] text-slate-400 pt-1">タップして詳細・調理モードへ →</p>
+          </div>
         `;
-        box.appendChild(btn);
+        box.appendChild(card);
       });
     }
 
