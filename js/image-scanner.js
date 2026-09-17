@@ -546,6 +546,10 @@ KitchenGit.ImageScanner = (function () {
       window.fillStepRows('reg-steps', currentScannedRecipe.steps);
     }
 
+    if (currentImageDataUrl && typeof window.setRegImage === 'function') {
+      window.setRegImage(currentImageDataUrl);
+    }
+
     closeModal();
     if (typeof window.openRegisterModal === 'function') {
       // Open register modal with values intact
@@ -584,6 +588,7 @@ KitchenGit.ImageScanner = (function () {
       name,
       tag,
       tags,
+      imageUrl: currentImageDataUrl || null,
       branch: 'main',
       servingsBase,
       pfc,

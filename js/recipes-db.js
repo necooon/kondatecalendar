@@ -43,6 +43,7 @@ window.KitchenGit = window.KitchenGit || {};
  * @typedef {object} Recipe
  * @property {string} id
  * @property {string} name
+ * @property {string | null} [imageUrl]
  * @property {string} tag
  * @property {string[]} tags
  * @property {string} branch
@@ -279,6 +280,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
     {
       id: 'demo-chicken',
       name: '鶏むね肉と秋茄子のさっぱり炒め',
+      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
       tag: '定番 #02',
       tags: ['鶏肉', '秋茄子', '炒め物', 'さっぱり'],
       branch: 'main',
@@ -343,6 +345,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
     {
       id: 'demo-ginger-pork',
       name: '豚肉と玉ねぎの生姜焼き',
+      imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1',
       tag: '定番 #01',
       tags: ['豚肉', '玉ねぎ', '生姜', '主菜', '定番'],
       branch: 'main',
@@ -376,6 +379,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
     {
       id: 'demo-mabo-tofu',
       name: '本格ピリ辛麻婆豆腐',
+      imageUrl: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6',
       tag: '中華 #01',
       tags: ['豆腐', '豚肉', '中華', '主菜'],
       branch: 'main',
@@ -409,6 +413,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
     {
       id: 'demo-salmon',
       name: '鮭の塩焼きと彩り温野菜',
+      imageUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2',
       tag: '魚料理 #01',
       tags: ['魚', '鮭', '和食', '主菜', 'ヘルシー'],
       branch: 'main',
@@ -441,6 +446,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
     {
       id: 'demo-tamago-soup',
       name: 'ふわふわ卵とほうれん草のスープ',
+      imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd',
       tag: '副菜 #01',
       tags: ['卵', 'ほうれん草', '汁物', '副菜', '時短'],
       branch: 'main',
@@ -471,6 +477,7 @@ KitchenGit.demoRecipes = function demoRecipes() {
     {
       id: 'demo-tonjiru',
       name: '具だくさん食べる豚汁',
+      imageUrl: 'https://images.unsplash.com/photo-1541832676-9b763b0239ab',
       tag: '汁物 #02',
       tags: ['豚肉', '大根', '汁物', '定番', '作り置き'],
       branch: 'main',
@@ -536,7 +543,7 @@ KitchenGit.RecipesDB = (function () {
     const model = M();
     const head = model.pickHead(recipe);
     const v = head.version || {};
-    return {
+    const payload = {
       name: recipe.name,
       tag: recipe.tag || '',
       tags: Array.isArray(recipe.tags) ? recipe.tags : [],
@@ -547,6 +554,10 @@ KitchenGit.RecipesDB = (function () {
       steps: model.stepsToDb(v.steps),
       versions: model.versionsToDb(recipe.versions)
     };
+    if (recipe.imageUrl !== undefined) {
+      payload.image_url = recipe.imageUrl || null;
+    }
+    return payload;
   }
 
   function mapRow(row) {
@@ -561,6 +572,7 @@ KitchenGit.RecipesDB = (function () {
     return {
       id: row.id,
       name: row.name,
+      imageUrl: row.image_url || null,
       tag: row.tag || '',
       tags,
       branch: row.branch || 'main',

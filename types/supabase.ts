@@ -435,6 +435,7 @@ export type Database = {
           branch: string
           created_at: string
           id: string
+          image_url: string | null
           ingredients: Json
           name: string
           pfc: Json | null
@@ -449,6 +450,7 @@ export type Database = {
           branch?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           ingredients?: Json
           name: string
           pfc?: Json | null
@@ -463,6 +465,7 @@ export type Database = {
           branch?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           ingredients?: Json
           name?: string
           pfc?: Json | null

@@ -409,13 +409,17 @@
           <h2 id="recipe-title" class="text-xl font-bold text-slate-900 leading-snug">鶏むね肉と秋茄子のさっぱり炒め</h2>
         </div>
 
-        <!-- 料理写真 ＆ 所要時間バッジ -->
-        <div class="relative rounded-3xl overflow-hidden shadow-sm border border-slate-200/80 bg-slate-900 aspect-[16/10]">
-          <img id="recipe-photo-img" src="" alt="料理写真" class="w-full h-full object-cover">
+        <!-- 料理写真 ＆ 所要時間バッジ ＆ 写真追加・変更ボタン -->
+        <div class="group relative rounded-3xl overflow-hidden shadow-sm border border-slate-200/80 bg-slate-900 aspect-[16/10]">
+          <img id="recipe-photo-img" src="" alt="料理写真" class="w-full h-full object-cover cursor-pointer" onclick="openRecipeImageModal()">
           <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs font-bold border border-white/15">
             <i class="fa-regular fa-clock text-emerald-400"></i>
             <span id="recipe-time-badge">調理所要時間: 15分</span>
           </div>
+          <button type="button" onclick="openRecipeImageModal()" class="active-scale absolute top-3 right-3 bg-black/60 hover:bg-black/85 backdrop-blur-md text-white px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs font-bold border border-white/20 shadow-sm" title="料理写真を追加・変更">
+            <i class="fa-solid fa-camera text-emerald-400 text-xs"></i>
+            <span id="recipe-photo-btn-text">写真を変更</span>
+          </button>
         </div>
 
         <!-- アクションボタン (レシピを編集 ＆ 献立に登録 ＆ 調理モード起動) -->
@@ -675,6 +679,50 @@
         <input type="number" min="1" step="1" id="edit-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
 
+      <!-- 料理写真の編集 -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="font-bold text-slate-700">料理写真（任意）</label>
+          <span id="edit-image-status-badge" class="text-[10px] font-bold text-slate-400">未設定</span>
+        </div>
+        <input type="hidden" id="edit-image-url" value="">
+        <input type="file" id="edit-image-camera-input" accept="image/*" capture="environment" class="hidden">
+        <input type="file" id="edit-image-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
+
+        <div id="edit-image-empty-box" class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center space-y-2">
+          <div class="flex justify-center gap-2">
+            <button type="button" onclick="document.getElementById('edit-image-camera-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-solid fa-camera text-emerald-600"></i>撮影
+            </button>
+            <button type="button" onclick="document.getElementById('edit-image-file-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-regular fa-image text-slate-500"></i>写真を選択
+            </button>
+            <button type="button" onclick="toggleEditUrlInput()" class="active-scale inline-flex items-center gap-1 bg-white text-slate-700 border border-slate-200 px-2.5 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-solid fa-link text-slate-500"></i>URL
+            </button>
+          </div>
+          <div id="edit-image-url-wrap" class="hidden pt-1 flex gap-1.5">
+            <input type="url" id="edit-image-url-input" placeholder="画像のURLを入力" class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+            <button type="button" onclick="applyEditImageUrlInput()" class="shrink-0 bg-slate-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs">反映</button>
+          </div>
+        </div>
+
+        <div id="edit-image-preview-box" class="hidden relative rounded-2xl overflow-hidden aspect-[16/10] bg-slate-900 border border-slate-200">
+          <img id="edit-image-preview-img" src="" alt="編集プレビュー" class="w-full h-full object-cover">
+          <div class="absolute bottom-2.5 left-2.5 text-white text-[10px] font-bold flex items-center gap-1 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur-xs">
+            <i class="fa-solid fa-camera text-emerald-400"></i>写真設定中
+          </div>
+          <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+            <button type="button" onclick="document.getElementById('edit-image-file-input').click()" class="active-scale bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
+              変更
+            </button>
+            <button type="button" onclick="clearEditImage()" class="active-scale bg-rose-600/90 hover:bg-rose-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
+              削除
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="font-bold text-slate-700">材料</label>
@@ -705,6 +753,94 @@
           <span>v1.3 として保存</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==================== 料理写真の追加・変更モーダル ==================== -->
+  <div id="recipe-image-modal-backdrop" onclick="closeRecipeImageModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden transition-opacity"></div>
+  <div id="recipe-image-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden max-h-[90vh] overflow-y-auto space-y-4">
+    <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shadow-xs">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 leading-tight">料理写真を追加・変更</h3>
+          <p id="recipe-image-target-name" class="text-[10px] text-slate-400 truncate max-w-[220px]"></p>
+        </div>
+      </div>
+      <button type="button" onclick="closeRecipeImageModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center active-scale">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- プレビューエリア -->
+    <div class="space-y-2">
+      <label class="text-xs font-bold text-slate-700 block">写真プレビュー</label>
+      <div id="recipe-image-preview-box" class="relative rounded-2xl overflow-hidden aspect-[16/10] bg-slate-100 border border-slate-200 flex items-center justify-center">
+        <img id="recipe-image-preview-img" src="" alt="プレビュー" class="w-full h-full object-cover hidden">
+        <div id="recipe-image-placeholder" class="text-center p-4">
+          <div class="w-12 h-12 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center text-lg mx-auto mb-2">
+            <i class="fa-solid fa-image"></i>
+          </div>
+          <p class="text-xs font-bold text-slate-600">写真が設定されていません</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">カメラ撮影・写真選択・おすすめから選べます</p>
+        </div>
+        <button type="button" id="recipe-image-clear-btn" onclick="clearRecipeImageModalSelection()" class="hidden active-scale absolute top-2.5 right-2.5 bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs flex items-center gap-1">
+          <i class="fa-solid fa-trash-can text-[10px]"></i>
+          <span>削除</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 選択アクションボタン群 -->
+    <div class="grid grid-cols-2 gap-2 pt-1">
+      <input type="file" id="recipe-image-camera-input" accept="image/*" capture="environment" class="hidden">
+      <input type="file" id="recipe-image-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
+      
+      <button type="button" onclick="document.getElementById('recipe-image-camera-input').click()" class="active-scale flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-3 rounded-2xl">
+        <i class="fa-solid fa-camera text-sm text-emerald-600"></i>
+        <span>カメラで撮影</span>
+      </button>
+      <button type="button" onclick="document.getElementById('recipe-image-file-input').click()" class="active-scale flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold text-xs py-3 rounded-2xl">
+        <i class="fa-regular fa-image text-sm text-slate-600"></i>
+        <span>写真ライブラリ</span>
+      </button>
+    </div>
+
+    <!-- URL入力アコーディオン -->
+    <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 space-y-2">
+      <label for="recipe-image-url-input" class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+        <i class="fa-solid fa-link text-slate-500 text-[11px]"></i>
+        <span>Web画像のURLを指定</span>
+      </label>
+      <div class="flex gap-2">
+        <input type="url" id="recipe-image-url-input" placeholder="https://example.com/dish.jpg" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <button type="button" onclick="applyRecipeImageUrlInput()" class="active-scale shrink-0 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl">
+          反映
+        </button>
+      </div>
+    </div>
+
+    <!-- おすすめプリセット料理写真から選択 -->
+    <div class="space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-700">おすすめ料理写真から選ぶ</span>
+        <span class="text-[10px] text-slate-400">タップして即反映</span>
+      </div>
+      <div id="recipe-image-presets" class="grid grid-cols-5 gap-1.5 max-h-36 overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- 保存 & キャンセル -->
+    <div class="pt-2 flex gap-2">
+      <button type="button" onclick="closeRecipeImageModal()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl text-xs active-scale">
+        キャンセル
+      </button>
+      <button type="button" onclick="saveRecipeImageModal()" id="recipe-image-save-btn" class="w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20 active-scale">
+        <i class="fa-solid fa-check text-sm"></i>
+        <span>写真を保存する</span>
+      </button>
     </div>
   </div>
 
@@ -846,6 +982,51 @@
       <div>
         <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
         <input required type="number" min="1" step="1" id="reg-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      </div>
+      <!-- 料理写真（任意） -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="font-bold text-slate-700">料理写真（任意）</label>
+          <span id="reg-image-status-badge" class="text-[10px] font-bold text-slate-400">未設定</span>
+        </div>
+        <input type="hidden" id="reg-image-url" value="">
+        <input type="file" id="reg-image-camera-input" accept="image/*" capture="environment" class="hidden">
+        <input type="file" id="reg-image-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
+
+        <!-- 写真未設定時 -->
+        <div id="reg-image-empty-box" class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center space-y-2">
+          <div class="flex justify-center gap-2">
+            <button type="button" onclick="document.getElementById('reg-image-camera-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-solid fa-camera text-emerald-600"></i>撮影
+            </button>
+            <button type="button" onclick="document.getElementById('reg-image-file-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-regular fa-image text-slate-500"></i>写真を選択
+            </button>
+            <button type="button" onclick="toggleRegUrlInput()" class="active-scale inline-flex items-center gap-1 bg-white text-slate-700 border border-slate-200 px-2.5 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-solid fa-link text-slate-500"></i>URL
+            </button>
+          </div>
+          <div id="reg-image-url-wrap" class="hidden pt-1 flex gap-1.5">
+            <input type="url" id="reg-image-url-input" placeholder="画像のURLを入力" class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+            <button type="button" onclick="applyRegImageUrlInput()" class="shrink-0 bg-slate-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs">設定</button>
+          </div>
+        </div>
+
+        <!-- 写真設定後プレビュー -->
+        <div id="reg-image-preview-box" class="hidden relative rounded-2xl overflow-hidden aspect-[16/10] bg-slate-900 border border-slate-200">
+          <img id="reg-image-preview-img" src="" alt="登録プレビュー" class="w-full h-full object-cover">
+          <div class="absolute bottom-2.5 left-2.5 text-white text-[10px] font-bold flex items-center gap-1 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur-xs">
+            <i class="fa-solid fa-camera text-emerald-400"></i>写真設定済
+          </div>
+          <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+            <button type="button" onclick="document.getElementById('reg-image-file-input').click()" class="active-scale bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
+              変更
+            </button>
+            <button type="button" onclick="clearRegImage()" class="active-scale bg-rose-600/90 hover:bg-rose-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
+              削除
+            </button>
+          </div>
+        </div>
       </div>
       <div>
         <div class="flex items-center justify-between mb-1">
@@ -1153,6 +1334,7 @@
   <script src="js/config.js"></script>
   <script src="js/nutrition.js"></script>
   <script src="js/recipes-db.js"></script>
+  <script src="js/image-utils.js"></script>
   <script src="js/items-db.js"></script>
   <script src="js/meals.js"></script>
   <script src="js/week.js"></script>
@@ -1162,6 +1344,7 @@
   <script src="js/shopping.js"></script>
   <script src="js/vendor/heic2any.min.js"></script>
   <script src="js/image-scanner.js"></script>
+  <script src="js/recipe-images.js"></script>
   <script>
     const appState = {
       activeTab: 'home',
@@ -1582,17 +1765,8 @@
         const tagsHtml = tags.map(t => `<span class="text-emerald-700 font-bold">#${t}</span>`).join(' ');
         const versionObj = (recipe.versions && recipe.versions[latest]) || {};
         const ingredientsList = (versionObj.ingredients || []).slice(0, 3).map(i => i.name).join('、');
-        
-        let imgUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
-        if ((recipe.name || '').includes('生姜焼き') || (recipe.name || '').includes('豚')) {
-          imgUrl = 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1';
-        } else if ((recipe.name || '').includes('鶏') || (recipe.name || '').includes('炒め')) {
-          imgUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
-        } else if ((recipe.name || '').includes('パスタ') || (recipe.name || '').includes('麺')) {
-          imgUrl = 'https://images.unsplash.com/photo-1621996346565-e3d5d6281295';
-        } else if ((recipe.name || '').includes('サラダ') || (recipe.name || '').includes('副菜')) {
-          imgUrl = 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd';
-        }
+        const imgUrl = getRecipeImageUrl(recipe);
+        const hasCustomPhoto = Boolean(recipe.imageUrl);
 
         const card = document.createElement('div');
         card.className = 'bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden mb-4';
@@ -1613,8 +1787,13 @@
 
           <!-- Insta Photo -->
           <div onclick="showRecipeDetail('${recipe.id}')" class="active-scale cursor-pointer relative bg-slate-900 aspect-[4/3] overflow-hidden">
-            <img src="${imgUrl}" alt="${recipe.name}" class="w-full h-full object-cover">
-            <div class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold">
+            <img src="${imgUrl}" alt="${escapeAttr(recipe.name)}" class="w-full h-full object-cover">
+            ${hasCustomPhoto ? `
+              <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-white/15 shadow-xs">
+                <i class="fa-solid fa-camera text-emerald-400 text-[10px]"></i>写真あり
+              </div>
+            ` : ''}
+            <div class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold border border-white/15">
               ${recipe.servingsBase || 2}人分
             </div>
           </div>
@@ -1715,17 +1894,32 @@
     function getRecipeImageUrl(recipe) {
       if (recipe && recipe.imageUrl) return recipe.imageUrl;
       const name = (recipe && recipe.name) || '';
-      if (name.includes('鶏むね肉') || name.includes('秋茄子') || name.includes('さっぱり炒め')) {
-        return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
-      }
-      if (name.includes('豚肉') || name.includes('生姜焼き')) {
+      if (name.includes('豚肉') || name.includes('生姜焼き') || name.includes('豚')) {
         return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1';
       }
-      if (name.includes('麻婆豆腐')) {
+      if (name.includes('鶏') || name.includes('チキン') || name.includes('炒め')) {
+        return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+      }
+      if (name.includes('麻婆豆腐') || name.includes('豆腐')) {
         return 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6';
       }
-      if (name.includes('鮭')) {
+      if (name.includes('鮭') || name.includes('魚') || name.includes('さば') || name.includes('鯖')) {
         return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2';
+      }
+      if (name.includes('パスタ') || name.includes('麺')) {
+        return 'https://images.unsplash.com/photo-1621996346565-e3d5d6281295';
+      }
+      if (name.includes('サラダ') || name.includes('野菜') || name.includes('ナムル')) {
+        return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd';
+      }
+      if (name.includes('スープ') || name.includes('汁')) {
+        return 'https://images.unsplash.com/photo-1547592166-23ac45744acd';
+      }
+      if (name.includes('カレー') || name.includes('シチュー')) {
+        return 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db';
+      }
+      if (name.includes('ハンバーグ') || name.includes('肉')) {
+        return 'https://images.unsplash.com/photo-1529042410759-befb1204b468';
       }
       return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
     }
@@ -1757,6 +1951,10 @@
       const photoImg = document.getElementById('recipe-photo-img');
       if (photoImg) {
         photoImg.src = getRecipeImageUrl(recipe);
+      }
+      const photoBtnText = document.getElementById('recipe-photo-btn-text');
+      if (photoBtnText) {
+        photoBtnText.innerText = recipe.imageUrl ? '写真を変更' : '写真を追加';
       }
       const timeBadge = document.getElementById('recipe-time-badge');
       if (timeBadge) {
@@ -2160,6 +2358,9 @@
       document.getElementById('commit-save-btn').querySelector('span').innerText = `${nextKey} として保存`;
       fillIngredientRows('edit-ingredients', v && v.ingredients);
       fillStepRows('edit-steps', v && v.steps);
+      if (typeof window.setEditImage === 'function') {
+        window.setEditImage(recipe.imageUrl || '');
+      }
       document.getElementById('commit-modal-backdrop').classList.remove('hidden');
       document.getElementById('commit-modal').classList.remove('hidden');
     }
@@ -2252,6 +2453,10 @@
         };
         recipe.name = name;
         recipe.servingsBase = servingsBase;
+        const editImgInput = document.getElementById('edit-image-url');
+        if (editImgInput) {
+          recipe.imageUrl = editImgInput.value || null;
+        }
         recipe.versions[key] = next;
         recipe.branch = next.branch;
         recipe.pfc = computeRecipePfc({ ...recipe, servingsBase }, ingredients);
@@ -2294,6 +2499,9 @@
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-tag').value = '';
       document.getElementById('reg-servings').value = '2';
+      if (typeof window.clearRegImage === 'function') {
+        window.clearRegImage();
+      }
       document.getElementById('reg-ingredients').innerHTML = '';
       document.getElementById('reg-steps').innerHTML = '';
       addIngredientRow('reg-ingredients');
@@ -2311,6 +2519,8 @@
       const name = document.getElementById('reg-name').value.trim();
       if (!name) throw new Error('料理名を入力してください');
       const tag = document.getElementById('reg-tag').value.trim();
+      const regImgInput = document.getElementById('reg-image-url');
+      const imageUrl = (regImgInput && regImgInput.value) || null;
       const servingsBase = Number(document.getElementById('reg-servings').value) || 2;
       const ingredients = collectIngredientRows('reg-ingredients');
       const n = window.KitchenGit && KitchenGit.Nutrition;
@@ -2327,6 +2537,7 @@
         name,
         tag,
         tags,
+        imageUrl,
         branch: 'main',
         servingsBase,
         pfc,

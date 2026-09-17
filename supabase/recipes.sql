@@ -13,6 +13,7 @@ create table if not exists public.recipes (
   ingredients jsonb not null default '[]'::jsonb,
   steps jsonb not null default '[]'::jsonb,
   versions jsonb not null default '{}'::jsonb,
+  image_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint recipes_pfc_object_chk
@@ -30,7 +31,8 @@ create table if not exists public.recipes (
 alter table public.recipes
   add column if not exists branch text not null default 'main',
   add column if not exists tags jsonb not null default '[]'::jsonb,
-  add column if not exists versions jsonb not null default '{}'::jsonb;
+  add column if not exists versions jsonb not null default '{}'::jsonb,
+  add column if not exists image_url text;
 
 alter table public.recipes drop constraint if exists recipes_tags_array_chk;
 alter table public.recipes add constraint recipes_tags_array_chk
