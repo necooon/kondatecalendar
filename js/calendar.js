@@ -383,32 +383,44 @@ KitchenGit.Calendar = (function () {
     if (isMemo) {
       const label = M.slotDisplayLabel(slot);
       return `
-        <div onclick="${openFn}" class="bg-amber-50 border border-amber-200 rounded-2xl p-2 flex items-start justify-between gap-2 cursor-pointer active:bg-amber-100">
-          <div class="flex items-start gap-2 min-w-0 pr-1">
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-2 flex items-start justify-between gap-2">
+          <div onclick="${openFn}" class="flex items-start gap-2 min-w-0 pr-1 cursor-pointer flex-1">
             ${badgeHtml}
             <p class="text-xs font-bold text-amber-900 truncate mt-0.5">${M.escapeHtml(label)}</p>
           </div>
           <div class="flex items-center gap-1 shrink-0 mt-0.5">
-            <i class="fa-solid fa-chevron-right text-[11px] text-amber-400"></i>
+            <button type="button" onclick="${openFn}" class="active-scale px-2 py-1 rounded-xl bg-white border border-amber-300 text-amber-800 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-100 shadow-2xs" title="献立を編集">
+              <i class="fa-solid fa-pen text-[9px]"></i>
+              <span>編集</span>
+            </button>
           </div>
         </div>
       `;
     }
 
+    const recipes = recipesOf(state);
     const titlesHtml = filled
-      ? items.map((item) => `<p class="text-xs font-bold text-slate-900 truncate">${M.escapeHtml(item.title)}</p>`).join('')
-      : '<p class="text-xs font-bold text-slate-400 truncate">未設定</p>';
+      ? items.map((item) => {
+          const recipe = M.findRecipeForItem(recipes, item);
+          const recipeId = recipe ? recipe.id : (item.recipeId || '');
+          const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
+          return `<p ${clickAction} class="text-xs font-bold text-slate-900 truncate hover:text-emerald-700 hover:underline cursor-pointer py-0.5" title="レシピを開く">${M.escapeHtml(item.title)}</p>`;
+        }).join('')
+      : `<p onclick="${openFn}" class="text-xs font-bold text-slate-400 truncate cursor-pointer">未設定</p>`;
 
     return `
-      <div onclick="${openFn}" class="bg-slate-50 border border-slate-200/70 rounded-2xl p-2 flex items-start justify-between gap-2 cursor-pointer active:bg-slate-100">
-        <div class="flex items-start gap-2 min-w-0 pr-1">
+      <div class="bg-slate-50 border border-slate-200/70 rounded-2xl p-2 flex items-start justify-between gap-2">
+        <div class="flex items-start gap-2 min-w-0 pr-1 flex-1">
           ${badgeHtml}
-          <div class="min-w-0 space-y-0.5 mt-0.5">${titlesHtml}</div>
+          <div class="min-w-0 space-y-0.5 mt-0.5 flex-1">${titlesHtml}</div>
         </div>
-        <div class="flex items-center gap-1 shrink-0 mt-0.5">
+        <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
           ${prepChip}
           ${slotServingsButtonHtml(dateStr, meta, slot)}
-          <i class="fa-solid fa-chevron-right text-[11px] text-slate-300"></i>
+          <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 hover:bg-slate-100 shadow-2xs" title="献立を編集" aria-label="献立を編集">
+            <i class="fa-solid fa-pen text-[9px] text-emerald-600"></i>
+            <span>編集</span>
+          </button>
         </div>
       </div>
     `;
@@ -670,6 +682,26 @@ KitchenGit.Calendar = (function () {
     window.showRecipeDetailFromCalendar = function (recipeId) {
       if (typeof window.switchTab === 'function') window.switchTab('recipe');
       if (typeof window.showRecipeDetail === 'function') window.showRecipeDetail(recipeId);
+    };
+
+    window.openRecipeByCalendarClick = function (recipeId, title) {
+      const recipes = recipesOf(state);
+      let found = null;
+      if (recipeId) {
+        found = recipes.find((r) => r.id === recipeId);
+      }
+      if (!found && title) {
+        found = recipes.find((r) => r.name === title || (r.name || '').includes(title) || title.includes(r.name || ''));
+      }
+      if (found && found.id) {
+        if (typeof window.switchTab === 'function') window.switchTab('recipe');
+        if (typeof window.showRecipeDetail === 'function') window.showRecipeDetail(found.id);
+      } else if (recipeId) {
+        if (typeof window.switchTab === 'function') window.switchTab('recipe');
+        if (typeof window.showRecipeDetail === 'function') window.showRecipeDetail(recipeId);
+      } else if (title) {
+        if (hooks.showToast) hooks.showToast(`「${title}」のレシピはまだ登録されていません`);
+      }
     };
 
     const calSearchInput = document.getElementById('calendar-recipe-search-input');
