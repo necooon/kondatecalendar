@@ -1462,6 +1462,13 @@
     });
     KitchenGit.Calendar.bindGlobals(appState);
 
+    function updateProfileRecipeCount() {
+      const el = document.getElementById('profile-recipe-count');
+      if (el && appState && Array.isArray(appState.recipes)) {
+        el.innerText = appState.recipes.length;
+      }
+    }
+
     function switchTab(tab) {
       appState.activeTab = tab;
 
@@ -1483,6 +1490,9 @@
         } else {
           showRecipeList();
         }
+      }
+      if (tab === 'profile') {
+        updateProfileRecipeCount();
       }
 
       ['home', 'calendar', 'recipe', 'shopping', 'profile'].forEach(t => {
@@ -1740,6 +1750,7 @@
     }
 
     function renderRecipeList() {
+      updateProfileRecipeCount();
       const box = document.getElementById('recipe-list');
       if (!box) return;
       box.innerHTML = '';
