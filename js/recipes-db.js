@@ -752,14 +752,22 @@ KitchenGit.RecipesDB = (function () {
   }
 
   async function seedIfEmpty() {
-    const existing = await fetchAll();
-    if (existing.length) return hydrateLegacy(existing);
-    const seeded = [];
+    let existing = await fetchAll();
+    existing = await hydrateLegacy(existing);
+    const existingNames = new Set(existing.map(r => r.name));
     for (const demo of KitchenGit.demoRecipes()) {
-      const { id, ...rest } = demo;
-      seeded.push(await insertRecipe(rest));
+      if (!existingNames.has(demo.name)) {
+        try {
+          const { id, ...rest } = demo;
+          const inserted = await insertRecipe(rest);
+          existing.push(inserted);
+          existingNames.add(demo.name);
+        } catch (e) {
+          console.error('Failed to seed missing demo recipe:', demo.name, e);
+        }
+      }
     }
-    return seeded;
+    return existing;
   }
 
   return { init, isReady, fetchAll, insertRecipe, insertVersion, updateRecipe, seedIfEmpty, mapRow };
