@@ -133,7 +133,8 @@ window.KitchenGit = window.KitchenGit || {};
       }
     } catch (err) {
       console.error(err);
-      if (typeof window.showToast === 'function') window.showToast('写真の保存に失敗しました', 'error');
+      const errMsg = err && err.message ? `写真の保存に失敗しました: ${err.message}` : '写真の保存に失敗しました';
+      if (typeof window.showToast === 'function') window.showToast(errMsg, 'error');
     } finally {
       if (saveBtn) saveBtn.disabled = false;
     }
@@ -305,7 +306,18 @@ window.KitchenGit = window.KitchenGit || {};
       if (!data.ok || !data.imageUrl) {
         throw new Error(data.error || '画像生成に失敗しました');
       }
-      onImageReady(data.imageUrl);
+
+      let finalImageUrl = data.imageUrl;
+      const utils = ImageUtils();
+      if (utils && typeof utils.optimizeDataUrl === 'function') {
+        try {
+          finalImageUrl = await utils.optimizeDataUrl(data.imageUrl);
+        } catch (optErr) {
+          console.warn('Image optimization warning:', optErr);
+        }
+      }
+
+      onImageReady(finalImageUrl);
       if (typeof window.showToast === 'function') window.showToast('AI料理画像を生成しました！');
     } catch (err) {
       console.error('AI image generation failed:', err);

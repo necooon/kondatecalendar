@@ -145,9 +145,40 @@ KitchenGit.ImageUtils = (function () {
     return s.startsWith('http://') || s.startsWith('https://') || s.startsWith('data:image/');
   }
 
+  async function optimizeDataUrl(dataUrl, maxDimension = 1000, quality = 0.8) {
+    if (!dataUrl || !dataUrl.startsWith('data:image/')) return dataUrl;
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, width);
+        canvas.height = Math.max(1, height);
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const optimized = canvas.toDataURL('image/jpeg', quality);
+        resolve(optimized);
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
   return {
     PRESET_RECIPE_IMAGES,
     processImageFile,
-    isValidImageUrl
+    isValidImageUrl,
+    optimizeDataUrl
   };
 })();
