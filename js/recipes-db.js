@@ -553,6 +553,7 @@ KitchenGit.RecipesDB = (function () {
       tags: Array.isArray(recipe.tags) ? recipe.tags : [],
       branch: recipe.branch || 'main',
       servings_base: recipe.servingsBase || 2,
+      interval_days: recipe.intervalDays || 0,
       pfc: recipe.pfc || null,
       ingredients: model.ingredientsToDb(v.ingredients),
       steps: model.stepsToDb(v.steps),
@@ -575,6 +576,7 @@ KitchenGit.RecipesDB = (function () {
     const tags = Array.isArray(row.tags) ? row.tags.slice() : [];
     let headVersion = versions['v1.0'] || Object.values(versions)[0];
     const imageUrl = row.image_url || (headVersion && headVersion.imageUrl) || null;
+    const intervalDays = row.interval_days != null ? Number(row.interval_days) : (row.intervalDays || 0);
     return {
       id: row.id,
       name: row.name,
@@ -583,6 +585,7 @@ KitchenGit.RecipesDB = (function () {
       tags,
       branch: row.branch || 'main',
       servingsBase: row.servings_base || 2,
+      intervalDays,
       pfc: row.pfc || null,
       versions
     };
@@ -607,6 +610,16 @@ KitchenGit.RecipesDB = (function () {
       .select()
       .single();
 
+    if (recipeErr && recipeErr.message && (recipeErr.message.includes('interval_days') || recipeErr.message.includes('column'))) {
+      delete payload.interval_days;
+      const retryRes = await client
+        .from('recipes')
+        .insert(payload)
+        .select()
+        .single();
+      recipeRow = retryRes.data;
+      recipeErr = retryRes.error;
+    }
     if (recipeErr && recipeErr.message && (recipeErr.message.includes('image_url') || recipeErr.message.includes('column'))) {
       console.warn('[RecipeOps] image_url column not found in recipes table, retrying without image_url top-level column...');
       delete payload.image_url;
@@ -633,6 +646,17 @@ KitchenGit.RecipesDB = (function () {
       .select()
       .single();
 
+    if (error && error.message && (error.message.includes('interval_days') || error.message.includes('column'))) {
+      delete payload.interval_days;
+      const retryRes = await client
+        .from('recipes')
+        .update(payload)
+        .eq('id', recipe.id)
+        .select()
+        .single();
+      data = retryRes.data;
+      error = retryRes.error;
+    }
     if (error && error.message && (error.message.includes('image_url') || error.message.includes('column'))) {
       console.warn('[RecipeOps] image_url column not found in recipes table, retrying without image_url top-level column...');
       delete payload.image_url;

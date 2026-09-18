@@ -86,16 +86,9 @@ KitchenGit.MealEditor = (function () {
   function itemsFromEditor(state) {
     const M = Meals();
     const recipes = recipesOf(state);
-    const foodItems = foodItemsOf(state);
     return M.cloneMealItems(selectedItems(state)).map((item) => {
       const title = (item.title || '').trim();
       if (!title) return null;
-
-      if (item.itemId || (!item.recipeId && M.findFoodItemForItem(foodItems, item))) {
-        const food = M.findFoodItemForItem(foodItems, item);
-        if (!food) return null;
-        return { title: food.name || title, recipeId: null, itemId: food.id };
-      }
 
       const recipe = M.findRecipeForItem(recipes, { title, recipeId: item.recipeId });
       if (!recipe) return null;
@@ -145,16 +138,16 @@ KitchenGit.MealEditor = (function () {
 
   function renderItems(state) {
     const M = Meals();
+    const currentBox = document.getElementById('meal-edit-current-slot-box');
     const list = document.getElementById('meal-edit-items');
     if (!list) return;
     const items = selectedItems(state);
     state.mealEditorItems = items;
+    if (currentBox) {
+      currentBox.classList.toggle('hidden', items.length === 0);
+    }
     if (!items.length) {
-      list.innerHTML = `
-        <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          まだ選んでいません。下のレシピまたは材料から追加します。
-        </p>
-      `;
+      list.innerHTML = '';
       return;
     }
     const recipes = recipesOf(state);
@@ -217,6 +210,73 @@ KitchenGit.MealEditor = (function () {
     }).join('');
   }
 
+  function recipeImageUrl(recipe) {
+    if (recipe && recipe.imageUrl) return recipe.imageUrl;
+    const name = (recipe && recipe.name) || '';
+    if (name.includes('豚肉') || name.includes('生姜焼き') || name.includes('豚')) {
+      return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1';
+    }
+    if (name.includes('鶏') || name.includes('チキン') || name.includes('炒め')) {
+      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+    }
+    if (name.includes('麻婆豆腐') || name.includes('豆腐')) {
+      return 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6';
+    }
+    if (name.includes('鮭') || name.includes('魚') || name.includes('さば') || name.includes('鯖')) {
+      return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2';
+    }
+    if (name.includes('パスタ') || name.includes('麺')) {
+      return 'https://images.unsplash.com/photo-1621996346565-e3d5d6281295';
+    }
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+  }
+
+  function isRecipeInInterval(recipe, targetDateStr, state) {
+    const interval = Number(recipe.intervalDays) || 0;
+    if (interval <= 0) return false;
+    if (!targetDateStr) return false;
+
+    const targetDate = new Date(targetDateStr);
+    if (Number.isNaN(targetDate.getTime())) return false;
+
+    const allDays = [];
+    if (state.weeksByStart) {
+      Object.values(state.weeksByStart).forEach((week) => {
+        if (Array.isArray(week)) allDays.push(...week);
+      });
+    }
+    if (state.calendarDays && Array.isArray(state.calendarDays)) {
+      allDays.push(...state.calendarDays);
+    }
+
+    const dayMap = new Map();
+    allDays.forEach((d) => {
+      if (d && d.date) dayMap.set(d.date, d);
+    });
+
+    const targetMs = targetDate.getTime();
+    const intervalMs = interval * 24 * 60 * 60 * 1000;
+    const startMs = targetMs - intervalMs;
+
+    for (const [dateStr, dayData] of dayMap.entries()) {
+      const dTime = new Date(dateStr).getTime();
+      if (!Number.isNaN(dTime) && dTime >= startMs && dTime < targetMs) {
+        const slots = dayData.slots || {};
+        for (const slotKey of Object.keys(slots)) {
+          const slot = slots[slotKey];
+          if (slot && Array.isArray(slot.items)) {
+            for (const item of slot.items) {
+              if (item.recipeId === recipe.id || (item.title && recipe.name && item.title.trim() === recipe.name.trim())) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   function renderRecipes(state) {
     const M = Meals();
     const wrap = document.getElementById('meal-edit-recipes-wrap');
@@ -249,6 +309,9 @@ KitchenGit.MealEditor = (function () {
 
     const matchesList = [];
     recipes.forEach((recipe) => {
+      if (isRecipeInInterval(recipe, state.selectedDate, state)) {
+        return;
+      }
       const details = M.recipeMatchesQueryDetails
         ? M.recipeMatchesQueryDetails(recipe, query)
         : { matches: M.recipeMatchesQuery(recipe, query), matchedIngredients: [], tokens: [] };
@@ -288,9 +351,6 @@ KitchenGit.MealEditor = (function () {
     const addedKeys = new Set(itemKeys(selectedItems(state)));
     list.innerHTML = matchesList.map(({ recipe, details }) => {
       const added = addedKeys.has(`recipe:${recipe.id}`) || addedKeys.has(`name:${(recipe.name || '').toLowerCase()}`);
-      const allIngredients = M.getRecipeIngredients ? M.getRecipeIngredients(recipe) : [];
-      const ingNames = allIngredients.map((i) => i.name).filter(Boolean);
-      const matchedIngs = details.matchedIngredients || [];
 
       // Highlight matching keyword tokens in recipe name
       let displayName = M.escapeHtml(recipe.name);
@@ -302,104 +362,39 @@ KitchenGit.MealEditor = (function () {
         });
       }
 
-      let ingredientsPreview = '';
-      if (matchedIngs.length > 0) {
-        ingredientsPreview = `
-          <div class="mt-1.5 flex items-center gap-1 flex-wrap text-[11px]">
-            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">一致した材料:</span>
-            ${matchedIngs.map((ing) => `
-              <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                <i class="fa-solid fa-check text-[8px] text-emerald-600"></i>${M.escapeHtml(ing)}
-              </span>
-            `).join('')}
-          </div>
-        `;
-      } else if (ingNames.length > 0) {
-        ingredientsPreview = `
-          <p class="mt-1 text-[10.5px] text-slate-500 line-clamp-1">
-            <span class="font-bold text-slate-600">材料:</span> ${M.escapeHtml(ingNames.slice(0, 5).join('、'))}${ingNames.length > 5 ? '…' : ''}
-          </p>
-        `;
-      }
-
       const tagBadge = recipe.tag
         ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${M.escapeHtml(recipe.tag)}</span>`
         : '';
       const pfcBadge = recipe.pfc && recipe.pfc.kcal
         ? `<span class="text-[9px] font-mono text-slate-400">${Math.round(recipe.pfc.kcal)} kcal</span>`
         : '';
+      const imgUrl = recipeImageUrl(recipe);
 
       return `
-        <div class="border ${added ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200/90 hover:border-emerald-300'} rounded-2xl p-2.5 shadow-2xs transition-all">
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-                ${tagBadge}
-                ${pfcBadge}
-              </div>
-              <h4 class="text-xs font-bold text-slate-900 leading-snug">${displayName}</h4>
+        <div class="border ${added ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200/90 hover:border-emerald-300'} rounded-2xl p-2.5 shadow-2xs transition-all flex items-center gap-3">
+          <img src="${imgUrl}" alt="${M.escapeHtml(recipe.name)}" class="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
+              ${tagBadge}
+              ${pfcBadge}
             </div>
-            <div class="shrink-0 flex items-center gap-1">
-              <button type="button" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="viewRecipeFromMealEditor(this.dataset.recipeId)" title="レシピ詳細を見る" class="w-7 h-7 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-xs active-scale">
-                <i class="fa-solid fa-book-open"></i>
-              </button>
-              <button type="button" data-recipe-name="${M.escapeHtml(recipe.name)}" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="pickMealRecipe(this.dataset.recipeName, this.dataset.recipeId)" class="active-scale text-xs font-bold px-3 py-1.5 rounded-xl transition-all ${
-                added
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200'
-              }">
-                ${added ? '<i class="fa-solid fa-check text-[10px] mr-1"></i>追加済' : '＋ この枠に追加'}
-              </button>
-            </div>
+            <h4 class="text-xs font-bold text-slate-900 leading-snug truncate">${displayName}</h4>
           </div>
-          ${ingredientsPreview}
+          <div class="shrink-0 flex items-center gap-1">
+            <button type="button" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="viewRecipeFromMealEditor(this.dataset.recipeId)" title="レシピ詳細を見る" class="w-7 h-7 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-xs active-scale">
+              <i class="fa-solid fa-book-open"></i>
+            </button>
+            <button type="button" data-recipe-name="${M.escapeHtml(recipe.name)}" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="pickAndSaveMealRecipe(this.dataset.recipeName, this.dataset.recipeId)" class="active-scale text-xs font-bold px-3.5 py-2 rounded-xl transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              <span>この枠に登録</span>
+            </button>
+          </div>
         </div>
       `;
     }).join('');
   }
 
-  function renderFoodItems(state) {
-    const M = Meals();
-    const wrap = document.getElementById('meal-edit-food-wrap');
-    const list = document.getElementById('meal-edit-food-items');
-    if (!wrap || !list) return;
-    if ((state.mealEditorTab || 'recipe') !== 'recipe') {
-      wrap.classList.add('hidden');
-      return;
-    }
-    wrap.classList.remove('hidden');
-    const foodItems = foodItemsOf(state);
-    const query = searchQueryOf(state);
-    if (!foodItems.length) {
-      list.innerHTML = `
-        <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          まだ食品が登録されていません。上の入力欄から追加できます。
-        </p>
-      `;
-      return;
-    }
-    const filtered = M.filterFoodItemsByQuery(foodItems, query);
-    if (!filtered.length) {
-      list.innerHTML = `
-        <p class="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-dashed border-slate-200 rounded-2xl px-3 py-2.5">
-          「${M.escapeHtml(query.trim())}」に一致する材料・単品はありません
-        </p>
-      `;
-      return;
-    }
-    const addedKeys = new Set(itemKeys(selectedItems(state)));
-    list.innerHTML = filtered.map((food) => {
-      const added = addedKeys.has(`item:${food.id}`) || addedKeys.has(`name:${(food.name || '').toLowerCase()}`);
-      const cls = added
-        ? 'w-full text-left bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2 font-bold text-amber-800'
-        : 'active-scale w-full text-left bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 font-bold text-slate-800';
-      return `
-        <button type="button" data-food-name="${M.escapeHtml(food.name)}" data-food-id="${M.escapeHtml(food.id)}" onclick="pickMealFoodItem(this.dataset.foodName, this.dataset.foodId)" class="${cls}">
-          ${M.escapeHtml(food.name)}${added ? ' <span class="text-[10px] font-bold">追加済</span>' : ''}
-        </button>
-      `;
-    }).join('');
-  }
+
 
   function appendMealItem(state, item) {
     if (isDuplicateItem(selectedItems(state), item)) {
@@ -410,7 +405,6 @@ KitchenGit.MealEditor = (function () {
     setEditorError('');
     renderItems(state);
     renderRecipes(state);
-    renderFoodItems(state);
     return true;
   }
 
@@ -418,7 +412,6 @@ KitchenGit.MealEditor = (function () {
     renderTabUi(state);
     renderItems(state);
     renderRecipes(state);
-    renderFoodItems(state);
     renderMemoPanel(state);
   }
 
@@ -455,8 +448,6 @@ KitchenGit.MealEditor = (function () {
         </span>
       `;
     }
-    const input = document.getElementById('meal-edit-food-input');
-    if (input) input.value = '';
     state.mealEditorSearchQuery = '';
     const searchInput = document.getElementById('meal-edit-search-input');
     if (searchInput) searchInput.value = '';
@@ -596,56 +587,21 @@ KitchenGit.MealEditor = (function () {
       setEditorError('');
       renderEditor(state);
     };
+    window.pickAndSaveMealRecipe = async function (name, recipeId) {
+      const title = (name || '').trim();
+      if (!title || !recipeId) return;
+      if (!beginAction()) return;
+      const item = { title, recipeId, itemId: null };
+      state.mealEditorItems = [item];
+      const items = itemsFromEditor(state);
+      await commitRecipeSlot(state, state.mealEditorDate, state.mealEditorSlot, items, '献立を保存しました');
+      toast(`「${title}」を献立に登録しました`);
+    };
+
     window.pickMealRecipe = function (name, recipeId) {
       const title = (name || '').trim();
       if (!title || !recipeId) return;
       appendMealItem(state, { title, recipeId, itemId: null });
-    };
-    window.pickMealFoodItem = function (name, itemId) {
-      const title = (name || '').trim();
-      if (!title || !itemId) return;
-      appendMealItem(state, { title, recipeId: null, itemId });
-    };
-    window.addMealFoodItemFromInput = async function () {
-      if (!beginAction()) return;
-      const input = document.getElementById('meal-edit-food-input');
-      const name = input ? input.value.trim() : '';
-      if (!name) {
-        toast('材料名を入力してください', 'error');
-        return;
-      }
-      try {
-        let food = null;
-        if (hooks.insertFoodItem) {
-          food = await hooks.insertFoodItem(name);
-        } else {
-          const ItemsDB = KitchenGit.ItemsDB;
-          const localItems = foodItemsOf(state);
-          food = ItemsDB.findByNameInList(localItems, name);
-          if (!food) {
-            food = {
-              id: 'local-' + Date.now(),
-              name,
-              category: ItemsDB.DEFAULT_CATEGORY,
-              unit: '個'
-            };
-            state.foodItems = ItemsDB.sortByName
-              ? ItemsDB.sortByName([food, ...localItems])
-              : [food, ...localItems];
-          }
-        }
-        if (!food) {
-          toast('材料を登録できませんでした', 'error');
-          return;
-        }
-        if (input) input.value = '';
-        if (appendMealItem(state, { title: food.name, recipeId: null, itemId: food.id })) {
-          renderFoodItems(state);
-        }
-      } catch (e) {
-        console.error(e);
-        toast('材料を登録できませんでした', 'error');
-      }
     };
     window.saveMealSlot = async function () {
       if (!beginAction()) return;
@@ -685,7 +641,6 @@ KitchenGit.MealEditor = (function () {
       const input = document.getElementById('meal-edit-search-input');
       if (input) input.value = '';
       renderRecipes(state);
-      renderFoodItems(state);
     };
 
     window.applyMealEditorChip = function (chip) {
@@ -699,7 +654,6 @@ KitchenGit.MealEditor = (function () {
       const input = document.getElementById('meal-edit-search-input');
       if (input) input.value = state.mealEditorSearchQuery;
       renderRecipes(state);
-      renderFoodItems(state);
     };
 
     window.viewRecipeFromMealEditor = function (recipeId) {
@@ -722,7 +676,6 @@ KitchenGit.MealEditor = (function () {
       searchInput.addEventListener('input', function () {
         state.mealEditorSearchQuery = this.value || '';
         renderRecipes(state);
-        renderFoodItems(state);
       });
     }
   }
@@ -730,7 +683,6 @@ KitchenGit.MealEditor = (function () {
   return {
     bindGlobals,
     renderRecipes,
-    renderFoodItems,
     open,
     close
   };

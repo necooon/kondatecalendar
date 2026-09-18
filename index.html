@@ -338,28 +338,20 @@
     <!-- ==================== VIEW 3: レシピ一覧 / 詳細 ==================== -->
     <section id="view-recipe" class="space-y-3.5 hidden">
       <div id="recipe-list-pane" class="space-y-3.5">
-        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60">
+        <!-- 統合されたレシピ検索・管理カード -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">Recipes</span>
-              <h2 class="text-lg font-bold text-slate-900 tracking-tight">レシピ管理</h2>
+              <span class="text-[10px] font-bold tracking-wider text-emerald-600 uppercase">Recipes</span>
+              <h2 class="text-base font-bold text-slate-900 tracking-tight">レシピ検索・一覧</h2>
             </div>
-            <span id="recipe-cloud-status" class="text-[10px] font-bold font-mono text-slate-400">読込中</span>
-          </div>
-        </div>
-
-        <!-- レシピ検索・タグ絞り込みウィジェット -->
-        <div class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-200/60 space-y-2.5">
-          <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
-                <i class="fa-solid fa-filter"></i>
-              </div>
-              <span class="text-xs font-bold text-slate-800">レシピを検索・絞り込み</span>
+              <span id="recipe-filter-count-badge" class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl"></span>
+              <span id="recipe-cloud-status" class="text-[10px] font-bold font-mono text-slate-400">読込中</span>
             </div>
-            <span id="recipe-filter-count-badge" class="text-[10px] font-bold text-slate-400"></span>
           </div>
 
+          <!-- 検索バー -->
           <div class="relative flex items-center">
             <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
             <input type="text" id="recipe-search-input" oninput="onRecipeSearchInput(this.value)" placeholder="料理名・材料・タグで検索 (例: 豚肉, 定番, 生姜)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-colors">
@@ -368,8 +360,8 @@
             </button>
           </div>
 
-          <!-- タグ絞り込みチップス -->
-          <div id="recipe-tag-chips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]"></div>
+          <!-- タグ絞り込みチップス（検索バーの下にコンパクトに配置） -->
+          <div id="recipe-tag-chips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-[11px]"></div>
         </div>
 
         <div id="recipe-list" class="space-y-2.5"></div>
@@ -678,6 +670,13 @@
         <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
         <input type="number" min="1" step="1" id="edit-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
       </div>
+      <div>
+        <label class="font-bold text-slate-700 block mb-1">作成インターバル（日数・任意）</label>
+        <div class="flex items-center gap-2">
+          <input type="number" min="0" step="1" id="edit-interval-days" value="0" class="w-28 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <span class="text-slate-500 text-[11px]">日以内は献立登録で非表示 (例: 14 = 2週間)</span>
+        </div>
+      </div>
 
       <!-- 料理写真の編集 -->
       <div>
@@ -862,8 +861,8 @@
     <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
     <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
       <div class="min-w-0 pr-2">
-        <p class="text-[10px] font-bold tracking-wider text-emerald-600 uppercase">Meal Slot</p>
-        <h3 id="meal-edit-heading" class="text-base font-bold text-slate-900 truncate">献立を編集</h3>
+        <p class="text-[10px] font-bold tracking-wider text-emerald-600 uppercase">Meal Selection</p>
+        <h3 id="meal-edit-heading" class="text-base font-bold text-slate-900 truncate">献立を選ぶ</h3>
       </div>
       <button type="button" onclick="closeMealEditor()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
         <i class="fa-solid fa-xmark text-sm"></i>
@@ -871,12 +870,15 @@
     </div>
     <div class="space-y-3 text-xs">
       <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-2xl" role="tablist">
-        <button type="button" id="meal-edit-tab-recipe" onclick="switchMealEditorTab('recipe')" class="py-2 rounded-xl text-[11px] font-bold transition-colors bg-white text-slate-900 shadow-sm border border-slate-900/10">自炊レシピ</button>
+        <button type="button" id="meal-edit-tab-recipe" onclick="switchMealEditorTab('recipe')" class="py-2 rounded-xl text-[11px] font-bold transition-colors bg-white text-slate-900 shadow-sm border border-slate-900/10">自炊レシピから選ぶ</button>
         <button type="button" id="meal-edit-tab-memo" onclick="switchMealEditorTab('memo')" class="py-2 rounded-xl text-[11px] font-bold transition-colors text-slate-500">外食・メモを記録</button>
       </div>
       <div id="meal-edit-panel-recipe" class="space-y-3">
-        <div>
-          <label class="font-bold text-slate-700 block mb-1">この枠の料理</label>
+        <div id="meal-edit-current-slot-box" class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-2.5">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">現在この枠に登録中の料理</span>
+            <button type="button" onclick="clearMealSlot()" class="text-[10px] font-bold text-rose-600 hover:text-rose-700">すべてクリア</button>
+          </div>
           <div id="meal-edit-items" class="space-y-1.5"></div>
         </div>
 
@@ -920,18 +922,7 @@
           <div id="meal-edit-recipes" class="space-y-2 max-h-56 overflow-y-auto pr-0.5"></div>
         </div>
 
-        <!-- 材料・単品 -->
-        <div id="meal-edit-food-wrap" class="pt-2 border-t border-slate-100">
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="font-bold text-slate-700 text-xs">材料・単品で登録</label>
-            <span class="text-[10px] text-slate-400">果物・納豆・ご飯など</span>
-          </div>
-          <div class="flex gap-2 mb-2">
-            <input type="text" id="meal-edit-food-input" placeholder="例: バナナ, 納豆, ご飯" class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            <button type="button" onclick="addMealFoodItemFromInput()" class="active-scale shrink-0 bg-amber-500 text-white text-[11px] font-bold px-3 py-2 rounded-xl">＋ 追加</button>
-          </div>
-          <div id="meal-edit-food-items" class="space-y-1.5 max-h-32 overflow-y-auto"></div>
-        </div>
+
       </div>
       <div id="meal-edit-panel-memo" class="space-y-3 hidden">
         <div>
@@ -992,6 +983,13 @@
       <div>
         <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
         <input required type="number" min="1" step="1" id="reg-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+      </div>
+      <div>
+        <label class="font-bold text-slate-700 block mb-1">作成インターバル（日数・任意）</label>
+        <div class="flex items-center gap-2">
+          <input type="number" min="0" step="1" id="reg-interval-days" value="0" class="w-28 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <span class="text-slate-500 text-[11px]">日以内は献立登録で非表示 (例: 14 = 2週間)</span>
+        </div>
       </div>
       <!-- 料理写真（任意） -->
       <div>
@@ -1834,7 +1832,6 @@
             <h3 onclick="showRecipeDetail('${recipe.id}')" class="active-scale cursor-pointer text-sm font-bold text-slate-900 hover:text-emerald-700 transition-colors">
               ${recipe.name}
             </h3>
-            ${ingredientsList ? `<p class="text-xs text-slate-600 line-clamp-1"><strong class="text-slate-800">主な材料:</strong> ${ingredientsList} など</p>` : ''}
             <div class="flex items-center gap-1.5 text-xs flex-wrap pt-0.5">
               ${tagsHtml}
             </div>
@@ -2368,6 +2365,8 @@
       document.getElementById('commit-error').classList.add('hidden');
       document.getElementById('edit-name').value = recipe.name || '';
       document.getElementById('edit-servings').value = String(recipe.servingsBase || 2);
+      const intervalInput = document.getElementById('edit-interval-days');
+      if (intervalInput) intervalInput.value = String(recipe.intervalDays || 0);
       document.getElementById('commit-input-note').value = (v && v.note) || '';
       document.getElementById('commit-next-badge').innerText = nextKey;
       document.getElementById('commit-save-btn').querySelector('span').innerText = `${nextKey} として保存`;
@@ -2468,6 +2467,10 @@
         };
         recipe.name = name;
         recipe.servingsBase = servingsBase;
+        const intervalInput = document.getElementById('edit-interval-days');
+        if (intervalInput) {
+          recipe.intervalDays = Number(intervalInput.value) || 0;
+        }
         const editImgInput = document.getElementById('edit-image-url');
         if (editImgInput) {
           recipe.imageUrl = editImgInput.value || null;
@@ -2514,6 +2517,8 @@
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-tag').value = '';
       document.getElementById('reg-servings').value = '2';
+      const intervalInput = document.getElementById('reg-interval-days');
+      if (intervalInput) intervalInput.value = '0';
       if (typeof window.clearRegImage === 'function') {
         window.clearRegImage();
       }
@@ -2537,6 +2542,7 @@
       const regImgInput = document.getElementById('reg-image-url');
       const imageUrl = (regImgInput && regImgInput.value) || null;
       const servingsBase = Number(document.getElementById('reg-servings').value) || 2;
+      const intervalDays = Number(document.getElementById('reg-interval-days').value) || 0;
       const ingredients = collectIngredientRows('reg-ingredients');
       const n = window.KitchenGit && KitchenGit.Nutrition;
       const computed = n
@@ -2555,6 +2561,7 @@
         imageUrl,
         branch: 'main',
         servingsBase,
+        intervalDays,
         pfc,
         versions: {
           'v1.0': {
