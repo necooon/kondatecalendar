@@ -250,51 +250,19 @@
             <div class="flex items-center justify-center gap-1.5 flex-wrap">
               <span id="week-range-label" class="text-sm font-bold text-slate-900 font-mono leading-tight">9/6 (土) - 9/12 (金)</span>
             </div>
-            <button type="button" id="goto-this-week-btn" onclick="goToThisWeek()" class="hidden mt-1 text-[11px] font-bold text-emerald-700 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 active-scale">
-              今週
-            </button>
           </div>
           <button type="button" onclick="shiftWeek(7)" aria-label="翌週" class="active-scale min-w-11 min-h-11 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
             <i class="fa-solid fa-chevron-right text-sm"></i>
           </button>
         </div>
 
-        <div class="flex items-center justify-between gap-2 pt-0.5">
-          <span class="text-[11px] text-slate-500">タップで日ごとを開閉</span>
-          <div class="flex items-center gap-2 shrink-0">
-            <button type="button" onclick="expandAllDays()" class="active-scale text-[11px] font-bold text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-50">すべて開く</button>
-            <button type="button" onclick="collapseAllDays()" class="active-scale text-[11px] font-bold text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-100">すべて閉じる</button>
-          </div>
-        </div>
+
+
+
 
       </div>
 
-      <!-- カレンダー画面：レシピ・材料検索バー -->
-      <div id="calendar-search-widget" class="bg-white rounded-3xl p-3.5 shadow-sm border border-slate-200/60 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
-              <i class="fa-solid fa-magnifying-glass"></i>
-            </div>
-            <span class="text-xs font-bold text-slate-800">レシピ・材料から献立を探す</span>
-          </div>
-          <span id="calendar-search-count-badge" class="text-[10px] font-bold text-slate-400"></span>
-        </div>
 
-        <div class="relative flex items-center">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
-          <input type="text" id="calendar-recipe-search-input" placeholder="料理名・材料で今週のレシピを検索 (例: 豚肉, 生姜, 豆腐)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-colors">
-          <button type="button" id="calendar-recipe-search-clear" onclick="clearCalendarRecipeSearch()" class="hidden absolute right-2.5 w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] hover:bg-slate-300 active-scale">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <!-- クイック材料タグ -->
-        <div id="calendar-search-chips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[11px]"></div>
-
-        <!-- 検索結果パネル（検索時のみ展開） -->
-        <div id="calendar-search-results" class="hidden space-y-2 pt-2 border-t border-slate-100 max-h-72 overflow-y-auto pr-0.5"></div>
-      </div>
 
       <!-- 1週間まとめ（月〜日の縦スクロール） -->
       <div id="week-overview" class="space-y-3">

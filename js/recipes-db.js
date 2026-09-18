@@ -347,6 +347,36 @@ KitchenGit.demoRecipes = function demoRecipes() {
       }
     },
     {
+      id: 'demo-jerk-chicken',
+      name: 'ジャークチキン',
+      imageUrl: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b',
+      tag: 'スパイス #01',
+      tags: ['鶏肉', 'スパイス', '主菜', 'エスニック'],
+      branch: 'main',
+      servingsBase: 2,
+      pfc: { p: 32.0, f: 14.5, c: 6.0, kcal: 290 },
+      versions: {
+        'v1.0': {
+          title: 'v1.0',
+          note: 'スパイス香る本格ジャークチキン',
+          sortOrder: 0,
+          branch: 'main',
+          hash: M.shortHash('demo-jerk-chicken|v1.0'),
+          author: 'You',
+          committedAt: '2026-09-04T12:00:00+09:00',
+          steps: [
+            { title: '漬け込み', instruction: '鶏もも肉にジャークスパイスミックスと調味料をもみ込み、冷蔵庫で30分以上漬け込みます。', timer: 1800, uses: ['鶏もも肉'] },
+            { title: '焼き上げ', instruction: 'グリルやフライパンで皮目から香ばしく焼き上げます。', timer: 600, uses: ['鶏もも肉'] }
+          ],
+          ingredients: [
+            { name: '鶏もも肉', baseAmount: 300, unit: 'g', note: '' },
+            { name: 'ジャークスパイス', baseAmount: 1, unit: '大さじ', note: '' },
+            { name: 'にんにく・生姜', baseAmount: 10, unit: 'g', note: '' }
+          ]
+        }
+      }
+    },
+    {
       id: 'demo-ginger-pork',
       name: '豚肉と玉ねぎの生姜焼き',
       imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1',

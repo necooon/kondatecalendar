@@ -229,6 +229,13 @@ KitchenGit.Calendar = (function () {
   function goToThisWeek(state) {
     const W = Week();
     setDisplayedWeek(state, W.toIsoDate(W.startOfWeekSaturday(new Date())), { selectToday: true });
+    setTimeout(() => {
+      const todayIso = W.toIsoDate(new Date());
+      const el = document.getElementById(W.dayDomId(todayIso));
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 60);
   }
 
   function applyAiSuggestion(state) {
@@ -435,10 +442,8 @@ KitchenGit.Calendar = (function () {
     const W = Week();
     const title = document.getElementById('week-plan-title');
     const range = document.getElementById('week-range-label');
-    const thisBtn = document.getElementById('goto-this-week-btn');
     if (title) title.textContent = W.relativeWeekTitle(state.weekStart);
     if (range) range.textContent = W.formatWeekRangeLabel(state.weekStart);
-    if (thisBtn) thisBtn.classList.toggle('hidden', W.weekDelta(state.weekStart) === 0);
   }
 
   function renderWeekOverview(state) {
