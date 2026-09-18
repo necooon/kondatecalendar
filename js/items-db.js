@@ -6,6 +6,7 @@ window.KitchenGit = window.KitchenGit || {};
  * @property {string} name
  * @property {string} category
  * @property {string} unit
+ * @property {number} count
  */
 
 KitchenGit.ItemsDB = (function () {
@@ -54,7 +55,8 @@ KitchenGit.ItemsDB = (function () {
       id: row.id,
       name: row.name || '',
       category: row.category || '',
-      unit: row.unit || ''
+      unit: row.unit || '',
+      count: row.count != null ? Number(row.count) : 0
     };
   }
 
@@ -78,7 +80,7 @@ KitchenGit.ItemsDB = (function () {
     if (!client) throw new Error('cloud-not-ready');
     const { data, error } = await client
       .from('items')
-      .select('id, name, category, unit')
+      .select('id, name, category, unit, count')
       .in('category', FOOD_CATEGORIES)
       .order('name', { ascending: true });
     throwIfError(error);
@@ -110,7 +112,7 @@ KitchenGit.ItemsDB = (function () {
         entered: false,
         purchase_destinations: []
       })
-      .select('id, name, category, unit')
+      .select('id, name, category, unit, count')
       .single();
     throwIfError(error);
     return mapRow(data);

@@ -72,7 +72,8 @@ KitchenGit.RecipeModel = (function () {
       name: ing.name,
       base_amount: ing.baseAmount,
       unit: ing.unit,
-      note: ing.note || ''
+      note: ing.note || '',
+      item_id: ing.itemId || ing.item_id || null
     }));
   }
 
@@ -81,7 +82,8 @@ KitchenGit.RecipeModel = (function () {
       name: i.name,
       baseAmount: Number(i.base_amount != null ? i.base_amount : i.baseAmount),
       unit: i.unit,
-      note: i.note || ''
+      note: i.note || '',
+      itemId: i.item_id || i.itemId || null
     }));
   }
 
@@ -114,7 +116,8 @@ KitchenGit.RecipeModel = (function () {
       author: version.author || 'You',
       committed_at: version.committedAt || new Date().toISOString(),
       ingredients: ingredientsToDb(version.ingredients),
-      steps: stepsToDb(version.steps)
+      steps: stepsToDb(version.steps),
+      image_url: version.imageUrl || null
     };
   }
 
@@ -129,7 +132,8 @@ KitchenGit.RecipeModel = (function () {
       author: raw.author || 'You',
       committedAt: raw.committed_at || raw.committedAt || new Date().toISOString(),
       ingredients: ingredientsFromDb(raw.ingredients),
-      steps: stepsFromDb(raw.steps)
+      steps: stepsFromDb(raw.steps),
+      imageUrl: raw.image_url || raw.imageUrl || null
     };
   }
 
@@ -569,10 +573,12 @@ KitchenGit.RecipesDB = (function () {
       versions = { 'v1.0': model.fallbackVersion(row, ingredients, steps) };
     }
     const tags = Array.isArray(row.tags) ? row.tags.slice() : [];
+    let headVersion = versions['v1.0'] || Object.values(versions)[0];
+    const imageUrl = row.image_url || (headVersion && headVersion.imageUrl) || null;
     return {
       id: row.id,
       name: row.name,
-      imageUrl: row.image_url || null,
+      imageUrl,
       tag: row.tag || '',
       tags,
       branch: row.branch || 'main',
@@ -594,11 +600,24 @@ KitchenGit.RecipesDB = (function () {
 
   async function insertRecipe(recipe) {
     if (!client) throw new Error('cloud-not-ready');
-    const { data: recipeRow, error: recipeErr } = await client
+    const payload = snapshotPayload(recipe);
+    let { data: recipeRow, error: recipeErr } = await client
       .from('recipes')
-      .insert(snapshotPayload(recipe))
+      .insert(payload)
       .select()
       .single();
+
+    if (recipeErr && recipeErr.message && (recipeErr.message.includes('image_url') || recipeErr.message.includes('column'))) {
+      console.warn('[RecipeOps] image_url column not found in recipes table, retrying without image_url top-level column...');
+      delete payload.image_url;
+      const retryRes = await client
+        .from('recipes')
+        .insert(payload)
+        .select()
+        .single();
+      recipeRow = retryRes.data;
+      recipeErr = retryRes.error;
+    }
     throwIfError(recipeErr);
     return mapRow(recipeRow);
   }
@@ -606,12 +625,26 @@ KitchenGit.RecipesDB = (function () {
   async function updateRecipe(recipe) {
     if (!client) throw new Error('cloud-not-ready');
     if (!recipe || !recipe.id) throw new Error('missing-id');
-    const { data, error } = await client
+    const payload = snapshotPayload(recipe);
+    let { data, error } = await client
       .from('recipes')
-      .update(snapshotPayload(recipe))
+      .update(payload)
       .eq('id', recipe.id)
       .select()
       .single();
+
+    if (error && error.message && (error.message.includes('image_url') || error.message.includes('column'))) {
+      console.warn('[RecipeOps] image_url column not found in recipes table, retrying without image_url top-level column...');
+      delete payload.image_url;
+      const retryRes = await client
+        .from('recipes')
+        .update(payload)
+        .eq('id', recipe.id)
+        .select()
+        .single();
+      data = retryRes.data;
+      error = retryRes.error;
+    }
     throwIfError(error);
     return mapRow(data);
   }

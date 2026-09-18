@@ -1400,7 +1400,8 @@
       appState.shoppingItems = KitchenGit.Shopping.buildFromWeek({
         calendarDays: appState.calendarDays,
         recipes: appState.recipes,
-        weekStart: appState.weekStart
+        weekStart: appState.weekStart,
+        foodItems: appState.foodItems
       });
       renderShoppingList();
     }
@@ -2871,6 +2872,7 @@
         appState.foodItems = [];
       }
       refreshMealEditorLists();
+      refreshShoppingList();
     }
 
     function refreshMealEditorLists() {

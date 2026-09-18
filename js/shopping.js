@@ -69,8 +69,10 @@ KitchenGit.Shopping = (function () {
     const opts = options || {};
     const calendarDays = opts.calendarDays || [];
     const recipes = opts.recipes || [];
+    const foodItems = opts.foodItems || [];
     const Meals = KitchenGit.Meals;
     const RecipeModel = KitchenGit.RecipeModel;
+    const ItemsDB = KitchenGit.ItemsDB;
     const merge = new Map();
     const excluded = loadExcluded();
 
@@ -98,19 +100,34 @@ KitchenGit.Shopping = (function () {
             const unit = String(ing.unit || 'g').trim();
             const scaled = RecipeModel.scaleAmount(ing.baseAmount, slotServings, servingsBase);
             const key = itemKey(name, unit);
+
+            let matchedFood = null;
+            if (ing.itemId && foodItems.length) {
+              matchedFood = foodItems.find(f => f.id === ing.itemId);
+            }
+            if (!matchedFood && foodItems.length && ItemsDB && typeof ItemsDB.findByNameInList === 'function') {
+              matchedFood = ItemsDB.findByNameInList(foodItems, name);
+            }
+            const hasStock = matchedFood && Number(matchedFood.count) > 0;
+            const itemId = matchedFood ? matchedFood.id : (ing.itemId || null);
+
             const existing = merge.get(key);
             if (existing) {
               existing.rawAmount += scaled;
               if (usagePart && !existing.usageParts.includes(usagePart)) {
                 existing.usageParts.push(usagePart);
               }
+              if (hasStock) existing.hasStock = true;
+              if (itemId && !existing.itemId) existing.itemId = itemId;
             } else {
               merge.set(key, {
                 name,
                 unit,
                 rawAmount: scaled,
                 category: categorizeIngredient(name),
-                usageParts: usagePart ? [usagePart] : []
+                usageParts: usagePart ? [usagePart] : [],
+                hasStock: !!hasStock,
+                itemId: itemId || null
               });
             }
           });
@@ -120,16 +137,19 @@ KitchenGit.Shopping = (function () {
 
     const items = Array.from(merge.values()).map((entry) => {
       const key = itemKey(entry.name, entry.unit);
+      const isExcludedStored = excluded[key];
+      const isExcluded = isExcludedStored !== undefined ? isExcludedStored : !!entry.hasStock;
       return {
-        id: key,
+        id: entry.itemId || key,
         key,
+        itemId: entry.itemId || null,
         category: entry.category,
         name: entry.name,
         unit: entry.unit,
         rawAmount: entry.rawAmount,
         amount: formatAmount(entry.rawAmount, entry.unit),
         usage: entry.usageParts.join('・'),
-        excluded: !!excluded[key]
+        excluded: isExcluded
       };
     });
 
