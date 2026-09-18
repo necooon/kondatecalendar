@@ -285,6 +285,82 @@ window.KitchenGit = window.KitchenGit || {};
     bindFileInput('edit-image-file-input', (dataUrl) => setEditImage(dataUrl));
   }
 
+  // ==================== 5. AI料理画像自動生成機能 ====================
+
+  async function generateAiRecipeImage(recipeName, ingredients, onImageReady) {
+    if (!recipeName || !String(recipeName).trim()) {
+      if (typeof window.showToast === 'function') window.showToast('料理名を入力してください', 'error');
+      return;
+    }
+
+    if (typeof window.showToast === 'function') window.showToast('AIが料理画像を生成中... (約10〜20秒)');
+
+    try {
+      const res = await fetch('/api/gemini/generate-recipe-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipeName, ingredients })
+      });
+      const data = await res.json();
+      if (!data.ok || !data.imageUrl) {
+        throw new Error(data.error || '画像生成に失敗しました');
+      }
+      onImageReady(data.imageUrl);
+      if (typeof window.showToast === 'function') window.showToast('AI料理画像を生成しました！');
+    } catch (err) {
+      console.error('AI image generation failed:', err);
+      if (typeof window.showToast === 'function') window.showToast(err.message || 'AI画像生成に失敗しました', 'error');
+    }
+  }
+
+  function generateAiRecipeImageForDetail() {
+    const recipe = typeof window.selectedRecipe === 'function' ? window.selectedRecipe() : null;
+    if (!recipe) {
+      if (typeof window.showToast === 'function') window.showToast('レシピが選択されていません', 'error');
+      return;
+    }
+    const activeVersion = window.appState ? window.appState.activeVersion : 'v1.0';
+    const versionObj = (recipe.versions && recipe.versions[activeVersion]) || {};
+    const ingredients = versionObj.ingredients || [];
+    generateAiRecipeImage(recipe.name, ingredients, (dataUrl) => {
+      setRecipeImageModalPreview(dataUrl);
+    });
+  }
+
+  function generateAiRecipeImageForRegister() {
+    const nameEl = document.getElementById('reg-name');
+    const recipeName = nameEl ? nameEl.value.trim() : '';
+    if (!recipeName) {
+      if (typeof window.showToast === 'function') window.showToast('先に料理名を入力してください', 'error');
+      if (nameEl) nameEl.focus();
+      return;
+    }
+    let ingredients = [];
+    if (typeof window.collectIngredientRows === 'function') {
+      ingredients = window.collectIngredientRows('reg-ingredients');
+    }
+    generateAiRecipeImage(recipeName, ingredients, (dataUrl) => {
+      setRegImage(dataUrl);
+    });
+  }
+
+  function generateAiRecipeImageForEdit() {
+    const nameEl = document.getElementById('edit-name');
+    const recipeName = nameEl ? nameEl.value.trim() : '';
+    if (!recipeName) {
+      if (typeof window.showToast === 'function') window.showToast('先に料理名を入力してください', 'error');
+      if (nameEl) nameEl.focus();
+      return;
+    }
+    let ingredients = [];
+    if (typeof window.collectIngredientRows === 'function') {
+      ingredients = window.collectIngredientRows('edit-ingredients');
+    }
+    generateAiRecipeImage(recipeName, ingredients, (dataUrl) => {
+      setEditImage(dataUrl);
+    });
+  }
+
   function escapeAttr(str) {
     if (!str) return '';
     return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -304,16 +380,19 @@ window.KitchenGit = window.KitchenGit || {};
   window.clearRecipeImageModalSelection = clearRecipeImageModalSelection;
   window.applyRecipeImageUrlInput = applyRecipeImageUrlInput;
   window.saveRecipeImageModal = saveRecipeImageModal;
+  window.generateAiRecipeImageForDetail = generateAiRecipeImageForDetail;
 
   window.setRegImage = setRegImage;
   window.clearRegImage = clearRegImage;
   window.toggleRegUrlInput = toggleRegUrlInput;
   window.applyRegImageUrlInput = applyRegImageUrlInput;
+  window.generateAiRecipeImageForRegister = generateAiRecipeImageForRegister;
 
   window.setEditImage = setEditImage;
   window.clearEditImage = clearEditImage;
   window.toggleEditUrlInput = toggleEditUrlInput;
   window.applyEditImageUrlInput = applyEditImageUrlInput;
+  window.generateAiRecipeImageForEdit = generateAiRecipeImageForEdit;
 
   window.initRecipeImagePickers = initRecipeImagePickers;
 
@@ -324,10 +403,13 @@ window.KitchenGit = window.KitchenGit || {};
     clearRecipeImageModalSelection,
     applyRecipeImageUrlInput,
     saveRecipeImageModal,
+    generateAiRecipeImageForDetail,
     setRegImage,
     clearRegImage,
+    generateAiRecipeImageForRegister,
     setEditImage,
     clearEditImage,
+    generateAiRecipeImageForEdit,
     initRecipeImagePickers
   };
 })();

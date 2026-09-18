@@ -706,6 +706,10 @@
             <button type="button" onclick="applyEditImageUrlInput()" class="shrink-0 bg-slate-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs">反映</button>
           </div>
         </div>
+        <button type="button" onclick="generateAiRecipeImageForEdit()" class="active-scale w-full mt-2 flex items-center justify-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold text-xs py-2.5 rounded-xl">
+          <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
+          <span>AIで料理名・材料から写真を自動生成する</span>
+        </button>
 
         <div id="edit-image-preview-box" class="hidden relative rounded-2xl overflow-hidden aspect-[16/10] bg-slate-900 border border-slate-200">
           <img id="edit-image-preview-img" src="" alt="編集プレビュー" class="w-full h-full object-cover">
@@ -795,17 +799,23 @@
     </div>
 
     <!-- 選択アクションボタン群 -->
-    <div class="grid grid-cols-2 gap-2 pt-1">
-      <input type="file" id="recipe-image-camera-input" accept="image/*" capture="environment" class="hidden">
-      <input type="file" id="recipe-image-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
-      
-      <button type="button" onclick="document.getElementById('recipe-image-camera-input').click()" class="active-scale flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-3 rounded-2xl">
-        <i class="fa-solid fa-camera text-sm text-emerald-600"></i>
-        <span>カメラで撮影</span>
-      </button>
-      <button type="button" onclick="document.getElementById('recipe-image-file-input').click()" class="active-scale flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold text-xs py-3 rounded-2xl">
-        <i class="fa-regular fa-image text-sm text-slate-600"></i>
-        <span>写真ライブラリ</span>
+    <div class="space-y-2 pt-1">
+      <div class="grid grid-cols-2 gap-2">
+        <input type="file" id="recipe-image-camera-input" accept="image/*" capture="environment" class="hidden">
+        <input type="file" id="recipe-image-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
+        
+        <button type="button" onclick="document.getElementById('recipe-image-camera-input').click()" class="active-scale flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-3 rounded-2xl">
+          <i class="fa-solid fa-camera text-sm text-emerald-600"></i>
+          <span>カメラで撮影</span>
+        </button>
+        <button type="button" onclick="document.getElementById('recipe-image-file-input').click()" class="active-scale flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold text-xs py-3 rounded-2xl">
+          <i class="fa-regular fa-image text-sm text-slate-600"></i>
+          <span>写真ライブラリ</span>
+        </button>
+      </div>
+      <button type="button" onclick="generateAiRecipeImageForDetail()" class="active-scale w-full flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold text-xs py-3 rounded-2xl">
+        <i class="fa-solid fa-wand-magic-sparkles text-sm text-purple-600"></i>
+        <span>AIでレシピ名・材料から料理画像を自動生成する</span>
       </button>
     </div>
 
@@ -1011,6 +1021,10 @@
             <button type="button" onclick="applyRegImageUrlInput()" class="shrink-0 bg-slate-800 text-white px-3 py-1.5 rounded-xl font-bold text-xs">設定</button>
           </div>
         </div>
+        <button type="button" onclick="generateAiRecipeImageForRegister()" class="active-scale w-full mt-2 flex items-center justify-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold text-xs py-2.5 rounded-xl">
+          <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
+          <span>AIで料理名・材料から写真を自動生成する</span>
+        </button>
 
         <!-- 写真設定後プレビュー -->
         <div id="reg-image-preview-box" class="hidden relative rounded-2xl overflow-hidden aspect-[16/10] bg-slate-900 border border-slate-200">

@@ -323,6 +323,65 @@ app.post('/api/gemini/extract-recipe', async (req, res) => {
   }
 });
 
+// Generate recipe image from recipe name and ingredients using Gemini image generation model
+app.post('/api/gemini/generate-recipe-image', async (req, res) => {
+  try {
+    const { recipeName, ingredients } = req.body;
+    if (!recipeName || !String(recipeName).trim()) {
+      return res.status(400).json({ ok: false, error: '料理名が指定されていません。' });
+    }
+
+    const ingredientListStr = Array.isArray(ingredients)
+      ? ingredients.map(i => (typeof i === 'string' ? i : (i.name || ''))).filter(Boolean).join('、')
+      : String(ingredients || '');
+
+    const ai = getGenAI();
+
+    const prompt = `A professional, highly appetizing, beautiful culinary studio food photography of a freshly cooked Japanese dish named "${recipeName}". Main ingredients/components: ${ingredientListStr || 'fresh ingredients'}. Aesthetic restaurant plating, shallow depth of field, warm natural lighting, vibrant and appetizing colors, 4k resolution, professional food styling.`;
+
+    console.log(`[RecipeOps] Generating recipe image for "${recipeName}" with model gemini-3.1-flash-lite-image...`);
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-image',
+      contents: {
+        parts: [
+          { text: prompt }
+        ]
+      },
+      config: {
+        imageConfig: {
+          aspectRatio: "4:3"
+        }
+      }
+    });
+
+    let imageUrl = null;
+    if (response && response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData && part.inlineData.data) {
+          const mime = part.inlineData.mimeType || 'image/png';
+          imageUrl = `data:${mime};base64,${part.inlineData.data}`;
+          break;
+        } else if (part.text) {
+          console.log('[RecipeOps Image Gen Text output]:', part.text);
+        }
+      }
+    }
+
+    if (!imageUrl) {
+      return res.status(500).json({ ok: false, error: 'AIが画像を生成できませんでした。APIキーが画像生成に対応しているかご確認ください。' });
+    }
+
+    return res.json({ ok: true, imageUrl });
+  } catch (err) {
+    console.error('Gemini image generation error:', err);
+    return res.status(500).json({
+      ok: false,
+      error: err.message || '料理画像の生成中にエラーが発生しました。'
+    });
+  }
+});
+
 // Fallback to index.html for SPA/client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
