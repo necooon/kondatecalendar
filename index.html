@@ -1610,7 +1610,24 @@
     }
 
     function applySelectedRecipe(recipeId) {
-      const recipe = appState.recipes.find(r => r.id === recipeId);
+      let recipe = null;
+      if (recipeId) {
+        recipe = appState.recipes.find(r => r.id === recipeId);
+        if (!recipe) {
+          if (recipeId === 'demo-chicken') {
+            recipe = appState.recipes.find(r => (r.name || '').includes('鶏むね肉') || (r.name || '').includes('秋茄子'));
+          } else if (recipeId === 'demo-ginger-pork') {
+            recipe = appState.recipes.find(r => (r.name || '').includes('生姜焼き') || (r.name || '').includes('豚肉'));
+          } else if (recipeId === 'demo-jerk-chicken') {
+            recipe = appState.recipes.find(r => (r.name || '').includes('ジャークチキン'));
+          } else {
+            recipe = appState.recipes.find(r => r.id.includes(recipeId) || recipeId.includes(r.id) || (r.name || '').includes(recipeId) || recipeId.includes(r.name || ''));
+          }
+        }
+      }
+      if (!recipe) {
+        recipe = appState.recipes[0];
+      }
       if (!recipe) return;
       appState.selectedRecipeId = recipe.id;
       appState.activeBranch = recipe.branch || 'main';
