@@ -351,7 +351,20 @@ KitchenGit.Calendar = (function () {
   }
 
   function slotBadgeHtml(meta) {
-    return `<span class="w-6 h-6 rounded-full ${meta.badge} inline-flex items-center justify-center shrink-0 mt-0.5" title="${meta.label}" aria-label="${meta.label}"><span class="material-symbols-outlined text-[15px] leading-none" aria-hidden="true">${meta.icon}</span></span>`;
+    const labelColor = {
+      breakfast: 'text-amber-800 bg-amber-100/90 border-amber-200',
+      lunch: 'text-sky-800 bg-sky-100/90 border-sky-200',
+      dinner: 'text-indigo-800 bg-indigo-100/90 border-indigo-200'
+    }[meta.key] || 'text-slate-800 bg-slate-100 border-slate-200';
+
+    return `
+      <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl border ${labelColor} shrink-0 shadow-2xs">
+        <span class="w-5 h-5 rounded-full ${meta.badge} inline-flex items-center justify-center">
+          <span class="material-symbols-outlined text-[13px] leading-none" aria-hidden="true">${meta.icon}</span>
+        </span>
+        <span class="text-[11px] font-bold tracking-tight">${meta.label}</span>
+      </div>
+    `;
   }
 
   function dayCardHeaderHtml(state, dayData) {
@@ -387,16 +400,22 @@ KitchenGit.Calendar = (function () {
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
     const badgeHtml = slotBadgeHtml(meta);
 
+    const slotContainerClass = {
+      breakfast: filled ? 'bg-amber-50/70 border-amber-200/90' : 'bg-amber-50/30 border-dashed border-amber-200/70 hover:border-amber-400',
+      lunch: filled ? 'bg-sky-50/70 border-sky-200/90' : 'bg-sky-50/30 border-dashed border-sky-200/70 hover:border-sky-400',
+      dinner: filled ? 'bg-indigo-50/70 border-indigo-200/90' : 'bg-indigo-50/30 border-dashed border-indigo-200/70 hover:border-indigo-400'
+    }[meta.key] || 'bg-slate-50 border-slate-200/70';
+
     if (isMemo) {
       const label = M.slotDisplayLabel(slot);
       return `
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-2 flex items-start justify-between gap-2">
-          <div onclick="${openFn}" class="flex items-start gap-2 min-w-0 pr-1 cursor-pointer flex-1">
-            ${badgeHtml}
-            <p class="text-xs font-bold text-amber-900 truncate mt-0.5">${M.escapeHtml(label)}</p>
+        <div class="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-2.5 flex items-start justify-between gap-2 shadow-2xs">
+          <div onclick="${openFn}" class="flex items-start gap-2.5 min-w-0 pr-1 cursor-pointer flex-1">
+            <div class="mt-0.5">${badgeHtml}</div>
+            <p class="text-xs font-bold text-amber-900 truncate mt-1">${M.escapeHtml(label)}</p>
           </div>
           <div class="flex items-center gap-1 shrink-0 mt-0.5">
-            <button type="button" onclick="${openFn}" class="active-scale px-2 py-1 rounded-xl bg-white border border-amber-300 text-amber-800 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-100 shadow-2xs" title="献立を編集">
+            <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-800 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-100 shadow-2xs" title="献立を編集">
               <i class="fa-solid fa-pen text-[9px]"></i>
               <span>編集</span>
             </button>
@@ -405,26 +424,39 @@ KitchenGit.Calendar = (function () {
       `;
     }
 
+    if (!filled) {
+      return `
+        <div class="${slotContainerClass} rounded-2xl p-2.5 flex items-center justify-between gap-2 border shadow-2xs transition-all">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            ${badgeHtml}
+            <span class="text-xs text-slate-400 font-medium pl-0.5">未設定</span>
+          </div>
+          <button type="button" onclick="${openFn}" class="active-scale px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs shrink-0 transition-colors" title="献立を登録">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>登録</span>
+          </button>
+        </div>
+      `;
+    }
+
     const recipes = recipesOf(state);
-    const titlesHtml = filled
-      ? items.map((item) => {
-          const recipe = M.findRecipeForItem(recipes, item);
-          const recipeId = recipe ? recipe.id : (item.recipeId || '');
-          const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
-          return `<p ${clickAction} class="text-xs font-bold text-slate-900 truncate hover:text-emerald-700 hover:underline cursor-pointer py-0.5" title="レシピを開く">${M.escapeHtml(item.title)}</p>`;
-        }).join('')
-      : `<p onclick="${openFn}" class="text-xs font-bold text-slate-400 truncate cursor-pointer">未設定</p>`;
+    const titlesHtml = items.map((item) => {
+      const recipe = M.findRecipeForItem(recipes, item);
+      const recipeId = recipe ? recipe.id : (item.recipeId || '');
+      const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
+      return `<p ${clickAction} class="text-xs font-bold text-slate-900 truncate hover:text-emerald-700 hover:underline cursor-pointer py-0.5" title="レシピを開く">${M.escapeHtml(item.title)}</p>`;
+    }).join('');
 
     return `
-      <div class="bg-slate-50 border border-slate-200/70 rounded-2xl p-2 flex items-start justify-between gap-2">
-        <div class="flex items-start gap-2 min-w-0 pr-1 flex-1">
-          ${badgeHtml}
-          <div class="min-w-0 space-y-0.5 mt-0.5 flex-1">${titlesHtml}</div>
+      <div class="${slotContainerClass} rounded-2xl p-2.5 flex items-start justify-between gap-2 border shadow-2xs transition-all">
+        <div class="flex items-start gap-2.5 min-w-0 pr-1 flex-1">
+          <div class="mt-0.5">${badgeHtml}</div>
+          <div class="min-w-0 space-y-0.5 flex-1 pt-0.5">${titlesHtml}</div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
           ${prepChip}
           ${slotServingsButtonHtml(dateStr, meta, slot)}
-          <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1 rounded-xl bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 hover:bg-slate-100 shadow-2xs" title="献立を編集" aria-label="献立を編集">
+          <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 hover:bg-slate-100 shadow-2xs" title="献立を編集" aria-label="献立を編集">
             <i class="fa-solid fa-pen text-[9px] text-emerald-600"></i>
             <span>編集</span>
           </button>
