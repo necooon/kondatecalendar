@@ -389,6 +389,27 @@ KitchenGit.Meals = (function () {
     return null;
   }
 
+  function recipeImageUrl(recipe) {
+    if (recipe && recipe.imageUrl) return recipe.imageUrl;
+    const name = (recipe && recipe.name) || '';
+    if (name.includes('豚肉') || name.includes('生姜焼き') || name.includes('豚')) {
+      return 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1';
+    }
+    if (name.includes('鶏') || name.includes('チキン') || name.includes('炒め')) {
+      return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+    }
+    if (name.includes('麻婆豆腐') || name.includes('豆腐')) {
+      return 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6';
+    }
+    if (name.includes('鮭') || name.includes('魚') || name.includes('さば') || name.includes('鯖')) {
+      return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2';
+    }
+    if (name.includes('パスタ') || name.includes('麺')) {
+      return 'https://images.unsplash.com/photo-1621996346565-e3d5d6281295';
+    }
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+  }
+
   return {
     DEFAULT_SERVINGS,
     MEMO_QUICK_TAGS,
@@ -430,6 +451,7 @@ KitchenGit.Meals = (function () {
     findRecipeForItem,
     findFoodItemForItem,
     findDay,
-    findDayInState
+    findDayInState,
+    recipeImageUrl
   };
 })();

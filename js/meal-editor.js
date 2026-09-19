@@ -158,6 +158,10 @@ KitchenGit.MealEditor = (function () {
       const recipeId = recipe ? recipe.id : (item.recipeId || '');
       const itemId = food ? food.id : (item.itemId || '');
       const label = (food && food.name) || (recipe && recipe.name) || item.title || '料理';
+      const imgUrl = recipe ? (recipe.imageUrl || M.recipeImageUrl(recipe)) : '';
+      const imgHtml = imgUrl
+        ? `<img src="${M.escapeHtml(imgUrl)}" alt="" class="w-9 h-9 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80">`
+        : '';
       const openBtn = recipe
         ? `<button type="button" onclick="event.stopPropagation(); openMatchedRecipeFromMeal(${index})" class="active-scale w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title="レシピを開く" aria-label="レシピを開く"><i class="fa-solid fa-book-bookmark text-xs"></i></button>`
         : '';
@@ -168,8 +172,9 @@ KitchenGit.MealEditor = (function () {
         ? ''
         : '<p class="text-[10px] font-medium text-amber-700">未登録のため、保存すると外れます</p>';
       return `
-        <div data-meal-item data-recipe-id="${M.escapeHtml(recipeId)}" data-item-id="${M.escapeHtml(itemId)}" class="flex items-start gap-1.5 bg-slate-50 border border-slate-200 rounded-2xl pl-3 pr-1.5 py-1.5">
-          <div class="flex-1 min-w-0 py-1.5">
+        <div data-meal-item data-recipe-id="${M.escapeHtml(recipeId)}" data-item-id="${M.escapeHtml(itemId)}" class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2">
+          ${imgHtml}
+          <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5 min-w-0">
               <p class="text-xs font-bold text-slate-900 truncate">${M.escapeHtml(label)}</p>
               ${kindBadge}
@@ -177,7 +182,7 @@ KitchenGit.MealEditor = (function () {
             ${unmatchedNote}
           </div>
           ${openBtn}
-          <button type="button" onclick="event.stopPropagation(); removeMealEditorItem(${index})" class="active-scale w-9 h-9 rounded-xl bg-white text-slate-400 border border-slate-200 shrink-0 mt-0.5" title="削除" aria-label="削除">
+          <button type="button" onclick="event.stopPropagation(); removeMealEditorItem(${index})" class="active-scale w-8 h-8 rounded-xl bg-white text-slate-400 border border-slate-200 shrink-0" title="削除" aria-label="削除">
             <i class="fa-solid fa-xmark text-sm"></i>
           </button>
         </div>

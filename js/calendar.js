@@ -338,7 +338,15 @@ KitchenGit.Calendar = (function () {
   }
 
   function isDayExpanded(state, dateStr) {
-    return !!(state.expandedDays && state.expandedDays[dateStr]);
+    if (state.expandedDays && state.expandedDays[dateStr] !== undefined) {
+      return state.expandedDays[dateStr];
+    }
+    const M = Meals();
+    const W = Week();
+    const dayData = M.findDay(state.calendarDays, dateStr);
+    const hasMeal = dayData ? M.weekHasAnyMeal([dayData]) : false;
+    const todayIso = W.toIsoDate(new Date());
+    return hasMeal || dateStr === todayIso;
   }
 
   function setDayExpanded(state, dateStr, expanded) {
@@ -465,18 +473,27 @@ KitchenGit.Calendar = (function () {
     }
 
     const recipes = recipesOf(state);
-    const titlesHtml = items.map((item) => {
+    const itemsHtml = items.map((item) => {
       const recipe = M.findRecipeForItem(recipes, item);
       const recipeId = recipe ? recipe.id : (item.recipeId || '');
+      const imgUrl = (recipe && recipe.imageUrl) || M.recipeImageUrl(recipe);
       const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
-      return `<p ${clickAction} class="text-xs font-bold text-slate-900 truncate hover:text-emerald-700 hover:underline cursor-pointer py-0.5" title="レシピを開く">${M.escapeHtml(item.title)}</p>`;
+      return `
+        <div ${clickAction} class="flex items-center gap-2.5 group cursor-pointer py-1" title="レシピを開く">
+          <img src="${M.escapeHtml(imgUrl)}" alt="${M.escapeHtml(item.title)}" class="w-10 h-10 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80 shadow-2xs group-hover:scale-105 transition-transform">
+          <div class="min-w-0 flex-1">
+            <p class="text-xs font-bold text-slate-900 truncate group-hover:text-emerald-700 group-hover:underline">${M.escapeHtml(item.title)}</p>
+            ${recipe && recipe.tag ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">${M.escapeHtml(recipe.tag)}</span>` : ''}
+          </div>
+        </div>
+      `;
     }).join('');
 
     return `
       <div class="${slotContainerClass} rounded-2xl p-2.5 flex items-start justify-between gap-2 border shadow-2xs transition-all">
         <div class="flex items-start gap-2.5 min-w-0 pr-1 flex-1">
           <div class="mt-0.5">${badgeHtml}</div>
-          <div class="min-w-0 space-y-0.5 flex-1 pt-0.5">${titlesHtml}</div>
+          <div class="min-w-0 space-y-1 flex-1 pt-0.5">${itemsHtml}</div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
           ${prepChip}
@@ -763,6 +780,7 @@ KitchenGit.Calendar = (function () {
 
       let filledCount = 0;
       let dinnerTitle = '';
+      let dinnerImgUrl = '';
       if (dayData && dayData.meals) {
         M.MEAL_SLOTS.forEach(meta => {
           if (M.isMealFilled(M.slotOf(dayData, meta.key))) filledCount++;
@@ -772,6 +790,9 @@ KitchenGit.Calendar = (function () {
           const items = M.mealItems(dinnerSlot);
           if (items.length > 0) {
             dinnerTitle = items[0].title;
+            const recipes = recipesOf(state);
+            const recipe = M.findRecipeForItem(recipes, items[0]);
+            dinnerImgUrl = (recipe && recipe.imageUrl) || M.recipeImageUrl(recipe);
           }
         }
       }
@@ -799,9 +820,12 @@ KitchenGit.Calendar = (function () {
            </div>`
         : `<span class="text-[9px] text-slate-300">—</span>`;
 
-      const titleHtml = dinnerTitle
-        ? `<p class="text-[9px] font-bold text-slate-700 truncate mt-0.5" title="${M.escapeHtml(dinnerTitle)}">${M.escapeHtml(dinnerTitle)}</p>`
-        : '';
+      const titleHtml = dinnerImgUrl
+        ? `<div class="mt-1 flex items-center gap-1 bg-slate-50 rounded-lg p-0.5 border border-slate-200/60 overflow-hidden" title="${M.escapeHtml(dinnerTitle)}">
+             <img src="${M.escapeHtml(dinnerImgUrl)}" alt="" class="w-4 h-4 rounded object-cover shrink-0">
+             <span class="text-[8.5px] font-bold text-slate-700 truncate">${M.escapeHtml(dinnerTitle)}</span>
+           </div>`
+        : (dinnerTitle ? `<p class="text-[9px] font-bold text-slate-700 truncate mt-0.5" title="${M.escapeHtml(dinnerTitle)}">${M.escapeHtml(dinnerTitle)}</p>` : '');
 
       return `
         <div data-date="${cell.date}" onclick="jumpToDateFromMonthly('${cell.date}')" class="${cellClass}">
