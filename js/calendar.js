@@ -260,11 +260,11 @@ KitchenGit.Calendar = (function () {
     const servings = M.slotServings(slot);
     return `
       <button type="button" onclick="event.stopPropagation(); toggleSlotServings('${M.escapeHtml(dateStr)}','${meta.key}')" class="active-scale text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all flex items-center gap-0.5 shrink-0 ${
-        servings === 1
+        servings === 2
           ? 'bg-slate-700 text-white border-slate-700'
           : 'bg-white text-slate-600 border-slate-200'
       }" aria-label="${M.escapeHtml(meta.label)} ${servings}人分">
-        <i class="fa-solid ${servings === 1 ? 'fa-user' : 'fa-user-group'} text-[8px]"></i>
+        <i class="fa-solid ${servings === 2 ? 'fa-user-group' : 'fa-user'} text-[8px]"></i>
         <span>${servings}</span>
       </button>
     `;
@@ -338,13 +338,7 @@ KitchenGit.Calendar = (function () {
   }
 
   function slotBadgeHtml(meta) {
-    const labelColor = 'text-slate-700 bg-slate-100 border-slate-200';
-
-    return `
-      <div class="inline-flex items-center justify-center w-7 h-7 rounded-xl border ${labelColor} shrink-0 shadow-2xs">
-        <span class="material-symbols-outlined text-[14px] leading-none" aria-hidden="true">${meta.icon}</span>
-      </div>
-    `;
+    return `<span class="material-symbols-outlined text-slate-500 text-base leading-none shrink-0" aria-hidden="true">${meta.icon}</span>`;
   }
 
   function dayCardHeaderHtml(state, dayData) {
@@ -358,7 +352,7 @@ KitchenGit.Calendar = (function () {
     const chevron = expanded ? 'fa-chevron-down' : 'fa-chevron-right';
     return `
       <button type="button" onclick="toggleDayAccordion('${escapeHtml(dateStr)}')" aria-expanded="${expanded ? 'true' : 'false'}" class="active-scale w-full flex items-center justify-between gap-2 text-left -mx-0.5 px-0.5 py-0.5 rounded-xl">
-        <div class="flex items-center gap-2.5 min-w-0">
+        <div class="flex items-center gap-2 min-w-0">
           <span class="text-xs font-bold text-slate-900 shrink-0">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
         </div>
         <span class="flex items-center gap-2 shrink-0">
@@ -381,6 +375,7 @@ KitchenGit.Calendar = (function () {
       : '';
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
     const badgeHtml = slotBadgeHtml(meta);
+    const servingsHtml = slotServingsButtonHtml(dateStr, meta, slot);
 
     const slotContainerClass = filled
       ? 'bg-white border border-slate-200 shadow-2xs'
@@ -389,14 +384,15 @@ KitchenGit.Calendar = (function () {
     if (isMemo) {
       const label = M.slotDisplayLabel(slot);
       return `
-        <div class="bg-slate-700/80 border border-slate-700/90 rounded-2xl p-2.5 flex items-start justify-between gap-2 shadow-2xs">
-          <div onclick="${openFn}" class="flex items-start gap-2.5 min-w-0 pr-1 cursor-pointer flex-1">
-            <div class="mt-0.5">${badgeHtml}</div>
-            <p class="text-xs font-bold text-slate-700 truncate mt-1">${M.escapeHtml(label)}</p>
+        <div class="bg-slate-700/80 border border-slate-700/90 rounded-xl py-1 px-2.5 flex items-center justify-between gap-2 shadow-2xs">
+          <div onclick="${openFn}" class="flex items-center gap-2 min-w-0 pr-1 cursor-pointer flex-1">
+            ${badgeHtml}
+            ${servingsHtml}
+            <p class="text-xs font-bold text-slate-700 truncate">${M.escapeHtml(label)}</p>
           </div>
-          <div class="flex items-center gap-1 shrink-0 mt-0.5">
-            <button type="button" onclick="${openFn}" class="active-scale p-1.5 rounded-xl bg-white border border-slate-700 text-slate-700 hover:bg-slate-700 shadow-2xs" title="献立を編集">
-              <i class="fa-solid fa-pen text-[10px]"></i>
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" onclick="${openFn}" class="active-scale w-6 h-6 rounded-lg bg-white border border-slate-700 text-slate-700 hover:bg-slate-700 shadow-2xs flex items-center justify-center" title="献立を編集">
+              <i class="fa-solid fa-pen text-[9px]"></i>
             </button>
           </div>
         </div>
@@ -405,14 +401,16 @@ KitchenGit.Calendar = (function () {
 
     if (!filled) {
       return `
-        <div class="${slotContainerClass} rounded-2xl p-2.5 flex items-center justify-between gap-2 border shadow-2xs transition-all">
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+        <div onclick="${openFn}" class="${slotContainerClass} rounded-xl py-1 px-2.5 flex items-center justify-between gap-2 border shadow-2xs transition-all cursor-pointer">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
             ${badgeHtml}
-            <span class="text-xs text-slate-400 font-medium pl-0.5">未設定</span>
+            ${servingsHtml}
           </div>
-          <button type="button" onclick="${openFn}" class="active-scale p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-900 shadow-2xs shrink-0 transition-colors" title="献立を登録">
-            <i class="fa-solid fa-plus text-xs"></i>
-          </button>
+          <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+            <button type="button" onclick="${openFn}" class="active-scale w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 shadow-2xs flex items-center justify-center" title="献立を編集" aria-label="献立を編集">
+              <i class="fa-solid fa-pen text-[9px] text-slate-900"></i>
+            </button>
+          </div>
         </div>
       `;
     }
@@ -423,26 +421,26 @@ KitchenGit.Calendar = (function () {
       const recipeId = recipe ? recipe.id : (item.recipeId || '');
       const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
       return `
-        <div ${clickAction} class="flex items-center gap-2.5 group cursor-pointer py-1" title="レシピを開く">
+        <div ${clickAction} class="flex items-center gap-2 group cursor-pointer" title="レシピを開く">
           <div class="min-w-0 flex-1">
-            <p class="text-xs font-bold text-slate-900 truncate group-hover:text-slate-900 group-hover:underline">${M.escapeHtml(item.title)}</p>
-            ${recipe && recipe.tag ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">${M.escapeHtml(recipe.tag)}</span>` : ''}
+            <p class="text-xs font-bold text-slate-900 truncate group-hover:underline">${M.escapeHtml(item.title)}</p>
+            ${recipe && recipe.tag ? `<span class="text-[8px] font-bold text-slate-500 bg-slate-100 px-1 py-0.2 rounded">${M.escapeHtml(recipe.tag)}</span>` : ''}
           </div>
         </div>
       `;
     }).join('');
 
     return `
-      <div class="${slotContainerClass} rounded-2xl p-2.5 flex items-start justify-between gap-2 border shadow-2xs transition-all">
-        <div class="flex items-start gap-2.5 min-w-0 pr-1 flex-1">
-          <div class="mt-0.5">${badgeHtml}</div>
-          <div class="min-w-0 space-y-1 flex-1 pt-0.5">${itemsHtml}</div>
+      <div class="${slotContainerClass} rounded-xl py-1 px-2.5 flex items-center justify-between gap-2 border shadow-2xs transition-all">
+        <div class="flex items-center gap-2 min-w-0 pr-1 flex-1">
+          ${badgeHtml}
+          ${servingsHtml}
+          <div class="min-w-0 flex-1">${itemsHtml}</div>
         </div>
-        <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
+        <div class="flex items-center gap-1 shrink-0">
           ${prepChip}
-          ${slotServingsButtonHtml(dateStr, meta, slot)}
-          <button type="button" onclick="${openFn}" class="active-scale p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 shadow-2xs" title="献立を編集" aria-label="献立を編集">
-            <i class="fa-solid fa-pen text-[10px] text-slate-900"></i>
+          <button type="button" onclick="${openFn}" class="active-scale w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 shadow-2xs flex items-center justify-center" title="献立を編集" aria-label="献立を編集">
+            <i class="fa-solid fa-pen text-[9px] text-slate-900"></i>
           </button>
         </div>
       </div>
@@ -451,7 +449,7 @@ KitchenGit.Calendar = (function () {
 
   function renderMealSlots(state, dayData, options) {
     const rows = Meals().MEAL_SLOTS.map((meta) => mealSlotRowHtml(state, dayData, meta, options)).join('');
-    return `<div class="space-y-1.5">${rows}</div>`;
+    return `<div class="space-y-1">${rows}</div>`;
   }
 
   function renderWeekNav(state) {

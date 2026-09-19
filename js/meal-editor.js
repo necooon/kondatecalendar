@@ -393,9 +393,9 @@ KitchenGit.MealEditor = (function () {
             <button type="button" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="viewRecipeFromMealEditor(this.dataset.recipeId)" title="レシピ詳細を見る" class="w-7 h-7 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-xs active-scale">
               <i class="fa-solid fa-book-open"></i>
             </button>
-            <button type="button" data-recipe-name="${M.escapeHtml(recipe.name)}" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="pickAndSaveMealRecipe(this.dataset.recipeName, this.dataset.recipeId)" class="active-scale text-xs font-bold px-3.5 py-2 rounded-xl transition-all bg-slate-900 hover:bg-slate-900 text-white shadow-sm flex items-center gap-1">
+            <button type="button" data-recipe-name="${M.escapeHtml(recipe.name)}" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="pickMealRecipe(this.dataset.recipeName, this.dataset.recipeId)" class="active-scale text-xs font-bold px-3.5 py-2 rounded-xl transition-all bg-slate-900 hover:bg-slate-900 text-white shadow-sm flex items-center gap-1">
               <i class="fa-solid fa-plus text-[10px]"></i>
-              <span>この枠に登録</span>
+              <span>追加</span>
             </button>
           </div>
         </div>
