@@ -11,7 +11,11 @@ KitchenGit.MealEditor = (function () {
   let actionLockUntil = 0;
 
   function recipesOf(state) {
-    return (hooks.getRecipes && hooks.getRecipes()) || state.recipes || [];
+    const list = (hooks.getRecipes && hooks.getRecipes()) || state.recipes || [];
+    if (list.length === 0 && typeof KitchenGit.demoRecipes === 'function') {
+      return KitchenGit.demoRecipes();
+    }
+    return list;
   }
 
   function foodItemsOf(state) {
@@ -105,7 +109,7 @@ KitchenGit.MealEditor = (function () {
     const activeCls = 'bg-white text-slate-900 shadow-sm border border-slate-900/10';
     const inactiveCls = 'text-slate-500';
     if (recipeBtn) recipeBtn.className = `py-2 rounded-xl text-[11px] font-bold transition-colors ${tab === 'recipe' ? activeCls : inactiveCls}`;
-    if (memoBtn) memoBtn.className = `py-2 rounded-xl text-[11px] font-bold transition-colors ${tab === 'memo' ? activeCls + ' text-emerald-700' : inactiveCls}`;
+    if (memoBtn) memoBtn.className = `py-2 rounded-xl text-[11px] font-bold transition-colors ${tab === 'memo' ? activeCls + ' text-slate-900' : inactiveCls}`;
     if (recipePanel) recipePanel.classList.toggle('hidden', tab !== 'recipe');
     if (memoPanel) memoPanel.classList.toggle('hidden', tab !== 'memo');
   }
@@ -118,7 +122,7 @@ KitchenGit.MealEditor = (function () {
     wrap.innerHTML = M.MEMO_QUICK_TAGS.map((tag) => {
       const selected = activeTag === tag.label;
       const cls = selected
-        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+        ? 'bg-slate-100 border-slate-100 text-slate-900'
         : 'bg-white border-slate-200 text-slate-700 active-scale';
       return `
         <button type="button" data-tag-label="${M.escapeHtml(tag.label)}" onclick="applyQuickTag(this.dataset.tagLabel)" class="px-2.5 py-1.5 rounded-full border text-[11px] font-bold ${cls}">
@@ -161,16 +165,16 @@ KitchenGit.MealEditor = (function () {
       const imgUrl = recipe ? M.recipeImageUrl(recipe) : '';
       const imgHtml = imgUrl
         ? `<img src="${M.escapeHtml(imgUrl)}" alt="" class="w-9 h-9 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80">`
-        : `<div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center shrink-0"><i class="fa-solid fa-utensils text-xs"></i></div>`;
+        : `<div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-900 border border-slate-100/80 flex items-center justify-center shrink-0"><i class="fa-solid fa-utensils text-xs"></i></div>`;
       const openBtn = recipe
-        ? `<button type="button" onclick="event.stopPropagation(); openMatchedRecipeFromMeal(${index})" class="active-scale w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0" title="レシピを開く" aria-label="レシピを開く"><i class="fa-solid fa-book-bookmark text-xs"></i></button>`
+        ? `<button type="button" onclick="event.stopPropagation(); openMatchedRecipeFromMeal(${index})" class="active-scale w-9 h-9 rounded-xl bg-slate-100 text-slate-900 border border-slate-100 shrink-0" title="レシピを開く" aria-label="レシピを開く"><i class="fa-solid fa-book-bookmark text-xs"></i></button>`
         : '';
       const kindBadge = food
-        ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">材料</span>'
+        ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-700 shrink-0">材料</span>'
         : '';
       const unmatchedNote = (recipe || food)
         ? ''
-        : '<p class="text-[10px] font-medium text-amber-700">未登録のため、保存すると外れます</p>';
+        : '<p class="text-[10px] font-medium text-slate-700">未登録のため、保存すると外れます</p>';
       return `
         <div data-meal-item data-recipe-id="${M.escapeHtml(recipeId)}" data-item-id="${M.escapeHtml(itemId)}" class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2">
           ${imgHtml}
@@ -205,7 +209,7 @@ KitchenGit.MealEditor = (function () {
       const isAll = chip === 'すべて';
       const isActive = isAll ? !currentQuery : currentQuery === chip;
       const cls = isActive
-        ? 'bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-full shadow-2xs border border-emerald-600 active-scale whitespace-nowrap text-[11px]'
+        ? 'bg-slate-900 text-white font-bold px-2.5 py-1 rounded-full shadow-2xs border border-slate-900 active-scale whitespace-nowrap text-[11px]'
         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/80 px-2.5 py-1 rounded-full active-scale whitespace-nowrap text-[11px]';
       return `
         <button type="button" data-chip="${M.escapeHtml(chip)}" onclick="applyMealEditorChip(this.dataset.chip)" class="${cls}">
@@ -304,7 +308,7 @@ KitchenGit.MealEditor = (function () {
       list.innerHTML = `
         <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-3 space-y-2">
           <p class="text-[11px] text-slate-600 leading-relaxed">献立は登録済みのレシピから選び、カレンダーに追加します。</p>
-          <button type="button" onclick="openRegisterFromMealEditor()" class="active-scale w-full bg-emerald-600 text-white text-[11px] font-bold py-2 rounded-xl">
+          <button type="button" onclick="openRegisterFromMealEditor()" class="active-scale w-full bg-slate-900 text-white text-[11px] font-bold py-2 rounded-xl">
             + レシピを登録する
           </button>
         </div>
@@ -344,7 +348,7 @@ KitchenGit.MealEditor = (function () {
           <p class="text-[10px] text-slate-400">
             料理名や材料名（例: 鶏肉, 豚肉, 豆腐, 茄子）を変えて検索するか、条件をクリアしてください。
           </p>
-          <button type="button" onclick="clearMealEditorSearch()" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-100 active-scale">
+          <button type="button" onclick="clearMealEditorSearch()" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-900 bg-slate-100 border border-slate-100 px-3 py-1.5 rounded-xl hover:bg-slate-100 active-scale">
             <i class="fa-solid fa-rotate-left text-[10px]"></i>
             <span>絞り込みをクリア</span>
           </button>
@@ -363,7 +367,7 @@ KitchenGit.MealEditor = (function () {
         details.tokens.forEach((tok) => {
           if (!tok) return;
           const re = new RegExp(`(${escapeRegex(tok)})`, 'gi');
-          displayName = displayName.replace(re, '<mark class="bg-amber-200 text-amber-950 font-bold px-0.5 rounded">$1</mark>');
+          displayName = displayName.replace(re, '<mark class="bg-slate-700 text-slate-700 font-bold px-0.5 rounded">$1</mark>');
         });
       }
 
@@ -376,7 +380,7 @@ KitchenGit.MealEditor = (function () {
       const imgUrl = recipeImageUrl(recipe);
 
       return `
-        <div class="border ${added ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-slate-200/90 hover:border-emerald-300'} rounded-2xl p-2.5 shadow-2xs transition-all flex items-center gap-3">
+        <div class="border ${added ? 'bg-slate-100/60 border-slate-100' : 'bg-white border-slate-200/90 hover:border-slate-100'} rounded-2xl p-2.5 shadow-2xs transition-all flex items-center gap-3">
           <img src="${imgUrl}" alt="${M.escapeHtml(recipe.name)}" class="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80">
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
@@ -389,7 +393,7 @@ KitchenGit.MealEditor = (function () {
             <button type="button" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="viewRecipeFromMealEditor(this.dataset.recipeId)" title="レシピ詳細を見る" class="w-7 h-7 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-xs active-scale">
               <i class="fa-solid fa-book-open"></i>
             </button>
-            <button type="button" data-recipe-name="${M.escapeHtml(recipe.name)}" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="pickAndSaveMealRecipe(this.dataset.recipeName, this.dataset.recipeId)" class="active-scale text-xs font-bold px-3.5 py-2 rounded-xl transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1">
+            <button type="button" data-recipe-name="${M.escapeHtml(recipe.name)}" data-recipe-id="${M.escapeHtml(recipe.id)}" onclick="pickAndSaveMealRecipe(this.dataset.recipeName, this.dataset.recipeId)" class="active-scale text-xs font-bold px-3.5 py-2 rounded-xl transition-all bg-slate-900 hover:bg-slate-900 text-white shadow-sm flex items-center gap-1">
               <i class="fa-solid fa-plus text-[10px]"></i>
               <span>この枠に登録</span>
             </button>
@@ -446,9 +450,8 @@ KitchenGit.MealEditor = (function () {
       heading.innerHTML = `
         <span class="inline-flex items-center gap-2 flex-wrap">
           <span>${displayDateOf(dayData)} (${dayData.day})</span>
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${meta.badge} text-[11px] font-bold">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs">
             <span class="material-symbols-outlined text-[14px] leading-none" aria-hidden="true">${meta.icon}</span>
-            <span>${meta.label}</span>
           </span>
         </span>
       `;

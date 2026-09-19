@@ -20,9 +20,9 @@ KitchenGit.Meals = (function () {
   };
 
   const MEAL_SLOTS = [
-    { key: 'breakfast', label: '朝', icon: 'wb_twilight', badge: 'bg-amber-100 text-amber-800' },
-    { key: 'lunch', label: '昼', icon: 'wb_sunny', badge: 'bg-sky-100 text-sky-800' },
-    { key: 'dinner', label: '晩', icon: 'brightness_2', badge: 'bg-indigo-100 text-indigo-800' }
+    { key: 'breakfast', label: '朝', icon: 'wb_twilight', badge: 'bg-slate-100 text-slate-700' },
+    { key: 'lunch', label: '昼', icon: 'wb_sunny', badge: 'bg-slate-100 text-slate-700' },
+    { key: 'dinner', label: '晩', icon: 'brightness_2', badge: 'bg-slate-100 text-slate-700' }
   ];
 
   function slotIconHtml(meta, sizeClass) {

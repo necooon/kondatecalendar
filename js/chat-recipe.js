@@ -44,7 +44,7 @@ KitchenGit.ChatRecipe = (function () {
     container.innerHTML = messages.map((m, index) => {
       const isUser = m.role === 'user';
       const bubbleClass = isUser
-        ? 'bg-emerald-600 text-white rounded-2xl rounded-tr-xs px-4 py-3 text-xs leading-relaxed max-w-[85%] ml-auto shadow-sm whitespace-pre-wrap'
+        ? 'bg-slate-900 text-white rounded-2xl rounded-tr-xs px-4 py-3 text-xs leading-relaxed max-w-[85%] ml-auto shadow-sm whitespace-pre-wrap'
         : 'bg-slate-100 text-slate-800 rounded-2xl rounded-tl-xs px-4 py-3 text-xs leading-relaxed max-w-[90%] mr-auto border border-slate-200/80 shadow-xs whitespace-pre-wrap';
 
       let recipeHtml = '';
@@ -53,16 +53,16 @@ KitchenGit.ChatRecipe = (function () {
         const ingSummary = (r.ingredients || []).slice(0, 5).map(i => `${i.name} ${i.baseAmount || ''}${i.unit || ''}`).join('、');
         const stepCount = (r.steps || []).length;
         recipeHtml = `
-          <div class="mt-3 bg-white rounded-2xl border border-indigo-200 p-3.5 space-y-2.5 shadow-sm">
+          <div class="mt-3 bg-white rounded-2xl border border-slate-800 p-3.5 space-y-2.5 shadow-sm">
             <div class="flex items-center justify-between">
-              <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-200">AI提案レシピ</span>
+              <span class="bg-slate-800 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-800">AI提案レシピ</span>
               <span class="text-[10px] text-slate-400 font-mono">${r.servingsBase || 2}人分 • 工程${stepCount}</span>
             </div>
             <h4 class="text-sm font-bold text-slate-900">${escapeHtml(r.name)}</h4>
-            ${r.tag ? `<p class="text-[11px] text-emerald-700 font-bold">🏷️ ${escapeHtml(r.tag)}</p>` : ''}
+            ${r.tag ? `<p class="text-[11px] text-slate-900 font-bold">🏷️ ${escapeHtml(r.tag)}</p>` : ''}
             <p class="text-[11px] text-slate-600"><strong>主な材料:</strong> ${escapeHtml(ingSummary)}${(r.ingredients || []).length > 5 ? '…他' : ''}</p>
             ${r.note ? `<p class="text-[10px] text-slate-500 italic bg-slate-50 p-2 rounded-xl">💡 ${escapeHtml(r.note)}</p>` : ''}
-            <button type="button" onclick="KitchenGit.ChatRecipe.registerRecipeFromChat(${index})" class="active-scale w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5">
+            <button type="button" onclick="KitchenGit.ChatRecipe.registerRecipeFromChat(${index})" class="active-scale w-full bg-gradient-to-r from-slate-800 to-purple-600 hover:from-slate-800 hover:to-purple-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl shadow-md shadow-slate-800/20 flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-bookmark"></i>
               <span>このレシピをレシピ帳に登録する</span>
             </button>
@@ -73,7 +73,7 @@ KitchenGit.ChatRecipe = (function () {
       return `
         <div class="flex flex-col gap-1">
           <div class="flex items-start gap-2 ${isUser ? 'flex-row-reverse' : ''}">
-            <div class="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold ${isUser ? 'bg-slate-800 text-white' : 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white'}">
+            <div class="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold ${isUser ? 'bg-slate-800 text-white' : 'bg-gradient-to-tr from-slate-800 to-purple-600 text-white'}">
               <i class="fa-solid ${isUser ? 'fa-user' : 'fa-wand-magic-sparkles'} text-[10px]"></i>
             </div>
             <div class="${bubbleClass}">

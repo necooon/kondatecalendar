@@ -99,47 +99,31 @@ KitchenGit.Calendar = (function () {
   function applyOfflineDemo(state) {
     const W = Week();
     const templates = KitchenGit.demoMealDays ? KitchenGit.demoMealDays() : [];
-    const weekStart = state.demoWeekStart || state.weekStart;
-    if (!weekStart || !templates.length) return;
-    state.weeksByStart[weekStart] = W.applyTemplateToWeek(weekStart, templates);
-    if (state.weekStart === weekStart) {
-      state.calendarDays = state.weeksByStart[weekStart];
-    }
+    if (!templates.length) return;
+    const today = new Date();
+    const thisStart = W.toIsoDate(W.startOfWeekSaturday(today));
+    const days = W.applyTemplateToWeek(thisStart, templates);
+    days.forEach((d) => {
+      state.allDaysMap[d.date] = d;
+    });
   }
 
   async function hydrateWeek(state, weekStart) {
-    const daysAtStart = ensureWeek(state, weekStart);
-    const snapshotGens = {};
-    daysAtStart.forEach((day) => {
-      snapshotGens[day.date] = day.localSaveGen || 0;
-    });
-    const DB = KitchenGit.MealsDB;
-    if (!DB || !DB.isReady()) {
-      if (weekStart === state.demoWeekStart) applyOfflineDemo(state);
-      ensureWeek(state, weekStart).forEach((d) => { state.allDaysMap[d.date] = d; });
-      return;
-    }
-    try {
-      const rows = await DB.fetchRange(weekStart);
-      const daysNow = ensureWeek(state, weekStart);
-      const merged = mergeRowsIntoWeek(daysNow, rows, snapshotGens);
-      state.weeksByStart[weekStart] = merged;
-      merged.forEach((d) => { state.allDaysMap[d.date] = d; });
-      if (state.weekStart === weekStart) state.calendarDays = merged;
-    } catch (e) {
-      console.error(e);
-      if (weekStart === state.demoWeekStart && !Meals().weekHasAnyMeal(ensureWeek(state, weekStart))) {
-        applyOfflineDemo(state);
-      }
-      ensureWeek(state, weekStart).forEach((d) => { state.allDaysMap[d.date] = d; });
-    }
+    // Kept for backward compatibility if needed
   }
 
   async function hydrateMonth(state, year, month) {
     const DB = KitchenGit.MealsDB;
-    if (!DB || !DB.isReady() || !DB.fetchMonthRange) return;
+    if (!DB || !DB.isReady() || !DB.fetchMonthRange) {
+      applyOfflineDemo(state);
+      return;
+    }
     try {
       const rows = await DB.fetchMonthRange(year, month);
+      if (!rows || rows.length === 0) {
+        applyOfflineDemo(state);
+        return;
+      }
       rows.forEach((row) => {
         if (row && row.date) {
           state.allDaysMap[row.date] = row;
@@ -147,6 +131,7 @@ KitchenGit.Calendar = (function () {
       });
     } catch (e) {
       console.error('hydrateMonth failed', e);
+      applyOfflineDemo(state);
     }
   }
 
@@ -159,7 +144,7 @@ KitchenGit.Calendar = (function () {
     }
     try {
       await DB.seedIfEmpty();
-      await hydrateWeek(state, state.weekStart);
+      await hydrateMonth(state, state.monthlyYear, state.monthlyMonth);
       return true;
     } catch (e) {
       console.error(e);
@@ -173,7 +158,6 @@ KitchenGit.Calendar = (function () {
     if (!dayData) return false;
     touchDay(state, dayData);
     if (!DB || !DB.isReady()) {
-      copyDayWrite(findLiveDay(state, dayData.date) || dayData, dayData);
       state.allDaysMap[dayData.date] = dayData;
       render(state);
       return true;
@@ -181,12 +165,9 @@ KitchenGit.Calendar = (function () {
     const dateStr = dayData.date;
     try {
       const saved = await DB.upsertDay(dayData);
-      const live = findLiveDay(state, dateStr) || dayData;
       if (saved && saved.id) {
-        live.id = saved.id;
         dayData.id = saved.id;
       }
-      copyDayWrite(live, dayData);
       state.allDaysMap[dayData.date] = dayData;
       render(state);
       return true;
@@ -201,26 +182,13 @@ KitchenGit.Calendar = (function () {
     hooks = options || {};
     const W = Week();
     const today = new Date();
-    const thisStart = W.toIsoDate(W.startOfWeekSaturday(today));
-    state.demoWeekStart = thisStart;
-    state.weekStart = thisStart;
-    state.weeksByStart = {};
-    state.prepByWeekStart = {};
     state.mealSaveGen = 0;
-    state.expandedDays = {};
-    state.calendarViewMode = state.calendarViewMode || 'list';
     state.monthlyYear = state.monthlyYear || today.getFullYear();
     state.monthlyMonth = state.monthlyMonth !== undefined ? state.monthlyMonth : today.getMonth();
     state.allDaysMap = state.allDaysMap || {};
-    state.calendarDays = ensureWeek(state, thisStart);
-    state.calendarDays.forEach((d) => { state.allDaysMap[d.date] = d; });
     const todayIso = W.toIsoDate(today);
-    state.selectedDate = state.calendarDays.some((d) => d.date === todayIso)
-      ? todayIso
-      : state.calendarDays[0].date;
-    if (state.calendarDays.some((d) => d.date === todayIso)) {
-      state.expandedDays[todayIso] = true;
-    }
+    state.selectedDate = state.selectedDate || todayIso;
+    applyOfflineDemo(state);
     return state;
   }
 
@@ -293,7 +261,7 @@ KitchenGit.Calendar = (function () {
     return `
       <button type="button" onclick="event.stopPropagation(); toggleSlotServings('${M.escapeHtml(dateStr)}','${meta.key}')" class="active-scale text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all flex items-center gap-0.5 shrink-0 ${
         servings === 1
-          ? 'bg-amber-500 text-white border-amber-500'
+          ? 'bg-slate-700 text-white border-slate-700'
           : 'bg-white text-slate-600 border-slate-200'
       }" aria-label="${M.escapeHtml(meta.label)} ${servings}人分">
         <i class="fa-solid ${servings === 1 ? 'fa-user' : 'fa-user-group'} text-[8px]"></i>
@@ -306,11 +274,8 @@ KitchenGit.Calendar = (function () {
     return `
       <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-3 space-y-2">
         <p class="text-xs font-bold text-slate-800">献立が未登録です</p>
-        <p class="text-[11px] text-slate-500 leading-relaxed">この週の献立はまだありません。AIに提案してもらうか、レシピから登録できます。</p>
+        <p class="text-[11px] text-slate-500 leading-relaxed">この週の献立はまだありません。レシピから登録できます。</p>
         <div class="flex flex-col gap-1.5">
-          <button type="button" onclick="aiSuggestRemaining()" class="active-scale w-full bg-emerald-600 text-white text-[11px] font-bold py-2 rounded-xl">
-            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>AIに今週の献立を提案してもらう
-          </button>
           <button type="button" onclick="openRegisterFromCalendar()" class="active-scale w-full bg-white text-slate-800 text-[11px] font-bold py-2 rounded-xl border border-slate-200">
             + レシピを登録する
           </button>
@@ -320,20 +285,23 @@ KitchenGit.Calendar = (function () {
   }
 
   function recipesOf(state) {
-    return (hooks.getRecipes && hooks.getRecipes()) || state.recipes || [];
+    const list = (hooks.getRecipes && hooks.getRecipes()) || state.recipes || [];
+    if (list.length === 0 && typeof KitchenGit.demoRecipes === 'function') {
+      return KitchenGit.demoRecipes();
+    }
+    return list;
   }
 
   function pfcBlockHtml(state, dayData) {
     const M = Meals();
     const computed = M.computeDayPfc(dayData, recipesOf(state));
-    const pfc = computed || dayData.pfc;
-    if (!pfc) return '';
+    const pfc = computed || dayData.pfc || { p: 35, f: 15, c: 38 };
     return `
-      <div class="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1">
-        <span>P: <strong class="text-rose-600 font-bold">${pfc.p}g</strong></span>
-        <span>F: <strong class="text-amber-600 font-bold">${pfc.f}g</strong></span>
-        <span>C: <strong class="text-sky-600 font-bold">${pfc.c}g</strong></span>
-      </div>
+      <span class="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 sm:px-2 py-0.5 rounded-lg border border-slate-200/60 shrink-0">
+        <span>P: <strong class="text-slate-800 font-bold">${pfc.p}g</strong></span>
+        <span>F: <strong class="text-slate-700 font-bold">${pfc.f}g</strong></span>
+        <span>C: <strong class="text-slate-700 font-bold">${pfc.c}g</strong></span>
+      </span>
     `;
   }
 
@@ -374,28 +342,19 @@ KitchenGit.Calendar = (function () {
   function mealSlotIndicatorHtml(dayData, meta) {
     const M = Meals();
     const filled = M.isMealFilled(M.slotOf(dayData, meta.key));
-    const iconColors = {
-      breakfast: filled ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-slate-300 bg-slate-50 border-slate-200/60 opacity-50',
-      lunch: filled ? 'text-sky-600 bg-sky-50 border-sky-200' : 'text-slate-300 bg-slate-50 border-slate-200/60 opacity-50',
-      dinner: filled ? 'text-indigo-600 bg-indigo-50 border-indigo-200' : 'text-slate-300 bg-slate-50 border-slate-200/60 opacity-50'
-    };
+    const iconColor = filled
+      ? 'text-slate-900 bg-slate-100 border-slate-300'
+      : 'text-slate-300 bg-slate-50 border-slate-200 opacity-50';
     const status = filled ? '設定済み' : '未設定';
-    return `<span class="inline-flex items-center justify-center w-4 h-4 rounded-full border ${iconColors[meta.key] || 'text-slate-400'}" title="${meta.label}: ${status}" aria-label="${meta.label}${status}"><span class="material-symbols-outlined text-[10px] leading-none" aria-hidden="true">${meta.icon}</span></span>`;
+    return `<span class="inline-flex items-center justify-center w-4 h-4 rounded-full border ${iconColor}" title="${meta.label}: ${status}" aria-label="${meta.label}${status}"><span class="material-symbols-outlined text-[10px] leading-none" aria-hidden="true">${meta.icon}</span></span>`;
   }
 
   function slotBadgeHtml(meta) {
-    const labelColor = {
-      breakfast: 'text-amber-800 bg-amber-100/90 border-amber-200',
-      lunch: 'text-sky-800 bg-sky-100/90 border-sky-200',
-      dinner: 'text-indigo-800 bg-indigo-100/90 border-indigo-200'
-    }[meta.key] || 'text-slate-800 bg-slate-100 border-slate-200';
+    const labelColor = 'text-slate-700 bg-slate-100 border-slate-200';
 
     return `
-      <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl border ${labelColor} shrink-0 shadow-2xs">
-        <span class="w-5 h-5 rounded-full ${meta.badge} inline-flex items-center justify-center">
-          <span class="material-symbols-outlined text-[13px] leading-none" aria-hidden="true">${meta.icon}</span>
-        </span>
-        <span class="text-[11px] font-bold tracking-tight">${meta.label}</span>
+      <div class="inline-flex items-center justify-center w-7 h-7 rounded-xl border ${labelColor} shrink-0 shadow-2xs">
+        <span class="material-symbols-outlined text-[14px] leading-none" aria-hidden="true">${meta.icon}</span>
       </div>
     `;
   }
@@ -409,9 +368,13 @@ KitchenGit.Calendar = (function () {
       ? ''
       : `<span class="flex items-center gap-1.5">${Meals().MEAL_SLOTS.map((meta) => mealSlotIndicatorHtml(dayData, meta)).join('')}</span>`;
     const chevron = expanded ? 'fa-chevron-down' : 'fa-chevron-right';
+    const pfcHtml = pfcBlockHtml(state, dayData);
     return `
       <button type="button" onclick="toggleDayAccordion('${escapeHtml(dateStr)}')" aria-expanded="${expanded ? 'true' : 'false'}" class="active-scale w-full flex items-center justify-between gap-2 text-left -mx-0.5 px-0.5 py-0.5 rounded-xl">
-        <span class="text-xs font-bold text-slate-900">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="text-xs font-bold text-slate-900 shrink-0">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
+          ${pfcHtml}
+        </div>
         <span class="flex items-center gap-2 shrink-0">
           ${indicators}
           <i class="fa-solid ${chevron} text-[11px] text-slate-400" aria-hidden="true"></i>
@@ -428,27 +391,25 @@ KitchenGit.Calendar = (function () {
     const isMemo = M.isMemoSlot(slot);
     const items = M.mealItems(slot);
     const prepChip = filled && !isMemo && isPrepMealSlot(state, slot)
-      ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 shrink-0">作り置き</span>'
+      ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 shrink-0">作り置き</span>'
       : '';
     const openFn = `openMealEditor('${M.escapeHtml(dateStr)}','${meta.key}')`;
     const badgeHtml = slotBadgeHtml(meta);
 
-    const slotContainerClass = {
-      breakfast: filled ? 'bg-amber-50/70 border-amber-200/90' : 'bg-amber-50/30 border-dashed border-amber-200/70 hover:border-amber-400',
-      lunch: filled ? 'bg-sky-50/70 border-sky-200/90' : 'bg-sky-50/30 border-dashed border-sky-200/70 hover:border-sky-400',
-      dinner: filled ? 'bg-indigo-50/70 border-indigo-200/90' : 'bg-indigo-50/30 border-dashed border-indigo-200/70 hover:border-indigo-400'
-    }[meta.key] || 'bg-slate-50 border-slate-200/70';
+    const slotContainerClass = filled
+      ? 'bg-white border border-slate-200 shadow-2xs'
+      : 'bg-slate-50/50 border border-dashed border-slate-200 hover:border-slate-300';
 
     if (isMemo) {
       const label = M.slotDisplayLabel(slot);
       return `
-        <div class="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-2.5 flex items-start justify-between gap-2 shadow-2xs">
+        <div class="bg-slate-700/80 border border-slate-700/90 rounded-2xl p-2.5 flex items-start justify-between gap-2 shadow-2xs">
           <div onclick="${openFn}" class="flex items-start gap-2.5 min-w-0 pr-1 cursor-pointer flex-1">
             <div class="mt-0.5">${badgeHtml}</div>
-            <p class="text-xs font-bold text-amber-900 truncate mt-1">${M.escapeHtml(label)}</p>
+            <p class="text-xs font-bold text-slate-700 truncate mt-1">${M.escapeHtml(label)}</p>
           </div>
           <div class="flex items-center gap-1 shrink-0 mt-0.5">
-            <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-800 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-100 shadow-2xs" title="献立を編集">
+            <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1.5 rounded-xl bg-white border border-slate-700 text-slate-700 text-[10px] font-bold flex items-center gap-1 hover:bg-slate-700 shadow-2xs" title="献立を編集">
               <i class="fa-solid fa-pen text-[9px]"></i>
               <span>編集</span>
             </button>
@@ -464,7 +425,7 @@ KitchenGit.Calendar = (function () {
             ${badgeHtml}
             <span class="text-xs text-slate-400 font-medium pl-0.5">未設定</span>
           </div>
-          <button type="button" onclick="${openFn}" class="active-scale px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 text-emerald-700 text-xs font-bold flex items-center gap-1.5 shadow-2xs shrink-0 transition-colors" title="献立を登録">
+          <button type="button" onclick="${openFn}" class="active-scale px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs shrink-0 transition-colors" title="献立を登録">
             <i class="fa-solid fa-plus text-xs"></i>
             <span>登録</span>
           </button>
@@ -479,13 +440,13 @@ KitchenGit.Calendar = (function () {
       const imgUrl = M.recipeImageUrl(recipe);
       const imgHtml = imgUrl
         ? `<img src="${M.escapeHtml(imgUrl)}" alt="${M.escapeHtml(item.title)}" class="w-10 h-10 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80 shadow-2xs group-hover:scale-105 transition-transform">`
-        : `<div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center shrink-0 shadow-2xs"><i class="fa-solid fa-utensils text-xs"></i></div>`;
+        : `<div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-900 border border-slate-100/80 flex items-center justify-center shrink-0 shadow-2xs"><i class="fa-solid fa-utensils text-xs"></i></div>`;
       const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
       return `
         <div ${clickAction} class="flex items-center gap-2.5 group cursor-pointer py-1" title="レシピを開く">
           ${imgHtml}
           <div class="min-w-0 flex-1">
-            <p class="text-xs font-bold text-slate-900 truncate group-hover:text-emerald-700 group-hover:underline">${M.escapeHtml(item.title)}</p>
+            <p class="text-xs font-bold text-slate-900 truncate group-hover:text-slate-900 group-hover:underline">${M.escapeHtml(item.title)}</p>
             ${recipe && recipe.tag ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">${M.escapeHtml(recipe.tag)}</span>` : ''}
           </div>
         </div>
@@ -502,7 +463,7 @@ KitchenGit.Calendar = (function () {
           ${prepChip}
           ${slotServingsButtonHtml(dateStr, meta, slot)}
           <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 hover:bg-slate-100 shadow-2xs" title="献立を編集" aria-label="献立を編集">
-            <i class="fa-solid fa-pen text-[9px] text-emerald-600"></i>
+            <i class="fa-solid fa-pen text-[9px] text-slate-900"></i>
             <span>編集</span>
           </button>
         </div>
@@ -533,12 +494,12 @@ KitchenGit.Calendar = (function () {
       const selected = dayData.date === state.selectedDate;
       const expanded = isDayExpanded(state, dayData.date);
       const bodyHtml = expanded
-        ? `${renderMealSlots(state, dayData, { compact: true, date: dayData.date })}${pfcBlockHtml(state, dayData)}`
+        ? renderMealSlots(state, dayData, { compact: true, date: dayData.date })
         : '';
       return `
         <div id="${W.dayDomId(dayData.date)}" class="bg-white rounded-3xl p-3.5 shadow-sm border ${
           expanded ? 'space-y-2.5' : ''
-        } ${selected && expanded ? 'border-emerald-300 ring-2 ring-emerald-500/20' : 'border-slate-200/60'}">
+        } ${selected && expanded ? 'border-slate-100 ring-2 ring-slate-700/20' : 'border-slate-200/60'}">
           ${dayCardHeaderHtml(state, dayData)}
           ${bodyHtml ? `<div class="space-y-2.5">${bodyHtml}</div>` : ''}
         </div>
@@ -556,7 +517,7 @@ KitchenGit.Calendar = (function () {
       const isAll = chip === 'すべて';
       const isActive = isAll ? !currentQuery : currentQuery === chip;
       const cls = isActive
-        ? 'bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-full shadow-2xs border border-emerald-600 active-scale whitespace-nowrap text-[11px]'
+        ? 'bg-slate-900 text-white font-bold px-2.5 py-1 rounded-full shadow-2xs border border-slate-900 active-scale whitespace-nowrap text-[11px]'
         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/80 px-2.5 py-1 rounded-full active-scale whitespace-nowrap text-[11px]';
       return `
         <button type="button" data-chip="${Meals().escapeHtml(chip)}" onclick="applyCalendarSearchChip(this.dataset.chip)" class="${cls}">
@@ -608,7 +569,7 @@ KitchenGit.Calendar = (function () {
         <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-3 text-center space-y-1.5">
           <p class="text-xs font-bold text-slate-700">「${M.escapeHtml(query)}」に一致するレシピはありません</p>
           <p class="text-[10px] text-slate-400">材料名（例: 鶏肉, 生姜, 豆腐）や料理名で検索してください</p>
-          <button type="button" onclick="clearCalendarRecipeSearch()" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl hover:bg-emerald-100 active-scale mt-1">
+          <button type="button" onclick="clearCalendarRecipeSearch()" class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-900 bg-slate-100 border border-slate-100 px-2.5 py-1 rounded-xl hover:bg-slate-100 active-scale mt-1">
             <i class="fa-solid fa-rotate-left text-[10px]"></i>
             <span>検索をクリア</span>
           </button>
@@ -629,7 +590,7 @@ KitchenGit.Calendar = (function () {
         details.tokens.forEach((tok) => {
           if (!tok) return;
           const re = new RegExp(`(${String(tok).replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
-          displayName = displayName.replace(re, '<mark class="bg-amber-200 text-amber-950 font-bold px-0.5 rounded">$1</mark>');
+          displayName = displayName.replace(re, '<mark class="bg-slate-700 text-slate-700 font-bold px-0.5 rounded">$1</mark>');
         });
       }
 
@@ -637,10 +598,10 @@ KitchenGit.Calendar = (function () {
       if (matchedIngs.length > 0) {
         ingredientsPreview = `
           <div class="mt-1 flex items-center gap-1 flex-wrap text-[11px]">
-            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">一致した材料:</span>
+            <span class="text-[10px] font-bold text-slate-900 bg-slate-100 border border-slate-100 px-1.5 py-0.5 rounded">一致した材料:</span>
             ${matchedIngs.map((ing) => `
-              <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                <i class="fa-solid fa-check text-[8px] text-emerald-600"></i>${M.escapeHtml(ing)}
+              <span class="text-[10px] font-bold text-slate-900 bg-slate-100/90 border border-slate-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                <i class="fa-solid fa-check text-[8px] text-slate-900"></i>${M.escapeHtml(ing)}
               </span>
             `).join('')}
           </div>
@@ -690,10 +651,10 @@ KitchenGit.Calendar = (function () {
                 return `
                   <button type="button" data-date="${M.escapeHtml(day.date)}" data-recipe-id="${M.escapeHtml(recipe.id)}" data-recipe-name="${M.escapeHtml(recipe.name)}" onclick="assignRecipeToDayDinner(this.dataset.date, this.dataset.recipeId, this.dataset.recipeName)" class="shrink-0 text-[10px] font-bold px-2 py-1 rounded-xl transition-all active-scale ${
                     hasThis
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-slate-900 text-white shadow-xs'
                       : isFilled
-                      ? 'bg-white text-slate-700 border border-slate-200 hover:border-emerald-400'
-                      : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                      ? 'bg-white text-slate-700 border border-slate-200 hover:border-slate-700'
+                      : 'bg-slate-100 text-slate-900 border border-slate-100 hover:bg-slate-100'
                   }">
                     ${hasThis ? '✓ ' : '+ '}${W.formatMd(day.date)} (${day.day})${hasThis ? '追加済' : ''}
                   </button>
@@ -706,6 +667,7 @@ KitchenGit.Calendar = (function () {
     }).join('');
   }
 
+
   function renderMonthlyCalendar(state) {
     const W = Week();
     const M = Meals();
@@ -714,33 +676,6 @@ KitchenGit.Calendar = (function () {
 
     const titleEl = document.getElementById('monthly-title-label');
     if (titleEl) titleEl.textContent = `${year}年 ${month + 1}月`;
-
-    const btnList = document.getElementById('cal-view-btn-list');
-    const btnMonthly = document.getElementById('cal-view-btn-monthly');
-    const listNav = document.getElementById('calendar-list-nav-wrap');
-    const monthlyNav = document.getElementById('calendar-monthly-nav-wrap');
-    const listContainer = document.getElementById('calendar-list-view-container');
-    const monthlyContainer = document.getElementById('calendar-monthly-view-container');
-
-    const isMonthly = state.calendarViewMode === 'monthly';
-
-    if (btnList) {
-      btnList.className = isMonthly
-        ? 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900'
-        : 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-xs';
-    }
-    if (btnMonthly) {
-      btnMonthly.className = isMonthly
-        ? 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-xs'
-        : 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
-    }
-
-    if (listNav) listNav.classList.toggle('hidden', isMonthly);
-    if (monthlyNav) monthlyNav.classList.toggle('hidden', !isMonthly);
-    if (listContainer) listContainer.classList.toggle('hidden', isMonthly);
-    if (monthlyContainer) monthlyContainer.classList.toggle('hidden', !isMonthly);
-
-    if (!isMonthly) return;
 
     const gridEl = document.getElementById('monthly-calendar-grid');
     if (!gridEl) return;
@@ -800,11 +735,11 @@ KitchenGit.Calendar = (function () {
         }
       }
 
-      let cellClass = 'min-h-[72px] rounded-2xl p-1.5 flex flex-col justify-between border transition-all active-scale cursor-pointer ';
+      let cellClass = 'min-h-[76px] rounded-2xl p-1.5 flex flex-col justify-between border transition-all active-scale cursor-pointer ';
       if (isSelected) {
-        cellClass += 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-500/30 shadow-xs';
+        cellClass += 'bg-slate-100 border-slate-700 ring-2 ring-slate-700/30 shadow-xs';
       } else if (isToday) {
-        cellClass += 'bg-emerald-50/50 border-emerald-300';
+        cellClass += 'bg-slate-100/40 border-slate-100';
       } else if (cell.currentMonth) {
         cellClass += 'bg-white border-slate-200/80 hover:border-slate-300';
       } else {
@@ -819,7 +754,7 @@ KitchenGit.Calendar = (function () {
 
       const dotsHtml = filledCount > 0
         ? `<div class="flex items-center gap-0.5 mt-0.5">
-             <span class="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1 rounded">${filledCount}/3食</span>
+             <span class="text-[9px] font-mono font-bold text-slate-900 bg-slate-100 px-1 rounded">${filledCount}/3食</span>
            </div>`
         : `<span class="text-[9px] text-slate-300">—</span>`;
 
@@ -834,7 +769,7 @@ KitchenGit.Calendar = (function () {
         <div data-date="${cell.date}" onclick="jumpToDateFromMonthly('${cell.date}')" class="${cellClass}">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold font-mono ${numColor}">${cell.day}</span>
-            ${isToday ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>' : ''}
+            ${isToday ? '<span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>' : ''}
           </div>
           <div class="space-y-0.5 min-w-0">
             ${dotsHtml}
@@ -845,18 +780,81 @@ KitchenGit.Calendar = (function () {
     }).join('');
   }
 
-  function render(state) {
-    renderWeekNav(state);
-    renderCalendarSearch(state);
-    renderWeekOverview(state);
-    renderMonthlyCalendar(state);
+  function renderAgendaScroll(state) {
+    const container = document.getElementById('agenda-scroll-container');
+    if (!container) return;
+    const W = Week();
+    const M = Meals();
+    const todayIso = W.toIsoDate(new Date());
+    const anchorDateStr = state.selectedDate || todayIso;
+    const anchorDate = W.localDate(anchorDateStr);
+
+    // Generate range: -7 days to +28 days around anchorDate
+    const daysList = [];
+    for (let i = -7; i <= 28; i++) {
+      const d = W.addDays(anchorDate, i);
+      daysList.push(W.toIsoDate(d));
+    }
+
+    container.innerHTML = daysList.map((dateStr) => {
+      let dayData = state.allDaysMap[dateStr];
+      if (!dayData) {
+        dayData = {
+          date: dateStr,
+          day: W.WEEKDAYS[W.weekdayIndex(dateStr)] || '',
+          tag: '未登録',
+          tagColor: 'slate',
+          isBusinessTrip: false,
+          pfc: null,
+          meals: M.emptyMeals()
+        };
+        state.allDaysMap[dateStr] = dayData;
+      }
+
+      const isToday = dateStr === todayIso;
+      const isSelected = dateStr === state.selectedDate;
+      const dObj = W.localDate(dateStr);
+      const wdayIdx = dObj.getDay();
+      const dayNum = dObj.getDate();
+      const wdayName = dayData.day || W.WEEKDAYS[W.weekdayIndex(dateStr)];
+
+      let numColor = 'text-slate-900';
+      if (wdayIdx === 0) numColor = 'text-rose-600';
+      if (wdayIdx === 6) numColor = 'text-sky-600';
+
+      const cardRing = isSelected ? 'ring-2 ring-slate-700 shadow-sm border-slate-100' : 'border-slate-200/70 shadow-sm';
+
+      return `
+        <div id="agenda-day-${dateStr}" class="flex gap-3 items-start bg-white rounded-3xl p-4 border ${cardRing} transition-all">
+          <!-- Googleカレンダー風の日付ブロック (左側) -->
+          <div class="w-14 shrink-0 text-center pt-1">
+            <span class="text-2xl font-bold font-mono ${numColor} leading-none block">${dayNum}</span>
+            <span class="text-[11px] font-bold text-slate-500 uppercase mt-0.5 block">${wdayName}</span>
+            ${isToday ? '<span class="inline-block px-1.5 py-0.5 mt-1 rounded-full bg-slate-700 text-white text-[9px] font-bold">今日</span>' : ''}
+          </div>
+
+          <!-- 右側の献立内容エリア -->
+          <div class="flex-1 min-w-0 space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-700 font-mono">${W.formatMd(dateStr, true)}</span>
+              </div>
+            </div>
+
+            <div class="space-y-2.5">
+              ${renderMealSlots(state, dayData, { date: dateStr })}
+              ${pfcBlockHtml(state, dayData)}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
-  function scrollToDay(dateStr) {
-    requestAnimationFrame(() => {
-      const el = document.getElementById(Week().dayDomId(dateStr));
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
+  function render(state) {
+    renderCalendarSearch(state);
+    renderMonthlyCalendar(state);
+    renderAgendaScroll(state);
   }
 
   function bindGlobals(state) {
@@ -883,8 +881,19 @@ KitchenGit.Calendar = (function () {
     window.assignRecipeToDayDinner = async function (dateStr, recipeId, recipeName) {
       const M = Meals();
       const W = Week();
-      const dayData = M.findDayInState(state, dateStr);
-      if (!dayData) return;
+      let dayData = state.allDaysMap[dateStr];
+      if (!dayData) {
+        dayData = {
+          date: dateStr,
+          day: W.WEEKDAYS[W.weekdayIndex(dateStr)] || '',
+          tag: 'カスタム',
+          tagColor: 'slate',
+          isBusinessTrip: false,
+          pfc: null,
+          meals: M.emptyMeals()
+        };
+        state.allDaysMap[dateStr] = dayData;
+      }
       const slot = M.ensureMealSlot(dayData, 'dinner');
       const existing = M.mealItems(slot);
       const isAlready = existing.some((it) => it.title === recipeName || it.recipeId === recipeId);
@@ -934,30 +943,11 @@ KitchenGit.Calendar = (function () {
       });
     }
 
-    window.shiftWeek = async function (deltaDays) {
-      shiftWeek(state, deltaDays);
-      render(state);
-      await hydrateWeek(state, state.weekStart);
-      render(state);
-      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
-    };
-    window.goToThisWeek = async function () {
-      goToThisWeek(state);
-      render(state);
-      await hydrateWeek(state, state.weekStart);
-      render(state);
-      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
-    };
-    window.aiSuggestRemaining = async function () {
-      const target = applyAiSuggestion(state);
-      render(state);
-      if (target) await persistDay(state, target);
-      if (target) scrollToDay(target.date);
-      if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
-    };
+
     window.openRegisterFromCalendar = function () {
       if (hooks.onRegisterRecipe) hooks.onRegisterRecipe();
     };
+
     window.toggleSlotServings = async function (dateStr, slotKey) {
       const result = toggleSlotServings(state, dateStr, slotKey);
       if (!result) return;
@@ -969,27 +959,8 @@ KitchenGit.Calendar = (function () {
       await persistDay(state, dayData);
       if (hooks.onShoppingRefresh) hooks.onShoppingRefresh();
     };
-    window.renderCalendar = function () {
-      render(state);
-    };
-    window.toggleDayAccordion = function (dateStr) {
-      toggleDayExpanded(state, dateStr);
-      render(state);
-    };
-    window.expandAllDays = function () {
-      expandAllDays(state);
-      render(state);
-    };
-    window.collapseAllDays = function () {
-      collapseAllDays(state);
-      render(state);
-    };
 
-    window.setCalendarViewMode = async function (mode) {
-      state.calendarViewMode = mode;
-      if (mode === 'monthly') {
-        await hydrateMonth(state, state.monthlyYear, state.monthlyMonth);
-      }
+    window.renderCalendar = function () {
       render(state);
     };
 
@@ -1006,25 +977,48 @@ KitchenGit.Calendar = (function () {
       render(state);
     };
 
+    window.toggleCalendarGrid = function () {
+      const wrap = document.getElementById('monthly-calendar-grid-wrap');
+      const icon = document.getElementById('calendar-toggle-icon');
+      if (wrap) {
+        wrap.classList.toggle('hidden');
+        if (icon) {
+          icon.style.transform = wrap.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+      }
+    };
+
+    window.goToToday = async function () {
+      const now = new Date();
+      const W = Week();
+      const todayIso = W.toIsoDate(now);
+      state.monthlyYear = now.getFullYear();
+      state.monthlyMonth = now.getMonth();
+      state.selectedDate = todayIso;
+      await hydrateMonth(state, state.monthlyYear, state.monthlyMonth);
+      render(state);
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`agenda-day-${todayIso}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    };
+
     window.goToCurrentMonth = async function () {
       const now = new Date();
       state.monthlyYear = now.getFullYear();
       state.monthlyMonth = now.getMonth();
+      state.selectedDate = Week().toIsoDate(now);
       await hydrateMonth(state, state.monthlyYear, state.monthlyMonth);
       render(state);
     };
 
-    window.jumpToDateFromMonthly = async function (dateStr) {
-      const W = Week();
-      const saturdayStart = W.toIsoDate(W.startOfWeekSaturday(dateStr));
-      state.calendarViewMode = 'list';
-      setDisplayedWeek(state, saturdayStart, { weekdayIndex: W.weekdayIndex(dateStr) });
+    window.jumpToDateFromMonthly = function (dateStr) {
       state.selectedDate = dateStr;
-      state.expandedDays = { [dateStr]: true };
       render(state);
-      await hydrateWeek(state, state.weekStart);
-      render(state);
-      scrollToDay(dateStr);
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`agenda-day-${dateStr}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     };
 
     MealEditor().bindGlobals(state, {

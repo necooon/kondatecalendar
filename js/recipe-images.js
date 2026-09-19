@@ -23,7 +23,7 @@ window.KitchenGit = window.KitchenGit || {};
     const utils = ImageUtils();
     const presets = (utils && utils.PRESET_RECIPE_IMAGES) || [];
     box.innerHTML = presets.map((p) => `
-      <button type="button" onclick="setRecipeImageModalPreview('${p.url}')" class="active-scale group relative rounded-xl overflow-hidden aspect-square border border-slate-200 hover:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all bg-slate-100" title="${escapeAttr(p.title)}">
+      <button type="button" onclick="setRecipeImageModalPreview('${p.url}')" class="active-scale group relative rounded-xl overflow-hidden aspect-square border border-slate-200 hover:border-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-700 transition-all bg-slate-100" title="${escapeAttr(p.title)}">
         <img src="${p.url}" alt="${escapeAttr(p.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" loading="lazy">
         <span class="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-xs text-[8.5px] text-white font-bold py-0.5 px-0.5 truncate text-center block">
           ${escapeAttr(p.title.split('・')[0])}
@@ -157,7 +157,7 @@ window.KitchenGit = window.KitchenGit || {};
       if (previewBox) previewBox.classList.remove('hidden');
       if (badge) {
         badge.textContent = '設定済';
-        badge.className = 'text-[10px] font-bold text-emerald-600';
+        badge.className = 'text-[10px] font-bold text-slate-900';
       }
     } else {
       if (input) input.value = '';
@@ -210,7 +210,7 @@ window.KitchenGit = window.KitchenGit || {};
       if (previewBox) previewBox.classList.remove('hidden');
       if (badge) {
         badge.textContent = '設定済';
-        badge.className = 'text-[10px] font-bold text-emerald-600';
+        badge.className = 'text-[10px] font-bold text-slate-900';
       }
     } else {
       if (input) input.value = '';

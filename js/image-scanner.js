@@ -304,7 +304,7 @@ KitchenGit.ImageScanner = (function () {
         return `
           <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
             <span class="font-medium text-slate-800">${ing.name}${note}</span>
-            <span class="font-mono font-bold text-emerald-700">${qty}</span>
+            <span class="font-mono font-bold text-slate-900">${qty}</span>
           </div>
         `;
       }).join('');
@@ -316,12 +316,12 @@ KitchenGit.ImageScanner = (function () {
       stepList.innerHTML = (recipe.steps || []).map((st, idx) => {
         const timerMinutes = st.timerSeconds ? Math.round(st.timerSeconds / 60) : (st.timer ? Math.round(st.timer / 60) : 0);
         const timerBadge = timerMinutes > 0
-          ? `<span class="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 font-bold px-1.5 py-0.5 rounded-md border border-amber-200 shrink-0"><i class="fa-regular fa-clock"></i>${timerMinutes}分</span>`
+          ? `<span class="inline-flex items-center gap-1 text-[10px] bg-slate-700 text-slate-700 font-bold px-1.5 py-0.5 rounded-md border border-slate-700 shrink-0"><i class="fa-regular fa-clock"></i>${timerMinutes}分</span>`
           : '';
         return `
           <div class="space-y-0.5 py-1.5 border-b border-slate-100 last:border-0">
             <div class="flex items-center justify-between gap-1">
-              <span class="text-[11px] font-bold text-emerald-700 font-mono">Step ${idx + 1}${st.title ? ` : ${st.title}` : ''}</span>
+              <span class="text-[11px] font-bold text-slate-900 font-mono">Step ${idx + 1}${st.title ? ` : ${st.title}` : ''}</span>
               ${timerBadge}
             </div>
             <p class="text-xs text-slate-700 leading-relaxed">${st.instruction}</p>
@@ -840,7 +840,7 @@ KitchenGit.ImageScanner = (function () {
         dropzone.addEventListener(eventName, (e) => {
           e.preventDefault();
           e.stopPropagation();
-          dropzone.classList.add('border-emerald-500', 'bg-emerald-50/50');
+          dropzone.classList.add('border-slate-700', 'bg-slate-100/50');
         });
       });
 
@@ -848,7 +848,7 @@ KitchenGit.ImageScanner = (function () {
         dropzone.addEventListener(eventName, (e) => {
           e.preventDefault();
           e.stopPropagation();
-          dropzone.classList.remove('border-emerald-500', 'bg-emerald-50/50');
+          dropzone.classList.remove('border-slate-700', 'bg-slate-100/50');
         });
       });
 

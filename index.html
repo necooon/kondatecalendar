@@ -158,7 +158,7 @@
   <header class="sticky top-0 z-30 ios-glass border-b border-slate-200/80 transition-all">
     <div class="max-w-md mx-auto px-4 pt-2 pb-2.5 flex items-center justify-between flex-nowrap gap-2">
       <div id="app-header-brand" class="flex items-center gap-2 min-w-0">
-        <div class="w-8 h-8 shrink-0 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-600/25">
+        <div class="w-8 h-8 shrink-0 rounded-xl bg-gradient-to-tr from-slate-900 to-slate-800 text-white flex items-center justify-center shadow-md shadow-slate-900/25">
           <i class="fa-solid fa-code-branch text-sm"></i>
         </div>
         <span class="text-sm font-black tracking-tight font-display text-slate-900 whitespace-nowrap">RecipeOps</span>
@@ -175,7 +175,7 @@
       <!-- 検索バー -->
       <div class="relative flex items-center">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-sm pointer-events-none"></i>
-        <input type="text" id="home-search-input" placeholder="検索" onkeydown="if(event.key==='Enter'){ switchTab('recipe'); onRecipeSearchInput(this.value); }" class="w-full bg-white border border-slate-200/80 rounded-2xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-colors">
+        <input type="text" id="home-search-input" placeholder="検索" onkeydown="if(event.key==='Enter'){ switchTab('recipe'); onRecipeSearchInput(this.value); }" class="w-full bg-white border border-slate-200/80 rounded-2xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:ring-2 focus:ring-slate-700 focus:outline-none transition-colors">
       </div>
 
       <!-- お気に入り & 履歴 ボタン -->
@@ -193,7 +193,7 @@
       <!-- 今週の献立 バナー -->
       <div onclick="switchTab('calendar')" class="active-scale cursor-pointer relative rounded-3xl overflow-hidden shadow-sm border border-slate-200/80 bg-gradient-to-r from-slate-200 to-slate-100 p-5 flex items-center justify-between">
         <div class="space-y-1 z-10">
-          <span class="text-[10px] font-bold tracking-wider text-emerald-700 uppercase">Weekly Plan</span>
+          <span class="text-[10px] font-bold tracking-wider text-slate-900 uppercase">Weekly Plan</span>
           <h3 class="text-xl font-bold text-slate-900">今週の献立</h3>
           <p class="text-xs text-slate-600">タップして予定を確認・編集</p>
         </div>
@@ -217,7 +217,7 @@
             <span>レシピ</span>
             <span class="text-[10px] font-normal text-slate-400">（主菜・副菜・単品対応）</span>
           </h3>
-          <button type="button" onclick="switchTab('recipe')" class="text-xs font-bold text-emerald-600">すべて見る</button>
+          <button type="button" onclick="switchTab('recipe')" class="text-xs font-bold text-slate-900">すべて見る</button>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div onclick="switchTab('recipe'); showRecipeDetail('demo-chicken');" class="active-scale cursor-pointer bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200/80">
@@ -225,7 +225,7 @@
               <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" alt="鶏むね肉と秋茄子のさっぱり炒め" class="w-full h-full object-cover">
             </div>
             <div class="p-3">
-              <span class="bg-emerald-50 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mb-1">主菜</span>
+              <span class="bg-slate-100 text-slate-900 text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mb-1">主菜</span>
               <p class="text-xs font-bold text-slate-900 truncate">鶏むね肉と秋茄子のさっぱり炒め</p>
               <p class="text-[10px] text-slate-400 font-mono mt-0.5">調理15分 • 2人分</p>
             </div>
@@ -235,7 +235,7 @@
               <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1" alt="豚肉と玉ねぎの生姜焼き" class="w-full h-full object-cover">
             </div>
             <div class="p-3">
-              <span class="bg-emerald-50 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mb-1">単品・定番</span>
+              <span class="bg-slate-100 text-slate-900 text-[9px] font-bold px-2 py-0.5 rounded-full inline-block mb-1">単品・定番</span>
               <p class="text-xs font-bold text-slate-900 truncate">豚肉と玉ねぎの生姜焼き</p>
               <p class="text-[10px] text-slate-400 font-mono mt-0.5">調理15分 • 2人分</p>
             </div>
@@ -244,70 +244,36 @@
       </div>
     </section>
 
-    <!-- ==================== VIEW 1: カレンダー画面 ==================== -->
+    <!-- ==================== VIEW 1: カレンダー画面 (Googleカレンダー風アプリ画面) ==================== -->
     <section id="view-calendar" class="space-y-3.5 hidden">
-      <!-- カレンダーヘッダーカード (表示切替 ＆ ナビ) -->
+      <!-- カレンダーヘッダー (Googleカレンダーアプリ風) -->
       <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">Meal Calendar</span>
-          <!-- リスト表示 / 月間カレンダー表示 切り替えタブ -->
-          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70" role="tablist">
-            <button type="button" id="cal-view-btn-list" onclick="setCalendarViewMode('list')" class="active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-xs">
-              <i class="fa-solid fa-list-ul mr-1"></i>リスト
-            </button>
-            <button type="button" id="cal-view-btn-monthly" onclick="setCalendarViewMode('monthly')" class="active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900">
-              <i class="fa-solid fa-calendar-days mr-1"></i>月間
-            </button>
-          </div>
-        </div>
-
-        <!-- 週間ナビゲーション (リスト表示時) -->
-        <div id="calendar-list-nav-wrap" class="space-y-2 pt-1 border-t border-slate-100">
-          <div class="flex items-center gap-1">
-            <button type="button" onclick="shiftWeek(-7)" aria-label="前週" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
-              <i class="fa-solid fa-chevron-left text-xs"></i>
-            </button>
-            <div class="flex-1 min-w-0 text-center px-1">
-              <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                <span id="week-range-label" class="text-xs font-bold text-slate-900 font-mono leading-tight">9/6 (土) - 9/12 (金)</span>
-              </div>
+          <div class="flex items-center gap-2 cursor-pointer select-none group" onclick="toggleCalendarGrid()">
+            <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center font-bold group-hover:bg-slate-100 transition-colors">
+              <i class="fa-solid fa-calendar-days text-sm"></i>
             </div>
-            <button type="button" onclick="shiftWeek(7)" aria-label="翌週" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
-              <i class="fa-solid fa-chevron-right text-xs"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- 月間ナビゲーション (月間表示時) -->
-        <div id="calendar-monthly-nav-wrap" class="hidden space-y-2 pt-1 border-t border-slate-100">
-          <div class="flex items-center justify-between">
-            <button type="button" onclick="shiftMonthlyMonth(-1)" aria-label="前月" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
-              <i class="fa-solid fa-chevron-left text-xs"></i>
-            </button>
-            <div class="text-center">
-              <span id="monthly-title-label" class="text-sm font-bold text-slate-900 font-mono">2026年 9月</span>
+            <div class="flex items-center gap-1.5">
+              <span id="monthly-title-label" class="text-base font-bold text-slate-900 font-mono">2026年 9月</span>
+              <i id="calendar-toggle-icon" class="fa-solid fa-chevron-down text-xs text-slate-400 transition-transform duration-200"></i>
             </div>
-            <div class="flex items-center gap-1">
-              <button type="button" onclick="goToCurrentMonth()" class="active-scale px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200">今月</button>
-              <button type="button" onclick="shiftMonthlyMonth(1)" aria-label="翌月" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="goToToday()" class="active-scale px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200">今日</button>
+            <div class="flex items-center gap-0.5">
+              <button type="button" onclick="shiftMonthlyMonth(-1)" aria-label="前月" class="active-scale w-9 h-9 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+                <i class="fa-solid fa-chevron-left text-xs"></i>
+              </button>
+              <button type="button" onclick="shiftMonthlyMonth(1)" aria-label="翌月" class="active-scale w-9 h-9 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
                 <i class="fa-solid fa-chevron-right text-xs"></i>
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- リスト表示コンテナ -->
-      <div id="calendar-list-view-container" class="space-y-3">
-        <div id="week-overview" class="space-y-3">
-          <!-- JSで7日分をレンダリング -->
-        </div>
-      </div>
-
-      <!-- 月間カレンダー表示コンテナ -->
-      <div id="calendar-monthly-view-container" class="hidden space-y-3">
-        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
-          <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 pb-1 border-b border-slate-100">
+        <!-- 月間カレンダーグリッド（デフォルト非表示） -->
+        <div id="monthly-calendar-grid-wrap" class="hidden space-y-2 pt-2 border-t border-slate-100">
+          <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 pb-1">
             <span class="text-rose-500">日</span>
             <span>月</span>
             <span>火</span>
@@ -320,12 +286,11 @@
             <!-- JSでレンダリング -->
           </div>
         </div>
-        <div class="bg-slate-50 border border-slate-200/60 rounded-2xl p-3 flex items-start gap-2.5">
-          <i class="fa-solid fa-calendar-check text-emerald-600 text-sm mt-0.5"></i>
-          <p class="text-[11px] text-slate-600 leading-relaxed">
-            月間カレンダー表示では、長期的な献立の予定や登録状況を一覧できます。<strong class="text-slate-900">日付をタップ</strong>すると、その日の週のリスト表示にジャンプします。
-          </p>
-        </div>
+      </div>
+
+      <!-- スクロール可能なGoogleカレンダー風 デイアジェンダ（前後日付リスト） -->
+      <div id="agenda-scroll-container" class="space-y-3.5 max-h-[75vh] overflow-y-auto pr-0.5 no-scrollbar">
+        <!-- JSでレンダリング -->
       </div>
     </section>
 
@@ -336,7 +301,7 @@
         <div class="flex items-center justify-between">
           <div>
             <div class="flex items-center gap-1.5">
-              <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono border border-indigo-200/70">STOCK SYNC</span>
+              <span class="bg-slate-800 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded-full font-mono border border-slate-800/70">STOCK SYNC</span>
             </div>
             <h2 class="text-lg font-bold text-slate-900 mt-0.5">まとめ買い出しリスト</h2>
           </div>
@@ -349,7 +314,7 @@
 
         <!-- 別アプリストック確認ヒント -->
         <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200/60 flex items-start gap-2.5">
-          <i class="fa-solid fa-lightbulb text-amber-500 text-sm mt-0.5"></i>
+          <i class="fa-solid fa-lightbulb text-slate-700 text-sm mt-0.5"></i>
           <p class="text-[11px] text-slate-600 leading-relaxed">
             別アプリでストックを確認しながら、<strong class="text-slate-900">「家にある食材」をタップ</strong>してください。自動で打ち消し線が引かれ購入品から除外されます。
           </p>
@@ -369,7 +334,7 @@
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-[10px] font-bold tracking-wider text-emerald-600 uppercase">Recipes</span>
+              <span class="text-[10px] font-bold tracking-wider text-slate-900 uppercase">Recipes</span>
               <h2 class="text-base font-bold text-slate-900 tracking-tight">レシピ検索・一覧</h2>
             </div>
             <div class="flex items-center gap-2">
@@ -381,7 +346,7 @@
           <!-- 検索バー -->
           <div class="relative flex items-center">
             <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
-            <input type="text" id="recipe-search-input" oninput="onRecipeSearchInput(this.value)" placeholder="料理名・材料・タグで検索 (例: 豚肉, 定番, 生姜)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-colors">
+            <input type="text" id="recipe-search-input" oninput="onRecipeSearchInput(this.value)" placeholder="料理名・材料・タグで検索 (例: 豚肉, 定番, 生姜)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-slate-700 focus:bg-white focus:outline-none transition-colors">
             <button type="button" id="recipe-search-clear" onclick="clearRecipeSearch()" class="hidden absolute right-2.5 w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] hover:bg-slate-300 active-scale">
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -395,7 +360,7 @@
 
         <!-- レシピ画面右下のFAB (Floating Action Button) -->
         <div class="fixed bottom-24 right-5 z-40">
-          <button type="button" onclick="openRecipeAddSelectorModal()" class="active-scale w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-xl shadow-emerald-600/30 flex items-center justify-center transition-transform hover:scale-105" title="レシピを追加">
+          <button type="button" onclick="openRecipeAddSelectorModal()" class="active-scale w-14 h-14 bg-slate-900 hover:bg-slate-900 text-white rounded-full shadow-xl shadow-slate-900/30 flex items-center justify-center transition-transform hover:scale-105" title="レシピを追加">
             <i class="fa-solid fa-plus text-2xl"></i>
           </button>
         </div>
@@ -404,13 +369,13 @@
       <div id="recipe-detail-pane" class="space-y-3.5 hidden">
         <!-- 上部ナビ (戻る & ブランチ切替) -->
         <div class="flex items-center justify-between gap-2 px-0.5">
-          <button type="button" onclick="showRecipeList()" class="active-scale text-xs font-bold text-emerald-700 flex items-center gap-1 bg-white px-3 py-2 rounded-2xl border border-slate-200/80 shadow-sm">
+          <button type="button" onclick="showRecipeList()" class="active-scale text-xs font-bold text-slate-900 flex items-center gap-1 bg-white px-3 py-2 rounded-2xl border border-slate-200/80 shadow-sm">
             <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>一覧へ
           </button>
           <div class="relative flex-1 max-w-[210px]">
             <button type="button" id="branch-toggle-btn" onclick="toggleBranchMenu()" class="active-scale w-full flex items-center justify-between gap-1.5 bg-white border border-slate-200/80 rounded-2xl px-3 py-2 shadow-sm">
               <span class="flex items-center gap-1.5 min-w-0">
-                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-emerald-600 shrink-0"></i>
+                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-slate-900 shrink-0"></i>
                 <span id="recipe-branch-name" class="text-xs font-bold font-mono text-slate-900 truncate">main</span>
               </span>
               <span id="recipe-commit-hash" class="text-[10px] font-mono text-slate-500 shrink-0">—————</span>
@@ -428,11 +393,11 @@
         <div class="group relative rounded-3xl overflow-hidden shadow-sm border border-slate-200/80 bg-slate-900 aspect-[16/10]">
           <img id="recipe-photo-img" src="" alt="料理写真" class="w-full h-full object-cover cursor-pointer" onclick="openRecipeImageModal()">
           <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs font-bold border border-white/15">
-            <i class="fa-regular fa-clock text-emerald-400"></i>
+            <i class="fa-regular fa-clock text-slate-700"></i>
             <span id="recipe-time-badge">調理所要時間: 15分</span>
           </div>
           <button type="button" onclick="openRecipeImageModal()" class="active-scale absolute top-3 right-3 bg-black/60 hover:bg-black/85 backdrop-blur-md text-white px-3 py-1.5 rounded-2xl flex items-center gap-1.5 text-xs font-bold border border-white/20 shadow-sm" title="料理写真を追加・変更">
-            <i class="fa-solid fa-camera text-emerald-400 text-xs"></i>
+            <i class="fa-solid fa-camera text-slate-700 text-xs"></i>
             <span id="recipe-photo-btn-text">写真を変更</span>
           </button>
         </div>
@@ -440,14 +405,14 @@
         <!-- アクションボタン (レシピを編集 ＆ 献立に登録 ＆ 調理モード起動) -->
         <div class="grid grid-cols-3 gap-2">
           <button type="button" onclick="openCommitModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold py-3.5 px-1.5 rounded-2xl flex items-center justify-center gap-1 border border-slate-200/80 shadow-sm">
-            <i class="fa-solid fa-pen-to-square text-emerald-600 text-xs"></i>
+            <i class="fa-solid fa-pen-to-square text-slate-900 text-xs"></i>
             <span>編集</span>
           </button>
           <button type="button" onclick="openRegisterToMealModal()" class="active-scale bg-white hover:bg-slate-50 text-slate-800 text-[11px] font-bold py-3.5 px-1.5 rounded-2xl flex items-center justify-center gap-1 border border-slate-200/80 shadow-sm">
-            <i class="fa-solid fa-calendar-plus text-emerald-600 text-xs"></i>
+            <i class="fa-solid fa-calendar-plus text-slate-900 text-xs"></i>
             <span>献立に登録</span>
           </button>
-          <button type="button" onclick="openCookingMode()" class="active-scale bg-[#047857] hover:bg-emerald-800 text-white text-[11px] font-bold py-3.5 px-1.5 rounded-2xl flex items-center justify-center gap-1 shadow-sm shadow-emerald-600/30">
+          <button type="button" onclick="openCookingMode()" class="active-scale bg-[#047857] hover:bg-slate-900 text-white text-[11px] font-bold py-3.5 px-1.5 rounded-2xl flex items-center justify-center gap-1 shadow-sm shadow-slate-900/30">
             <i class="fa-solid fa-bowl-food text-xs"></i>
             <span>調理</span>
           </button>
@@ -457,7 +422,7 @@
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-              <i data-lucide="info" class="w-4 h-4 text-emerald-600"></i>
+              <i data-lucide="info" class="w-4 h-4 text-slate-900"></i>
               <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">NUTRITION PROFILE</span>
             </div>
             <span class="text-[11px] text-slate-400">1食あたり（推定値）</span>
@@ -471,28 +436,28 @@
               <span class="text-[9px] font-bold text-rose-600 block">Protein</span>
               <span id="recipe-p" class="text-xs font-mono font-bold text-rose-700">—</span>
             </div>
-            <div class="bg-amber-50 border border-amber-100 rounded-2xl py-2 px-1">
-              <span class="text-[9px] font-bold text-amber-600 block">Fat</span>
-              <span id="recipe-f" class="text-xs font-mono font-bold text-amber-700">—</span>
+            <div class="bg-slate-700 border border-slate-700 rounded-2xl py-2 px-1">
+              <span class="text-[9px] font-bold text-slate-700 block">Fat</span>
+              <span id="recipe-f" class="text-xs font-mono font-bold text-slate-700">—</span>
             </div>
             <div class="bg-sky-50 border border-sky-100 rounded-2xl py-2 px-1">
               <span class="text-[9px] font-bold text-sky-600 block">Carbs</span>
               <span id="recipe-c" class="text-xs font-mono font-bold text-sky-700">—</span>
             </div>
           </div>
-          <p id="recipe-pfc-note" class="hidden text-[10px] text-amber-700"></p>
+          <p id="recipe-pfc-note" class="hidden text-xs text-slate-600 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 mt-2 leading-relaxed"></p>
         </div>
 
         <!-- 材料 (Materials) -->
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <div class="flex items-center gap-1.5">
-              <i data-lucide="utensils" class="w-4 h-4 text-emerald-600"></i>
+              <i data-lucide="utensils" class="w-4 h-4 text-slate-900"></i>
               <h3 class="text-xs font-bold text-slate-800">材料</h3>
             </div>
             <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shrink-0">
               <button type="button" onclick="changeRecipeServings(-1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">−</button>
-              <span id="recipe-servings-text" class="w-12 text-center text-xs font-bold font-mono text-emerald-700">2人分</span>
+              <span id="recipe-servings-text" class="w-12 text-center text-xs font-bold font-mono text-slate-900">2人分</span>
               <button type="button" onclick="changeRecipeServings(1)" class="active-scale w-7 h-7 bg-white rounded-xl text-slate-800 font-bold shadow-2xs flex items-center justify-center text-sm">＋</button>
             </div>
           </div>
@@ -502,7 +467,7 @@
         <!-- 調理手順 (Steps) -->
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-3">
           <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-            <i data-lucide="list-ordered" class="w-4 h-4 text-emerald-600"></i>
+            <i data-lucide="list-ordered" class="w-4 h-4 text-slate-900"></i>
             <h3 class="text-xs font-bold text-slate-800">調理手順</h3>
           </div>
           <div id="recipe-steps-box" class="space-y-2.5"></div>
@@ -511,16 +476,16 @@
         <!-- メモ (Notes) -->
         <div id="recipe-note-card" class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
           <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-            <i data-lucide="sticky-note" class="w-4 h-4 text-emerald-600"></i>
+            <i data-lucide="sticky-note" class="w-4 h-4 text-slate-900"></i>
             <h3 class="text-xs font-bold text-slate-800">メモ</h3>
           </div>
-          <textarea id="recipe-note-input" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-700 leading-relaxed focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-y min-h-[4.5rem]" placeholder="メモを入力…"></textarea>
+          <textarea id="recipe-note-input" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-700 leading-relaxed focus:ring-2 focus:ring-slate-700 focus:outline-none resize-y min-h-[4.5rem]" placeholder="メモを入力…"></textarea>
         </div>
 
         <!-- バージョン履歴 (Version History) -->
         <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/80 space-y-2">
           <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-            <i data-lucide="git-commit" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <i data-lucide="git-commit" class="w-3.5 h-3.5 text-slate-900"></i>
             バージョン履歴
           </label>
           <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5" id="recipe-version-tabs"></div>
@@ -531,7 +496,7 @@
     <!-- ==================== VIEW 4: マイページ画面 ==================== -->
     <section id="view-profile" class="space-y-4 hidden">
       <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60 text-center space-y-3">
-        <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-700 font-bold text-2xl mx-auto flex items-center justify-center shadow-inner">
+        <div class="w-20 h-20 rounded-full bg-slate-100 text-slate-900 font-bold text-2xl mx-auto flex items-center justify-center shadow-inner">
           <i class="fa-solid fa-user text-3xl"></i>
         </div>
         <div>
@@ -540,11 +505,11 @@
         </div>
         <div class="pt-2 flex justify-center gap-4 text-xs font-bold text-slate-700">
           <div class="bg-slate-50 rounded-2xl px-4 py-2 border border-slate-200/80">
-            <span class="block text-emerald-600 text-sm font-mono" id="profile-recipe-count">6</span>
+            <span class="block text-slate-900 text-sm font-mono" id="profile-recipe-count">6</span>
             <span class="text-[10px] text-slate-400">登録レシピ</span>
           </div>
           <div class="bg-slate-50 rounded-2xl px-4 py-2 border border-slate-200/80">
-            <span class="block text-indigo-600 text-sm font-mono">v1.0.0</span>
+            <span class="block text-slate-800 text-sm font-mono">v1.0.0</span>
             <span class="text-[10px] text-slate-400">バージョン</span>
           </div>
         </div>
@@ -555,10 +520,10 @@
         <div class="space-y-1 text-xs">
           <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
             <div class="flex items-center gap-2.5">
-              <i class="fa-solid fa-cloud text-emerald-600"></i>
+              <i class="fa-solid fa-cloud text-slate-900"></i>
               <span class="font-bold text-slate-800">Supabase クラウド同期</span>
             </div>
-            <span class="text-[10px] font-bold font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">接続済</span>
+            <span class="text-[10px] font-bold font-mono text-slate-900 bg-slate-100 border border-slate-100 px-2.5 py-1 rounded-full">接続済</span>
           </div>
           <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
             <div class="flex items-center gap-2.5">
@@ -577,7 +542,7 @@
   <nav class="fixed bottom-0 left-0 right-0 z-40 ios-glass border-t border-slate-200/80 pb-safe">
     <div class="max-w-md mx-auto px-4 py-2 flex items-center justify-between">
       <!-- タブ1: ホーム -->
-      <button type="button" onclick="switchTab('home')" id="tab-btn-home" class="active-scale flex flex-col items-center gap-1 text-emerald-600">
+      <button type="button" onclick="switchTab('home')" id="tab-btn-home" class="active-scale flex flex-col items-center gap-1 text-slate-900">
         <i class="fa-solid fa-house text-lg"></i>
         <span class="text-[10px] font-bold">ホーム</span>
       </button>
@@ -615,8 +580,8 @@
   <div id="cooking-modal" class="fixed inset-0 z-50 bg-zinc-950 text-white hidden flex flex-col justify-between p-5 pb-safe pt-safe select-none">
     <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
       <div class="flex items-center gap-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wide">Cooking Mode</span>
+        <span class="w-2.5 h-2.5 rounded-full bg-slate-700 animate-pulse"></span>
+        <span class="text-xs font-mono font-bold text-slate-700 uppercase tracking-wide">Cooking Mode</span>
       </div>
       <button type="button" onclick="closeCookingMode()" class="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300 active:bg-zinc-700">
         <i class="fa-solid fa-xmark"></i>
@@ -626,15 +591,15 @@
     <div class="my-auto py-6 space-y-5 overflow-y-auto">
       <div>
         <div class="flex items-center justify-between text-zinc-400 font-mono text-xs">
-          <span id="step-badge" class="bg-zinc-800 px-3 py-1 rounded-full text-emerald-400 font-bold text-sm">Step 1 of 4 (25%)</span>
+          <span id="step-badge" class="bg-zinc-800 px-3 py-1 rounded-full text-slate-700 font-bold text-sm">Step 1 of 4 (25%)</span>
           <span>画面常時点灯中</span>
         </div>
         <div class="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
-          <div id="cooking-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all" style="width: 25%"></div>
+          <div id="cooking-progress-bar" class="h-full bg-slate-700 rounded-full transition-all" style="width: 25%"></div>
         </div>
       </div>
 
-      <p id="step-title" class="text-sm font-bold text-emerald-400 tracking-wide">下味</p>
+      <p id="step-title" class="text-sm font-bold text-slate-700 tracking-wide">下味</p>
       <p id="step-text" class="text-2xl font-bold leading-relaxed text-zinc-100">
         フライパンにごま油小さじ1を熱し、鶏むね肉を中火で両面に焼き色がつくまで約3分焼きます。
       </p>
@@ -644,13 +609,13 @@
       <div id="cooking-timer-wrap" class="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <i data-lucide="clock" class="w-7 h-7 text-emerald-400"></i>
+            <i data-lucide="clock" class="w-7 h-7 text-slate-700"></i>
             <div>
               <span class="text-[10px] text-zinc-400 uppercase block font-mono">Timer</span>
               <span id="cooking-timer-display" class="text-3xl font-mono font-bold text-white tracking-wider">03:00</span>
             </div>
           </div>
-          <button type="button" onclick="toggleCookingTimer()" id="cooking-timer-btn" class="active-scale bg-emerald-500 text-zinc-950 font-bold px-5 py-2.5 rounded-2xl text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20">
+          <button type="button" onclick="toggleCookingTimer()" id="cooking-timer-btn" class="active-scale bg-slate-700 text-zinc-950 font-bold px-5 py-2.5 rounded-2xl text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-slate-700/20">
             <i class="fa-solid fa-play"></i>
             <span>スタート</span>
           </button>
@@ -663,7 +628,7 @@
       <button type="button" onclick="stepMove(-1)" class="active-scale bg-zinc-900 text-zinc-300 font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-1.5 border border-zinc-800">
         <i class="fa-solid fa-arrow-left"></i>前のステップ
       </button>
-      <button type="button" id="cooking-next-btn" onclick="stepMove(1)" class="active-scale bg-emerald-500 text-zinc-950 font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-1.5">
+      <button type="button" id="cooking-next-btn" onclick="stepMove(1)" class="active-scale bg-slate-700 text-zinc-950 font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-1.5">
         次のステップ<i class="fa-solid fa-arrow-right"></i>
       </button>
     </div>
@@ -687,16 +652,16 @@
     <div class="space-y-3.5 text-xs">
       <div>
         <label class="font-bold text-slate-700 block mb-1">料理名</label>
-        <input type="text" id="edit-name" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <input type="text" id="edit-name" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-slate-700 focus:outline-none">
       </div>
       <div>
         <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
-        <input type="number" min="1" step="1" id="edit-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <input type="number" min="1" step="1" id="edit-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-slate-700 focus:outline-none">
       </div>
       <div>
         <label class="font-bold text-slate-700 block mb-1">作成インターバル（日数・任意）</label>
         <div class="flex items-center gap-2">
-          <input type="number" min="0" step="1" id="edit-interval-days" value="0" class="w-28 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <input type="number" min="0" step="1" id="edit-interval-days" value="0" class="w-28 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-slate-700 focus:outline-none">
           <span class="text-slate-500 text-[11px]">日以内は献立登録で非表示 (例: 14 = 2週間)</span>
         </div>
       </div>
@@ -713,8 +678,8 @@
 
         <div id="edit-image-empty-box" class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center space-y-2">
           <div class="flex justify-center gap-2">
-            <button type="button" onclick="document.getElementById('edit-image-camera-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold text-xs">
-              <i class="fa-solid fa-camera text-emerald-600"></i>撮影
+            <button type="button" onclick="document.getElementById('edit-image-camera-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-slate-100 text-slate-900 border border-slate-100 px-3 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-solid fa-camera text-slate-900"></i>撮影
             </button>
             <button type="button" onclick="document.getElementById('edit-image-file-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs">
               <i class="fa-regular fa-image text-slate-500"></i>写真を選択
@@ -736,7 +701,7 @@
         <div id="edit-image-preview-box" class="hidden relative rounded-2xl overflow-hidden aspect-[16/10] bg-slate-900 border border-slate-200">
           <img id="edit-image-preview-img" src="" alt="編集プレビュー" class="w-full h-full object-cover">
           <div class="absolute bottom-2.5 left-2.5 text-white text-[10px] font-bold flex items-center gap-1 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur-xs">
-            <i class="fa-solid fa-camera text-emerald-400"></i>写真設定中
+            <i class="fa-solid fa-camera text-slate-700"></i>写真設定中
           </div>
           <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">
             <button type="button" onclick="document.getElementById('edit-image-file-input').click()" class="active-scale bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
@@ -752,7 +717,7 @@
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="font-bold text-slate-700">材料</label>
-          <button type="button" onclick="addIngredientRow('edit-ingredients')" class="text-emerald-700 font-bold">＋ 行を追加</button>
+          <button type="button" onclick="addIngredientRow('edit-ingredients')" class="text-slate-900 font-bold">＋ 行を追加</button>
         </div>
         <div id="edit-ingredients" class="space-y-1.5"></div>
       </div>
@@ -760,21 +725,21 @@
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="font-bold text-slate-700">手順</label>
-          <button type="button" onclick="addStepRow('edit-steps')" class="text-emerald-700 font-bold">＋ 行を追加</button>
+          <button type="button" onclick="addStepRow('edit-steps')" class="text-slate-900 font-bold">＋ 行を追加</button>
         </div>
         <div id="edit-steps" class="space-y-1.5"></div>
       </div>
 
       <div>
         <label class="font-bold text-slate-700 block mb-1">メモ（任意）</label>
-        <textarea id="commit-input-note" rows="2" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="例: パートナー絶賛。生姜は千切りの方が風味が際立つ。"></textarea>
+        <textarea id="commit-input-note" rows="2" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-slate-700 focus:outline-none" placeholder="例: パートナー絶賛。生姜は千切りの方が風味が際立つ。"></textarea>
       </div>
 
       <p id="commit-error" class="hidden text-rose-600 font-bold"></p>
 
       <div class="pt-2 flex gap-2">
         <button type="button" onclick="closeCommitModal()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl text-xs active-scale">キャンセル</button>
-        <button type="button" onclick="saveRecipeUpdate()" id="commit-save-btn" class="w-2/3 bg-emerald-600 text-white font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm active-scale">
+        <button type="button" onclick="saveRecipeUpdate()" id="commit-save-btn" class="w-2/3 bg-slate-900 text-white font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm active-scale">
           <i class="fa-solid fa-check"></i>
           <span>v1.3 として保存</span>
         </button>
@@ -788,7 +753,7 @@
     <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shadow-xs">
+        <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center text-xs shadow-xs">
           <i class="fa-solid fa-camera"></i>
         </div>
         <div>
@@ -826,8 +791,8 @@
         <input type="file" id="recipe-image-camera-input" accept="image/*" capture="environment" class="hidden">
         <input type="file" id="recipe-image-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
         
-        <button type="button" onclick="document.getElementById('recipe-image-camera-input').click()" class="active-scale flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs py-3 rounded-2xl">
-          <i class="fa-solid fa-camera text-sm text-emerald-600"></i>
+        <button type="button" onclick="document.getElementById('recipe-image-camera-input').click()" class="active-scale flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-100 text-slate-900 border border-slate-100 font-bold text-xs py-3 rounded-2xl">
+          <i class="fa-solid fa-camera text-sm text-slate-900"></i>
           <span>カメラで撮影</span>
         </button>
         <button type="button" onclick="document.getElementById('recipe-image-file-input').click()" class="active-scale flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold text-xs py-3 rounded-2xl">
@@ -848,7 +813,7 @@
         <span>Web画像のURLを指定</span>
       </label>
       <div class="flex gap-2">
-        <input type="url" id="recipe-image-url-input" placeholder="https://example.com/dish.jpg" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <input type="url" id="recipe-image-url-input" placeholder="https://example.com/dish.jpg" class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-slate-700 focus:outline-none">
         <button type="button" onclick="applyRecipeImageUrlInput()" class="active-scale shrink-0 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl">
           反映
         </button>
@@ -869,7 +834,7 @@
       <button type="button" onclick="closeRecipeImageModal()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-2xl text-xs active-scale">
         キャンセル
       </button>
-      <button type="button" onclick="saveRecipeImageModal()" id="recipe-image-save-btn" class="w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/20 active-scale">
+      <button type="button" onclick="saveRecipeImageModal()" id="recipe-image-save-btn" class="w-2/3 bg-slate-900 hover:bg-slate-900 text-white font-bold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-slate-900/20 active-scale">
         <i class="fa-solid fa-check text-sm"></i>
         <span>写真を保存する</span>
       </button>
@@ -884,7 +849,7 @@
     <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
     <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
       <div class="min-w-0 pr-2">
-        <p class="text-[10px] font-bold tracking-wider text-emerald-600 uppercase">Meal Selection</p>
+        <p class="text-[10px] font-bold tracking-wider text-slate-900 uppercase">Meal Selection</p>
         <h3 id="meal-edit-heading" class="text-base font-bold text-slate-900 truncate">献立を選ぶ</h3>
       </div>
       <button type="button" onclick="closeMealEditor()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center shrink-0">
@@ -897,9 +862,9 @@
         <button type="button" id="meal-edit-tab-memo" onclick="switchMealEditorTab('memo')" class="py-2 rounded-xl text-[11px] font-bold transition-colors text-slate-500">外食・メモを記録</button>
       </div>
       <div id="meal-edit-panel-recipe" class="space-y-3">
-        <div id="meal-edit-current-slot-box" class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-2.5">
+        <div id="meal-edit-current-slot-box" class="bg-slate-100/70 border border-slate-100/80 rounded-2xl p-2.5">
           <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">現在この枠に登録中の料理</span>
+            <span class="text-[10px] font-bold text-slate-900 uppercase tracking-wider">現在この枠に登録中の料理</span>
             <button type="button" onclick="clearMealSlot()" class="text-[10px] font-bold text-rose-600 hover:text-rose-700">すべてクリア</button>
           </div>
           <div id="meal-edit-items" class="space-y-1.5"></div>
@@ -909,7 +874,7 @@
         <div class="space-y-2 pt-1 border-t border-slate-100">
           <div class="flex items-center justify-between">
             <label for="meal-edit-search-input" class="font-bold text-slate-700 flex items-center gap-1.5 text-xs">
-              <i class="fa-solid fa-magnifying-glass text-emerald-600 text-[11px]"></i>
+              <i class="fa-solid fa-magnifying-glass text-slate-900 text-[11px]"></i>
               <span>登録レシピを検索</span>
             </label>
             <span id="meal-edit-search-count-badge" class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full"></span>
@@ -917,7 +882,7 @@
 
           <div class="relative flex items-center">
             <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
-            <input type="text" id="meal-edit-search-input" placeholder="料理名・材料で検索 (例: 鶏肉, 豆腐, 生姜)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-colors">
+            <input type="text" id="meal-edit-search-input" placeholder="料理名・材料で検索 (例: 鶏肉, 豆腐, 生姜)" class="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-8 pr-8 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-slate-700 focus:bg-white focus:outline-none transition-colors">
             <button type="button" id="meal-edit-search-clear" onclick="clearMealEditorSearch()" class="hidden absolute right-2.5 w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[10px] hover:bg-slate-300 active-scale">
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -932,12 +897,12 @@
           <div class="flex items-center justify-between">
             <span id="meal-edit-recipes-header" class="text-[11px] font-bold text-slate-700">登録レシピ一覧</span>
             <div class="flex items-center gap-2">
-              <button type="button" onclick="openImageScannerFromMealEditor()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 active-scale flex items-center gap-1">
+              <button type="button" onclick="openImageScannerFromMealEditor()" class="text-[11px] font-bold text-slate-900 hover:text-slate-900 active-scale flex items-center gap-1">
                 <i class="fa-solid fa-camera text-[10px]"></i>
                 <span>画像から</span>
               </button>
               <span class="text-slate-300">|</span>
-              <button type="button" onclick="openRegisterFromMealEditor()" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 active-scale">
+              <button type="button" onclick="openRegisterFromMealEditor()" class="text-[11px] font-bold text-slate-900 hover:text-slate-900 active-scale">
                 + 手動登録
               </button>
             </div>
@@ -950,21 +915,21 @@
       <div id="meal-edit-panel-memo" class="space-y-3 hidden">
         <div>
           <label for="meal-edit-memo-input" class="font-bold text-slate-700 block mb-1">記録内容（お店の名前や食べたもの）</label>
-          <textarea id="meal-edit-memo-input" rows="3" placeholder="例：〇〇レストラン、サイゼリヤ、テイクアウト寿司など" class="w-full border border-slate-200 rounded-2xl px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none"></textarea>
+          <textarea id="meal-edit-memo-input" rows="3" placeholder="例：〇〇レストラン、サイゼリヤ、テイクアウト寿司など" class="w-full border border-slate-200 rounded-2xl px-3 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-700/30 resize-none"></textarea>
         </div>
         <div>
           <p class="font-bold text-slate-700 mb-1.5">よく使うクイックタグ</p>
           <div id="meal-edit-quick-tags" class="flex flex-wrap gap-1.5"></div>
         </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2.5 flex gap-2">
+        <div class="bg-slate-700 border border-slate-700 rounded-2xl px-3 py-2.5 flex gap-2">
           <span class="text-sm shrink-0">💡</span>
-          <p class="text-[11px] text-amber-900 leading-relaxed">外食・メモを設定すると、この枠の食材は自動的に「買い物リスト」から除外されます。</p>
+          <p class="text-[11px] text-slate-700 leading-relaxed">外食・メモを設定すると、この枠の食材は自動的に「買い物リスト」から除外されます。</p>
         </div>
       </div>
       <p id="meal-edit-error" class="hidden text-rose-600 font-bold"></p>
       <div class="pt-1 flex gap-2">
         <button type="button" onpointerdown="clearMealSlot()" onclick="clearMealSlot()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl active-scale">クリア</button>
-        <button type="button" onpointerdown="saveMealSlot()" onclick="saveMealSlot()" class="w-2/3 bg-emerald-600 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm active-scale">
+        <button type="button" onpointerdown="saveMealSlot()" onclick="saveMealSlot()" class="w-2/3 bg-slate-900 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm active-scale">
           <i class="fa-solid fa-check"></i>
           <span>保存</span>
         </button>
@@ -983,17 +948,17 @@
       </button>
     </div>
     <!-- 画像から自動入力クイックカード -->
-    <div class="mb-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-2xl p-3 flex items-center justify-between gap-2.5">
+    <div class="mb-3.5 bg-gradient-to-r from-slate-100 to-slate-800 border border-slate-100/80 rounded-2xl p-3 flex items-center justify-between gap-2.5">
       <div class="flex items-center gap-2.5 min-w-0">
-        <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+        <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
           <i class="fa-solid fa-camera text-xs"></i>
         </div>
         <div class="min-w-0">
-          <p class="text-xs font-bold text-emerald-950 truncate">写真・画像から自動入力</p>
-          <p class="text-[10px] text-emerald-700 truncate">料理本やメモから材料・手順をAI抽出</p>
+          <p class="text-xs font-bold text-slate-900 truncate">写真・画像から自動入力</p>
+          <p class="text-[10px] text-slate-900 truncate">料理本やメモから材料・手順をAI抽出</p>
         </div>
       </div>
-      <button type="button" id="btn-scan-from-register" onclick="closeRegisterModal(); openImageScannerModal();" class="active-scale shrink-0 bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5">
+      <button type="button" id="btn-scan-from-register" onclick="closeRegisterModal(); openImageScannerModal();" class="active-scale shrink-0 bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5">
         <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
         <span>読み取る</span>
       </button>
@@ -1001,16 +966,16 @@
     <form id="register-form" class="space-y-3.5 text-xs" onsubmit="event.preventDefault(); saveNewRecipe();">
       <div>
         <label class="font-bold text-slate-700 block mb-1">料理名</label>
-        <input required type="text" id="reg-name" placeholder="例: 豚ヒレと豆腐のスタミナ炒め" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <input required type="text" id="reg-name" placeholder="例: 豚ヒレと豆腐のスタミナ炒め" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-slate-700 focus:outline-none">
       </div>
       <div>
         <label class="font-bold text-slate-700 block mb-1">この材料は何人分</label>
-        <input required type="number" min="1" step="1" id="reg-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <input required type="number" min="1" step="1" id="reg-servings" value="2" class="w-24 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-slate-700 focus:outline-none">
       </div>
       <div>
         <label class="font-bold text-slate-700 block mb-1">作成インターバル（日数・任意）</label>
         <div class="flex items-center gap-2">
-          <input type="number" min="0" step="1" id="reg-interval-days" value="0" class="w-28 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <input type="number" min="0" step="1" id="reg-interval-days" value="0" class="w-28 bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs font-mono focus:ring-2 focus:ring-slate-700 focus:outline-none">
           <span class="text-slate-500 text-[11px]">日以内は献立登録で非表示 (例: 14 = 2週間)</span>
         </div>
       </div>
@@ -1027,8 +992,8 @@
         <!-- 写真未設定時 -->
         <div id="reg-image-empty-box" class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 text-center space-y-2">
           <div class="flex justify-center gap-2">
-            <button type="button" onclick="document.getElementById('reg-image-camera-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold text-xs">
-              <i class="fa-solid fa-camera text-emerald-600"></i>撮影
+            <button type="button" onclick="document.getElementById('reg-image-camera-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-slate-100 text-slate-900 border border-slate-100 px-3 py-1.5 rounded-xl font-bold text-xs">
+              <i class="fa-solid fa-camera text-slate-900"></i>撮影
             </button>
             <button type="button" onclick="document.getElementById('reg-image-file-input').click()" class="active-scale inline-flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs">
               <i class="fa-regular fa-image text-slate-500"></i>写真を選択
@@ -1051,7 +1016,7 @@
         <div id="reg-image-preview-box" class="hidden relative rounded-2xl overflow-hidden aspect-[16/10] bg-slate-900 border border-slate-200">
           <img id="reg-image-preview-img" src="" alt="登録プレビュー" class="w-full h-full object-cover">
           <div class="absolute bottom-2.5 left-2.5 text-white text-[10px] font-bold flex items-center gap-1 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur-xs">
-            <i class="fa-solid fa-camera text-emerald-400"></i>写真設定済
+            <i class="fa-solid fa-camera text-slate-700"></i>写真設定済
           </div>
           <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">
             <button type="button" onclick="document.getElementById('reg-image-file-input').click()" class="active-scale bg-black/60 hover:bg-black/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
@@ -1066,25 +1031,25 @@
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="font-bold text-slate-700">材料</label>
-          <button type="button" onclick="addIngredientRow('reg-ingredients')" class="text-emerald-700 font-bold">＋ 行を追加</button>
+          <button type="button" onclick="addIngredientRow('reg-ingredients')" class="text-slate-900 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-ingredients" class="space-y-1.5"></div>
       </div>
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="font-bold text-slate-700">手順</label>
-          <button type="button" onclick="addStepRow('reg-steps')" class="text-emerald-700 font-bold">＋ 行を追加</button>
+          <button type="button" onclick="addStepRow('reg-steps')" class="text-slate-900 font-bold">＋ 行を追加</button>
         </div>
         <div id="reg-steps" class="space-y-1.5"></div>
       </div>
       <div>
         <label class="font-bold text-slate-700 block mb-1">タグ（任意）</label>
-        <input type="text" id="reg-tag" placeholder="例: 定番 #03" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <input type="text" id="reg-tag" placeholder="例: 定番 #03" class="w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 text-xs focus:ring-2 focus:ring-slate-700 focus:outline-none">
       </div>
       <p id="register-error" class="hidden text-rose-600 font-bold"></p>
       <div class="pt-1 flex gap-2">
         <button type="button" onclick="closeRegisterModal()" class="w-1/3 bg-slate-100 text-slate-600 font-bold py-3 rounded-2xl active-scale">キャンセル</button>
-        <button type="submit" id="register-save-btn" class="w-2/3 bg-emerald-600 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm active-scale">
+        <button type="submit" id="register-save-btn" class="w-2/3 bg-slate-900 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-sm active-scale">
           <i class="fa-solid fa-check"></i>
           <span>v1.0 として保存</span>
         </button>
@@ -1098,7 +1063,7 @@
     <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
     <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
       <div class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+        <div class="w-7 h-7 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center text-xs">
           <i class="fa-solid fa-camera"></i>
         </div>
         <div>
@@ -1116,8 +1081,8 @@
       <input type="file" id="scanner-file-input" accept="image/jpeg,image/png,image/webp,image/*,.heic,.heif,image/heic,image/heif" class="hidden">
       <input type="file" id="scanner-camera-input" accept="image/jpeg,image/png,image/*" capture="environment" class="hidden">
 
-      <div id="scanner-dropzone" class="border-2 border-dashed border-slate-200 hover:border-emerald-500 rounded-3xl p-6 text-center transition-colors bg-slate-50/50 flex flex-col items-center justify-center gap-3 cursor-pointer" onclick="document.getElementById('scanner-file-input').click()">
-        <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-xs">
+      <div id="scanner-dropzone" class="border-2 border-dashed border-slate-200 hover:border-slate-700 rounded-3xl p-6 text-center transition-colors bg-slate-50/50 flex flex-col items-center justify-center gap-3 cursor-pointer" onclick="document.getElementById('scanner-file-input').click()">
+        <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center text-2xl shadow-xs">
           <i class="fa-solid fa-cloud-arrow-up"></i>
         </div>
         <div>
@@ -1130,19 +1095,19 @@
       </div>
 
       <div class="grid grid-cols-2 gap-2.5">
-        <button type="button" onclick="document.getElementById('scanner-camera-input').click()" class="active-scale bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-3 rounded-2xl shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-2 text-xs">
+        <button type="button" onclick="document.getElementById('scanner-camera-input').click()" class="active-scale bg-slate-900 hover:bg-slate-900 text-white font-bold py-3 px-3 rounded-2xl shadow-sm shadow-slate-900/20 flex items-center justify-center gap-2 text-xs">
           <i class="fa-solid fa-camera"></i>
           <span>カメラで撮影</span>
         </button>
         <button type="button" onclick="document.getElementById('scanner-file-input').click()" class="active-scale bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold py-3 px-3 rounded-2xl shadow-xs flex items-center justify-center gap-2 text-xs">
-          <i class="fa-regular fa-image text-emerald-600"></i>
+          <i class="fa-regular fa-image text-slate-900"></i>
           <span>写真・ファイル選択</span>
         </button>
       </div>
 
       <div class="pt-1 border-t border-slate-100 flex items-center justify-between">
         <span class="text-[10px] text-slate-400">画像がない場合は？</span>
-        <button type="button" onclick="KitchenGit.ImageScanner.loadSampleRecipeImage()" class="active-scale text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 py-1 px-2 rounded-xl hover:bg-emerald-50">
+        <button type="button" onclick="KitchenGit.ImageScanner.loadSampleRecipeImage()" class="active-scale text-[11px] font-bold text-slate-900 hover:text-slate-900 flex items-center gap-1.5 py-1 px-2 rounded-xl hover:bg-slate-100">
           <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
           <span>サンプル画像で試す</span>
         </button>
@@ -1156,22 +1121,22 @@
         <div class="scanner-laser-line"></div>
         <div class="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xs text-white px-3 py-1 rounded-xl text-[10px] font-mono flex items-center justify-between">
           <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="w-2 h-2 rounded-full bg-slate-700 animate-ping"></span>
             <span>Gemini 3.8 Flash 解析中</span>
           </span>
-          <i class="fa-solid fa-sparkles text-emerald-400"></i>
+          <i class="fa-solid fa-sparkles text-slate-700"></i>
         </div>
       </div>
 
       <div class="space-y-2">
         <div class="flex items-center justify-between text-xs">
           <span id="scanner-progress-text" class="font-bold text-slate-700 flex items-center gap-1.5">
-            <i class="fa-solid fa-spinner fa-spin text-emerald-600"></i>
+            <i class="fa-solid fa-spinner fa-spin text-slate-900"></i>
             <span>画像を最適化中...</span>
           </span>
         </div>
         <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-          <div id="scanner-progress-bar" class="h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full w-1/3 transition-all duration-300"></div>
+          <div id="scanner-progress-bar" class="h-2 bg-gradient-to-r from-slate-700 to-slate-800 rounded-full w-1/3 transition-all duration-300"></div>
         </div>
       </div>
 
@@ -1182,20 +1147,20 @@
 
     <!-- 3. 解析結果プレビューエリア -->
     <div id="scanner-result-area" class="hidden space-y-3.5">
-      <div class="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-200/90 rounded-2xl p-3 space-y-2">
+      <div class="bg-gradient-to-r from-slate-100/80 to-slate-800/80 border border-slate-100/90 rounded-2xl p-3 space-y-2">
         <div class="flex items-center justify-between gap-2">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
-            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1">
+            <i class="fa-solid fa-circle-check text-slate-900"></i>
             <span>レシピを抽出しました</span>
           </span>
           <span id="scanner-result-summary" class="text-[10px] text-slate-500 font-mono font-bold"></span>
         </div>
         <div>
           <label class="block text-[10px] font-bold text-slate-500 mb-0.5">料理名（タップして微修正可能）</label>
-          <input type="text" id="scanner-result-title" class="w-full font-bold text-sm text-slate-900 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          <input type="text" id="scanner-result-title" class="w-full font-bold text-sm text-slate-900 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-slate-700 focus:outline-none">
         </div>
         <div class="flex items-center gap-2 pt-0.5">
-          <span id="scanner-result-tag" class="text-[10px] font-bold text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-full shadow-2xs"></span>
+          <span id="scanner-result-tag" class="text-[10px] font-bold text-slate-900 bg-white border border-slate-100 px-2 py-0.5 rounded-full shadow-2xs"></span>
           <span id="scanner-result-servings" class="text-[10px] font-mono font-bold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-full shadow-2xs"></span>
         </div>
       </div>
@@ -1213,22 +1178,22 @@
       </div>
 
       <!-- コツ・メモプレビュー -->
-      <div id="scanner-result-note-wrap" class="hidden bg-amber-50 border border-amber-200/80 rounded-2xl p-2.5">
-        <span class="text-[10px] font-bold text-amber-800 flex items-center gap-1 mb-0.5">
+      <div id="scanner-result-note-wrap" class="hidden bg-slate-700 border border-slate-700/80 rounded-2xl p-2.5">
+        <span class="text-[10px] font-bold text-slate-700 flex items-center gap-1 mb-0.5">
           <i class="fa-solid fa-lightbulb"></i>
           <span>メモ・調理のコツ</span>
         </span>
-        <p id="scanner-result-note" class="text-xs text-amber-900 leading-relaxed"></p>
+        <p id="scanner-result-note" class="text-xs text-slate-700 leading-relaxed"></p>
       </div>
 
       <!-- アクションボタン -->
       <div class="space-y-2 pt-1">
-        <button type="button" onclick="KitchenGit.ImageScanner.applyToRegisterForm()" class="active-scale w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3.5 rounded-2xl shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-2">
+        <button type="button" onclick="KitchenGit.ImageScanner.applyToRegisterForm()" class="active-scale w-full bg-slate-900 hover:bg-slate-900 text-white text-xs font-bold py-3.5 rounded-2xl shadow-sm shadow-slate-900/20 flex items-center justify-center gap-2">
           <i class="fa-solid fa-sliders"></i>
           <span>フォームで確認・微調整して保存</span>
         </button>
         <button type="button" id="scanner-direct-save-btn" onclick="KitchenGit.ImageScanner.directSaveRecipe()" class="active-scale w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3 rounded-2xl flex items-center justify-center gap-2 shadow-xs">
-          <i class="fa-solid fa-bolt text-amber-400"></i>
+          <i class="fa-solid fa-bolt text-slate-700"></i>
           <span>このままレシピに追加</span>
         </button>
         <button type="button" onclick="KitchenGit.ImageScanner.reset()" class="w-full text-slate-500 text-[11px] font-bold py-2 rounded-xl hover:bg-slate-50 active-scale">
@@ -1253,7 +1218,7 @@
           <i class="fa-solid fa-terminal text-[10px] text-slate-500"></i>
           <span>詳細なサーバーログを表示</span>
         </button>
-        <div id="scanner-error-log-box" class="hidden mt-2 p-3 bg-zinc-900 text-emerald-400 font-mono text-[10px] rounded-2xl max-h-40 overflow-y-auto whitespace-pre-wrap break-all border border-zinc-800">
+        <div id="scanner-error-log-box" class="hidden mt-2 p-3 bg-zinc-900 text-slate-700 font-mono text-[10px] rounded-2xl max-h-40 overflow-y-auto whitespace-pre-wrap break-all border border-zinc-800">
           [RecipeOps Client & Server Diagnostics]
           - Timestamp: <span id="scanner-log-time">2026-09-13</span>
           - Endpoint: /api/gemini/extract-recipe
@@ -1264,7 +1229,7 @@
 
       <div class="flex flex-col gap-2 pt-1">
         <div class="flex gap-2">
-          <button type="button" onclick="KitchenGit.ImageScanner.retryLast()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 rounded-2xl active-scale shadow-sm">
+          <button type="button" onclick="KitchenGit.ImageScanner.retryLast()" class="flex-1 bg-slate-900 hover:bg-slate-900 text-white font-bold text-xs py-3 rounded-2xl active-scale shadow-sm">
             もう一度解析する
           </button>
           <button type="button" onclick="KitchenGit.ImageScanner.reset()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-2xl active-scale">
@@ -1274,7 +1239,7 @@
         <button type="button" onclick="closeImageScannerModal(); openRegisterModal();" class="w-full text-center text-slate-500 hover:text-slate-700 text-xs py-2 rounded-xl hover:bg-slate-50 active-scale">
           手動で入力する
         </button>
-        <button type="button" onclick="KitchenGit.ImageScanner.loadSampleRecipeImage()" class="w-full text-center text-emerald-600 hover:text-emerald-700 text-xs font-bold py-2 rounded-xl hover:bg-emerald-50 active-scale">
+        <button type="button" onclick="KitchenGit.ImageScanner.loadSampleRecipeImage()" class="w-full text-center text-slate-900 hover:text-slate-900 text-xs font-bold py-2 rounded-xl hover:bg-slate-100 active-scale">
           <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>サンプル画像で動作を確認する
         </button>
       </div>
@@ -1287,7 +1252,7 @@
     <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-1"></div>
     <div class="flex items-center justify-between pb-2 border-b border-slate-100">
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+        <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-900 flex items-center justify-center text-xs font-bold">
           <i class="fa-solid fa-calendar-plus"></i>
         </div>
         <div>
@@ -1304,7 +1269,7 @@
     <div class="space-y-2">
       <div class="flex items-center justify-between">
         <label class="text-xs font-bold text-slate-700">登録する日を選択</label>
-        <span id="register-to-meal-selected-label" class="text-xs font-bold text-emerald-600"></span>
+        <span id="register-to-meal-selected-label" class="text-xs font-bold text-slate-900"></span>
       </div>
       <!-- 月切り替えヘッダー -->
       <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2">
@@ -1357,7 +1322,7 @@
     </div>
 
     <!-- 登録ボタン -->
-    <button type="button" onclick="commitRegisterToMeal()" class="active-scale w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3.5 rounded-2xl shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2">
+    <button type="button" onclick="commitRegisterToMeal()" class="active-scale w-full bg-slate-900 hover:bg-slate-900 text-white text-xs font-bold py-3.5 rounded-2xl shadow-md shadow-slate-900/30 flex items-center justify-center gap-2">
       <i class="fa-solid fa-check text-sm"></i>
       <span>この献立に追加する</span>
     </button>
@@ -1378,23 +1343,23 @@
     </div>
 
     <div class="space-y-3 pb-4">
-      <button type="button" onclick="closeRecipeAddSelectorModal(); openChatRecipeModal();" class="active-scale w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-4 rounded-2xl shadow-md shadow-indigo-600/20 flex items-center gap-4 text-left transition-all">
+      <button type="button" onclick="closeRecipeAddSelectorModal(); openChatRecipeModal();" class="active-scale w-full bg-gradient-to-r from-slate-800 to-purple-600 hover:from-slate-800 hover:to-purple-700 text-white p-4 rounded-2xl shadow-md shadow-slate-800/20 flex items-center gap-4 text-left transition-all">
         <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
           <i class="fa-solid fa-comments text-xl"></i>
         </div>
         <div class="flex-1">
           <div class="text-sm font-bold">チャットでAIレシピ作成</div>
-          <div class="text-[11px] text-indigo-100">AIと会話しながら、冷蔵庫の食材などでレシピを作ります</div>
+          <div class="text-[11px] text-slate-800">AIと会話しながら、冷蔵庫の食材などでレシピを作ります</div>
         </div>
       </button>
 
-      <button type="button" onclick="closeRecipeAddSelectorModal(); openImageScannerModal();" class="active-scale w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-4 rounded-2xl shadow-md shadow-emerald-600/20 flex items-center gap-4 text-left transition-all">
+      <button type="button" onclick="closeRecipeAddSelectorModal(); openImageScannerModal();" class="active-scale w-full bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-900 hover:to-slate-800 text-white p-4 rounded-2xl shadow-md shadow-slate-900/20 flex items-center gap-4 text-left transition-all">
         <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
           <i class="fa-solid fa-camera text-xl"></i>
         </div>
         <div class="flex-1">
           <div class="text-sm font-bold">画像からレシピを読み取る</div>
-          <div class="text-[11px] text-emerald-100">料理の写真やレシピ本を撮影して自動でテキスト化</div>
+          <div class="text-[11px] text-slate-100">料理の写真やレシピ本を撮影して自動でテキスト化</div>
         </div>
       </button>
 
@@ -1416,7 +1381,7 @@
     <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2 shrink-0"></div>
     <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
       <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-slate-800 to-purple-600 text-white flex items-center justify-center shadow-md shadow-slate-800/25">
           <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
         </div>
         <div>
@@ -1446,8 +1411,8 @@
 
     <!-- 入力フォームエリア -->
     <div class="shrink-0 pt-2 pb-1 flex items-center gap-2">
-      <input type="text" id="chat-input-field" onkeydown="if(event.key==='Enter'){sendChatMessage();}" placeholder="作りたい料理や材料を相談する (例: 鮭のホイル焼き)" class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors">
-      <button type="button" id="chat-send-btn" onclick="sendChatMessage()" class="active-scale w-11 h-11 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-600/25 shrink-0">
+      <input type="text" id="chat-input-field" onkeydown="if(event.key==='Enter'){sendChatMessage();}" placeholder="作りたい料理や材料を相談する (例: 鮭のホイル焼き)" class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-slate-800 focus:bg-white focus:outline-none transition-colors">
+      <button type="button" id="chat-send-btn" onclick="sendChatMessage()" class="active-scale w-11 h-11 bg-slate-800 hover:bg-slate-800 text-white rounded-2xl flex items-center justify-center shadow-md shadow-slate-800/25 shrink-0">
         <i class="fa-solid fa-paper-plane text-xs"></i>
       </button>
     </div>
@@ -1614,7 +1579,7 @@
         if (!btn) return;
         const isActive = t === tab;
         if (isActive) {
-          btn.className = 'active-scale flex flex-col items-center gap-1 text-emerald-600';
+          btn.className = 'active-scale flex flex-col items-center gap-1 text-slate-900';
           const span = btn.querySelector('span:last-child');
           if (span) span.className = 'text-[10px] font-bold';
         } else {
@@ -1661,7 +1626,7 @@
               </div>
               <div class="text-right">
                 <span class="${large ? 'text-sm' : 'text-xs'} font-mono font-bold">${item.amount}</span>
-                ${item.excluded ? '<span class="text-[9px] text-indigo-500 block font-bold">ストック有</span>' : ''}
+                ${item.excluded ? '<span class="text-[9px] text-slate-800 block font-bold">ストック有</span>' : ''}
               </div>
             </div>
           `;
@@ -1670,7 +1635,7 @@
         card.innerHTML = `
           <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
             <h3 class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-              <i class="fa-solid fa-tag text-emerald-600 text-xs"></i> ${cat}
+              <i class="fa-solid fa-tag text-slate-900 text-xs"></i> ${cat}
             </h3>
             <span class="text-[11px] font-mono text-slate-400">${activeCount} / ${catItems.length}品</span>
           </div>
@@ -1702,7 +1667,7 @@
       const btn = document.getElementById('shop-mode-toggle-btn');
       const label = document.getElementById('shop-mode-label');
       if (appState.isShoppingMode) {
-        btn.className = 'active-scale bg-emerald-600 text-white text-xs font-bold px-3 py-2 rounded-2xl flex items-center gap-1.5 shadow-sm';
+        btn.className = 'active-scale bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-2xl flex items-center gap-1.5 shadow-sm';
         label.innerText = '買い物中 (ON)';
       } else {
         btn.className = 'active-scale bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-2xl flex items-center gap-1.5 shadow-sm';
@@ -1752,7 +1717,7 @@
       const el = document.getElementById('recipe-cloud-status');
       if (!el) return;
       el.textContent = text;
-      el.className = `text-[10px] font-bold font-mono ${ok ? 'text-emerald-600' : 'text-amber-600'}`;
+      el.className = `text-[10px] font-bold font-mono ${ok ? 'text-slate-900' : 'text-slate-700'}`;
     }
 
     function applySelectedRecipe(recipeId) {
@@ -1848,7 +1813,7 @@
 
       let html = `
         <button type="button" onclick="selectRecipeTagFilter('')" class="active-scale shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-          isAllSelected ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          isAllSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
         }">
           すべて
         </button>
@@ -1857,7 +1822,7 @@
         const isSelected = appState.recipeSelectedTag === tag;
         html += `
           <button type="button" onclick="selectRecipeTagFilter('${escapeAttr(tag)}')" class="active-scale shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-            isSelected ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            isSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }">
             #${tag}
           </button>
@@ -1917,7 +1882,7 @@
       filtered.forEach(recipe => {
         const latest = latestVersionKey(recipe);
         const tags = recipeHashtags(recipe);
-        const tagsHtml = tags.map(t => `<span class="text-emerald-700 font-bold">#${t}</span>`).join(' ');
+        const tagsHtml = tags.map(t => `<span class="text-slate-900 font-bold">#${t}</span>`).join(' ');
         const versionObj = (recipe.versions && recipe.versions[latest]) || {};
         const ingredientsList = (versionObj.ingredients || []).slice(0, 3).map(i => i.name).join('、');
         const imgUrl = getRecipeImageUrl(recipe);
@@ -1929,7 +1894,7 @@
           <!-- Insta Header -->
           <div class="flex items-center justify-between px-4 py-3">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs shadow-inner">
+              <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-900 font-bold flex items-center justify-center text-xs shadow-inner">
                 <i class="fa-solid fa-utensils text-xs"></i>
               </div>
               <div>
@@ -1937,7 +1902,7 @@
                 <p class="text-[9px] text-slate-400 font-mono">${recipe.branch || 'main'} • ${latest}</p>
               </div>
             </div>
-            ${recipe.tag ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full">${recipe.tag}</span>` : ''}
+            ${recipe.tag ? `<span class="bg-slate-100 text-slate-900 border border-slate-100 text-[10px] font-bold px-2.5 py-1 rounded-full">${recipe.tag}</span>` : ''}
           </div>
 
           <!-- Insta Photo -->
@@ -1945,7 +1910,7 @@
             <img src="${imgUrl}" alt="${escapeAttr(recipe.name)}" class="w-full h-full object-cover">
             ${hasCustomPhoto ? `
               <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-white/15 shadow-xs">
-                <i class="fa-solid fa-camera text-emerald-400 text-[10px]"></i>写真あり
+                <i class="fa-solid fa-camera text-slate-700 text-[10px]"></i>写真あり
               </div>
             ` : ''}
             <div class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold border border-white/15">
@@ -1971,7 +1936,7 @@
 
           <!-- Insta Caption / Content -->
           <div class="px-4 pb-4 space-y-1.5">
-            <h3 onclick="showRecipeDetail('${recipe.id}')" class="active-scale cursor-pointer text-sm font-bold text-slate-900 hover:text-emerald-700 transition-colors">
+            <h3 onclick="showRecipeDetail('${recipe.id}')" class="active-scale cursor-pointer text-sm font-bold text-slate-900 hover:text-slate-900 transition-colors">
               ${recipe.name}
             </h3>
             <div class="flex items-center gap-1.5 text-xs flex-wrap pt-0.5">
@@ -2014,7 +1979,7 @@
       if (!box) return;
       const tags = recipeHashtags(recipe);
       box.innerHTML = tags.map((t) =>
-        `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">#${t.replace(/^#/, '')}</span>`
+        `<span class="text-[10px] font-bold text-slate-900 bg-slate-100 border border-slate-100 px-2 py-0.5 rounded-full">#${t.replace(/^#/, '')}</span>`
       ).join('');
     }
 
@@ -2025,7 +1990,7 @@
       const branches = recipeModel().branchesOf(recipe);
       menu.innerHTML = branches.map((name) => {
         const active = name === (appState.activeBranch || recipe.branch);
-        return `<button type="button" data-branch="${name.replace(/"/g, '')}" onclick="selectRecipeBranch(this.dataset.branch)" class="w-full text-left px-3 py-2 text-xs font-mono ${active ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}">${name}</button>`;
+        return `<button type="button" data-branch="${name.replace(/"/g, '')}" onclick="selectRecipeBranch(this.dataset.branch)" class="w-full text-left px-3 py-2 text-xs font-mono ${active ? 'bg-slate-100 text-slate-900 font-bold' : 'text-slate-700 hover:bg-slate-50'}">${name}</button>`;
       }).join('');
     }
 
@@ -2164,7 +2129,7 @@
         row.className = 'p-2.5 rounded-2xl border flex items-center justify-between text-xs bg-slate-50 border-slate-200/70';
         row.innerHTML = `
           <div class="flex items-center gap-2.5 min-w-0">
-            <span class="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
+            <span class="w-2 h-2 rounded-full bg-slate-900 shrink-0"></span>
             <div class="min-w-0">
               <span class="font-bold text-slate-800">${ing.name}</span>
               ${ing.note ? `<span class="text-slate-400 ml-1.5">${ing.note}</span>` : ''}
@@ -2190,7 +2155,7 @@
               const qty = ing
                 ? `${recipeModel().scaleAmount(ing.baseAmount, appState.servings, recipe.servingsBase)} ${ing.unit}`
                 : '';
-              return `<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">${name}${qty ? ` · ${qty}` : ''}</span>`;
+              return `<span class="inline-flex items-center gap-1 bg-slate-100 text-slate-900 border border-slate-100 text-[10px] font-bold px-2 py-0.5 rounded-full">${name}${qty ? ` · ${qty}` : ''}</span>`;
             }).join('');
             const card = document.createElement('div');
             card.className = 'rounded-2xl border border-slate-200/80 bg-slate-50 p-3 space-y-1.5';
@@ -2200,7 +2165,7 @@
                   <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-mono font-bold flex items-center justify-center shrink-0">${i + 1}</span>
                   <span class="text-xs font-bold text-slate-900 truncate">${step.title || `手順 ${i + 1}`}</span>
                 </div>
-                ${timerLabel ? `<span class="text-[10px] font-mono font-bold text-emerald-700 flex items-center gap-1 shrink-0"><i data-lucide="clock" class="w-3 h-3"></i>${timerLabel}</span>` : ''}
+                ${timerLabel ? `<span class="text-[10px] font-mono font-bold text-slate-900 flex items-center gap-1 shrink-0"><i data-lucide="clock" class="w-3 h-3"></i>${timerLabel}</span>` : ''}
               </div>
               <p class="text-xs text-slate-700 leading-relaxed">${step.instruction}</p>
               ${badges ? `<div class="flex flex-wrap gap-1 pt-0.5">${badges}</div>` : ''}
@@ -2297,7 +2262,7 @@
         const qty = ing
           ? `${recipeModel().scaleAmount(ing.baseAmount, appState.servings, recipe && recipe.servingsBase)} ${ing.unit}`
           : '';
-        return `<span class="inline-flex items-center bg-zinc-800 text-emerald-300 border border-zinc-700 text-[11px] font-bold px-2.5 py-1 rounded-full">${name}${qty ? ` · ${qty}` : ''}</span>`;
+        return `<span class="inline-flex items-center bg-zinc-800 text-slate-100 border border-zinc-700 text-[11px] font-bold px-2.5 py-1 rounded-full">${name}${qty ? ` · ${qty}` : ''}</span>`;
       }).join('') || '<span class="text-xs text-zinc-500">このステップの指定食材はありません</span>';
 
       clearInterval(appState.timerInterval);
@@ -2448,7 +2413,7 @@
       const minutesValue = minutes != null && minutes !== '' ? minutes : '';
       row.innerHTML = `
         <div class="flex items-start gap-2">
-          <span class="step-num font-mono font-bold text-emerald-700 shrink-0 pt-2">1</span>
+          <span class="step-num font-mono font-bold text-slate-900 shrink-0 pt-2">1</span>
           <div class="flex-1 space-y-1 min-w-0">
             <input type="text" value="${escapeAttr(title)}" placeholder="手順タイトル（任意）" class="step-title w-full bg-white border border-slate-200 rounded-xl p-2">
             <textarea rows="2" placeholder="手順の説明" class="w-full bg-white border border-slate-200 rounded-xl p-2">${escapeAttr(instruction)}</textarea>
@@ -2877,9 +2842,9 @@
 
         let cls = 'h-9 rounded-xl flex items-center justify-center text-xs font-bold transition-colors active-scale ';
         if (isSelected) {
-          cls += 'bg-emerald-600 text-white shadow-sm';
+          cls += 'bg-slate-900 text-white shadow-sm';
         } else if (isToday) {
-          cls += 'bg-emerald-50 text-emerald-800 border border-emerald-300';
+          cls += 'bg-slate-100 text-slate-900 border border-slate-100';
         } else if (cell.currentMonth) {
           cls += 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200';
         } else {
@@ -2914,7 +2879,7 @@
       buttons.forEach(btn => {
         const slot = btn.getAttribute('data-slot');
         if (slot === registerModalState.slot) {
-          btn.className = 'register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs';
+          btn.className = 'register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-slate-100 border-slate-100 text-slate-900 shadow-2xs';
         } else {
           btn.className = 'register-slot-btn py-2.5 px-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-slate-50 border-slate-200 text-slate-700';
         }
