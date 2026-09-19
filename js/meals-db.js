@@ -243,6 +243,21 @@ KitchenGit.MealsDB = (function () {
     return (data || []).map(mapRow);
   }
 
+  async function fetchMonthRange(year, month) {
+    if (!client) throw new Error('cloud-not-ready');
+    const startStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const endStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const { data, error } = await client
+      .from('meal_days')
+      .select('*')
+      .gte('date', startStr)
+      .lte('date', endStr)
+      .order('date', { ascending: true });
+    throwIfError(error);
+    return (data || []).map(mapRow);
+  }
+
   async function upsertDay(dayData) {
     if (!client) throw new Error('cloud-not-ready');
     if (!dayData || !dayData.date) throw new Error('missing-date');
@@ -273,5 +288,5 @@ KitchenGit.MealsDB = (function () {
     return seeded;
   }
 
-  return { init, isReady, fetchRange, upsertDay, seedIfEmpty, mapRow };
+  return { init, isReady, fetchRange, fetchMonthRange, upsertDay, seedIfEmpty, mapRow };
 })();

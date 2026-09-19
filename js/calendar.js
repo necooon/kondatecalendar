@@ -116,6 +116,7 @@ KitchenGit.Calendar = (function () {
     const DB = KitchenGit.MealsDB;
     if (!DB || !DB.isReady()) {
       if (weekStart === state.demoWeekStart) applyOfflineDemo(state);
+      ensureWeek(state, weekStart).forEach((d) => { state.allDaysMap[d.date] = d; });
       return;
     }
     try {
@@ -123,12 +124,29 @@ KitchenGit.Calendar = (function () {
       const daysNow = ensureWeek(state, weekStart);
       const merged = mergeRowsIntoWeek(daysNow, rows, snapshotGens);
       state.weeksByStart[weekStart] = merged;
+      merged.forEach((d) => { state.allDaysMap[d.date] = d; });
       if (state.weekStart === weekStart) state.calendarDays = merged;
     } catch (e) {
       console.error(e);
       if (weekStart === state.demoWeekStart && !Meals().weekHasAnyMeal(ensureWeek(state, weekStart))) {
         applyOfflineDemo(state);
       }
+      ensureWeek(state, weekStart).forEach((d) => { state.allDaysMap[d.date] = d; });
+    }
+  }
+
+  async function hydrateMonth(state, year, month) {
+    const DB = KitchenGit.MealsDB;
+    if (!DB || !DB.isReady() || !DB.fetchMonthRange) return;
+    try {
+      const rows = await DB.fetchMonthRange(year, month);
+      rows.forEach((row) => {
+        if (row && row.date) {
+          state.allDaysMap[row.date] = row;
+        }
+      });
+    } catch (e) {
+      console.error('hydrateMonth failed', e);
     }
   }
 
@@ -156,6 +174,7 @@ KitchenGit.Calendar = (function () {
     touchDay(state, dayData);
     if (!DB || !DB.isReady()) {
       copyDayWrite(findLiveDay(state, dayData.date) || dayData, dayData);
+      state.allDaysMap[dayData.date] = dayData;
       render(state);
       return true;
     }
@@ -168,6 +187,7 @@ KitchenGit.Calendar = (function () {
         dayData.id = saved.id;
       }
       copyDayWrite(live, dayData);
+      state.allDaysMap[dayData.date] = dayData;
       render(state);
       return true;
     } catch (e) {
@@ -188,7 +208,12 @@ KitchenGit.Calendar = (function () {
     state.prepByWeekStart = {};
     state.mealSaveGen = 0;
     state.expandedDays = {};
+    state.calendarViewMode = state.calendarViewMode || 'list';
+    state.monthlyYear = state.monthlyYear || today.getFullYear();
+    state.monthlyMonth = state.monthlyMonth !== undefined ? state.monthlyMonth : today.getMonth();
+    state.allDaysMap = state.allDaysMap || {};
     state.calendarDays = ensureWeek(state, thisStart);
+    state.calendarDays.forEach((d) => { state.allDaysMap[d.date] = d; });
     const todayIso = W.toIsoDate(today);
     state.selectedDate = state.calendarDays.some((d) => d.date === todayIso)
       ? todayIso
@@ -661,10 +686,143 @@ KitchenGit.Calendar = (function () {
     }).join('');
   }
 
+  function renderMonthlyCalendar(state) {
+    const W = Week();
+    const M = Meals();
+    const year = state.monthlyYear;
+    const month = state.monthlyMonth;
+
+    const titleEl = document.getElementById('monthly-title-label');
+    if (titleEl) titleEl.textContent = `${year}年 ${month + 1}月`;
+
+    const btnList = document.getElementById('cal-view-btn-list');
+    const btnMonthly = document.getElementById('cal-view-btn-monthly');
+    const listNav = document.getElementById('calendar-list-nav-wrap');
+    const monthlyNav = document.getElementById('calendar-monthly-nav-wrap');
+    const listContainer = document.getElementById('calendar-list-view-container');
+    const monthlyContainer = document.getElementById('calendar-monthly-view-container');
+
+    const isMonthly = state.calendarViewMode === 'monthly';
+
+    if (btnList) {
+      btnList.className = isMonthly
+        ? 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900'
+        : 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-xs';
+    }
+    if (btnMonthly) {
+      btnMonthly.className = isMonthly
+        ? 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-xs'
+        : 'active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900';
+    }
+
+    if (listNav) listNav.classList.toggle('hidden', isMonthly);
+    if (monthlyNav) monthlyNav.classList.toggle('hidden', !isMonthly);
+    if (listContainer) listContainer.classList.toggle('hidden', isMonthly);
+    if (monthlyContainer) monthlyContainer.classList.toggle('hidden', !isMonthly);
+
+    if (!isMonthly) return;
+
+    const gridEl = document.getElementById('monthly-calendar-grid');
+    if (!gridEl) return;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+
+    const cells = [];
+    const prevLastDay = new Date(year, month, 0).getDate();
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      const d = prevLastDay - i;
+      const m = month === 0 ? 11 : month - 1;
+      const y = month === 0 ? year - 1 : year;
+      const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      cells.push({ day: d, currentMonth: false, date: dateStr });
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      cells.push({ day: d, currentMonth: true, date: dateStr });
+    }
+
+    let nextDay = 1;
+    while (cells.length % 7 !== 0) {
+      const m = month === 11 ? 0 : month + 1;
+      const y = month === 11 ? year + 1 : year;
+      const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(nextDay).padStart(2, '0')}`;
+      cells.push({ day: nextDay, currentMonth: false, date: dateStr });
+      nextDay++;
+    }
+
+    const todayIso = W.toIsoDate(new Date());
+
+    gridEl.innerHTML = cells.map(cell => {
+      const dayData = state.allDaysMap[cell.date];
+      const isToday = cell.date === todayIso;
+      const isSelected = cell.date === state.selectedDate;
+
+      let filledCount = 0;
+      let dinnerTitle = '';
+      if (dayData && dayData.meals) {
+        M.MEAL_SLOTS.forEach(meta => {
+          if (M.isMealFilled(M.slotOf(dayData, meta.key))) filledCount++;
+        });
+        const dinnerSlot = M.slotOf(dayData, 'dinner');
+        if (M.isMealFilled(dinnerSlot)) {
+          const items = M.mealItems(dinnerSlot);
+          if (items.length > 0) {
+            dinnerTitle = items[0].title;
+          }
+        }
+      }
+
+      let cellClass = 'min-h-[72px] rounded-2xl p-1.5 flex flex-col justify-between border transition-all active-scale cursor-pointer ';
+      if (isSelected) {
+        cellClass += 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-500/30 shadow-xs';
+      } else if (isToday) {
+        cellClass += 'bg-emerald-50/50 border-emerald-300';
+      } else if (cell.currentMonth) {
+        cellClass += 'bg-white border-slate-200/80 hover:border-slate-300';
+      } else {
+        cellClass += 'bg-slate-50/60 border-slate-100 opacity-60';
+      }
+
+      const dObj = W.localDate(cell.date);
+      const wday = dObj.getDay();
+      let numColor = cell.currentMonth ? 'text-slate-800' : 'text-slate-400';
+      if (wday === 0) numColor = cell.currentMonth ? 'text-rose-600' : 'text-rose-300';
+      if (wday === 6) numColor = cell.currentMonth ? 'text-sky-600' : 'text-sky-300';
+
+      const dotsHtml = filledCount > 0
+        ? `<div class="flex items-center gap-0.5 mt-0.5">
+             <span class="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1 rounded">${filledCount}/3食</span>
+           </div>`
+        : `<span class="text-[9px] text-slate-300">—</span>`;
+
+      const titleHtml = dinnerTitle
+        ? `<p class="text-[9px] font-bold text-slate-700 truncate mt-0.5" title="${M.escapeHtml(dinnerTitle)}">${M.escapeHtml(dinnerTitle)}</p>`
+        : '';
+
+      return `
+        <div data-date="${cell.date}" onclick="jumpToDateFromMonthly('${cell.date}')" class="${cellClass}">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold font-mono ${numColor}">${cell.day}</span>
+            ${isToday ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>' : ''}
+          </div>
+          <div class="space-y-0.5 min-w-0">
+            ${dotsHtml}
+            ${titleHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   function render(state) {
     renderWeekNav(state);
     renderCalendarSearch(state);
     renderWeekOverview(state);
+    renderMonthlyCalendar(state);
   }
 
   function scrollToDay(dateStr) {
@@ -798,6 +956,48 @@ KitchenGit.Calendar = (function () {
     window.collapseAllDays = function () {
       collapseAllDays(state);
       render(state);
+    };
+
+    window.setCalendarViewMode = async function (mode) {
+      state.calendarViewMode = mode;
+      if (mode === 'monthly') {
+        await hydrateMonth(state, state.monthlyYear, state.monthlyMonth);
+      }
+      render(state);
+    };
+
+    window.shiftMonthlyMonth = async function (delta) {
+      state.monthlyMonth += delta;
+      if (state.monthlyMonth > 11) {
+        state.monthlyMonth = 0;
+        state.monthlyYear += 1;
+      } else if (state.monthlyMonth < 0) {
+        state.monthlyMonth = 11;
+        state.monthlyYear -= 1;
+      }
+      await hydrateMonth(state, state.monthlyYear, state.monthlyMonth);
+      render(state);
+    };
+
+    window.goToCurrentMonth = async function () {
+      const now = new Date();
+      state.monthlyYear = now.getFullYear();
+      state.monthlyMonth = now.getMonth();
+      await hydrateMonth(state, state.monthlyYear, state.monthlyMonth);
+      render(state);
+    };
+
+    window.jumpToDateFromMonthly = async function (dateStr) {
+      const W = Week();
+      const saturdayStart = W.toIsoDate(W.startOfWeekSaturday(dateStr));
+      state.calendarViewMode = 'list';
+      setDisplayedWeek(state, saturdayStart, { weekdayIndex: W.weekdayIndex(dateStr) });
+      state.selectedDate = dateStr;
+      state.expandedDays = { [dateStr]: true };
+      render(state);
+      await hydrateWeek(state, state.weekStart);
+      render(state);
+      scrollToDay(dateStr);
     };
 
     MealEditor().bindGlobals(state, {

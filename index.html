@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMYXSR7HF2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-CMYXSR7HF2');
+  </script>
+
   <meta charset="UTF-8">
   <!-- iPhoneノッチ・Dynamic Island・ホームバー対応のセーフエリア設定 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -236,37 +246,86 @@
 
     <!-- ==================== VIEW 1: カレンダー画面 ==================== -->
     <section id="view-calendar" class="space-y-3.5 hidden">
-      <!-- 週間カードヘッダー -->
-      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60">
-        <div class="mb-3">
-          <span class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">Weekly Plan</span>
+      <!-- カレンダーヘッダーカード (表示切替 ＆ ナビ) -->
+      <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold tracking-wider text-emerald-600 uppercase">Meal Calendar</span>
+          <!-- リスト表示 / 月間カレンダー表示 切り替えタブ -->
+          <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/70" role="tablist">
+            <button type="button" id="cal-view-btn-list" onclick="setCalendarViewMode('list')" class="active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-white text-slate-900 shadow-xs">
+              <i class="fa-solid fa-list-ul mr-1"></i>リスト
+            </button>
+            <button type="button" id="cal-view-btn-monthly" onclick="setCalendarViewMode('monthly')" class="active-scale px-3 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900">
+              <i class="fa-solid fa-calendar-days mr-1"></i>月間
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-1 mb-3">
-          <button type="button" onclick="shiftWeek(-7)" aria-label="前週" class="active-scale min-w-11 min-h-11 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
-            <i class="fa-solid fa-chevron-left text-sm"></i>
-          </button>
-          <div class="flex-1 min-w-0 text-center px-1">
-            <div class="flex items-center justify-center gap-1.5 flex-wrap">
-              <span id="week-range-label" class="text-sm font-bold text-slate-900 font-mono leading-tight">9/6 (土) - 9/12 (金)</span>
+        <!-- 週間ナビゲーション (リスト表示時) -->
+        <div id="calendar-list-nav-wrap" class="space-y-2 pt-1 border-t border-slate-100">
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="shiftWeek(-7)" aria-label="前週" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+              <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+            <div class="flex-1 min-w-0 text-center px-1">
+              <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                <span id="week-range-label" class="text-xs font-bold text-slate-900 font-mono leading-tight">9/6 (土) - 9/12 (金)</span>
+              </div>
+            </div>
+            <button type="button" onclick="shiftWeek(7)" aria-label="翌週" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+              <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 月間ナビゲーション (月間表示時) -->
+        <div id="calendar-monthly-nav-wrap" class="hidden space-y-2 pt-1 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="shiftMonthlyMonth(-1)" aria-label="前月" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+              <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+            <div class="text-center">
+              <span id="monthly-title-label" class="text-sm font-bold text-slate-900 font-mono">2026年 9月</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="goToCurrentMonth()" class="active-scale px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200">今月</button>
+              <button type="button" onclick="shiftMonthlyMonth(1)" aria-label="翌月" class="active-scale min-w-10 min-h-10 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+              </button>
             </div>
           </div>
-          <button type="button" onclick="shiftWeek(7)" aria-label="翌週" class="active-scale min-w-11 min-h-11 shrink-0 rounded-2xl bg-slate-100 text-slate-900 flex items-center justify-center hover:bg-slate-200">
-            <i class="fa-solid fa-chevron-right text-sm"></i>
-          </button>
         </div>
-
-
-
-
-
       </div>
 
+      <!-- リスト表示コンテナ -->
+      <div id="calendar-list-view-container" class="space-y-3">
+        <div id="week-overview" class="space-y-3">
+          <!-- JSで7日分をレンダリング -->
+        </div>
+      </div>
 
-
-      <!-- 1週間まとめ（月〜日の縦スクロール） -->
-      <div id="week-overview" class="space-y-3">
-        <!-- JSで7日分をレンダリング -->
+      <!-- 月間カレンダー表示コンテナ -->
+      <div id="calendar-monthly-view-container" class="hidden space-y-3">
+        <div class="bg-white rounded-3xl p-4 shadow-sm border border-slate-200/60 space-y-3">
+          <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400 pb-1 border-b border-slate-100">
+            <span class="text-rose-500">日</span>
+            <span>月</span>
+            <span>火</span>
+            <span>水</span>
+            <span>木</span>
+            <span>金</span>
+            <span class="text-sky-600">土</span>
+          </div>
+          <div id="monthly-calendar-grid" class="grid grid-cols-7 gap-1.5">
+            <!-- JSでレンダリング -->
+          </div>
+        </div>
+        <div class="bg-slate-50 border border-slate-200/60 rounded-2xl p-3 flex items-start gap-2.5">
+          <i class="fa-solid fa-calendar-check text-emerald-600 text-sm mt-0.5"></i>
+          <p class="text-[11px] text-slate-600 leading-relaxed">
+            月間カレンダー表示では、長期的な献立の予定や登録状況を一覧できます。<strong class="text-slate-900">日付をタップ</strong>すると、その日の週のリスト表示にジャンプします。
+          </p>
+        </div>
       </div>
     </section>
 
