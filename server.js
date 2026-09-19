@@ -382,6 +382,114 @@ app.post('/api/gemini/generate-recipe-image', async (req, res) => {
   }
 });
 
+// Chat-based recipe creation and brainstorming via Gemini AI
+app.post('/api/gemini/chat-recipe', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ ok: false, error: 'メッセージ履歴が提供されていません。' });
+    }
+
+    const ai = getGenAI();
+
+    const contents = messages.map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }]
+    }));
+
+    const systemInstruction = `あなたはプロの料理研究家であり、親しみやすいAIレシピ作成アシスタントです。
+ユーザーとチャット形式で会話しながら、献立やレシピの提案、材料の調整、手順の作成を行います。
+ユーザーがレシピの作成を求めたとき、または料理の話から具体的なレシピが決まったときは、会話の返答（reply）に加えて、構造化されたレシピオブジェクト（recipe）を必ずJSONに含めて返してください。
+
+【レシピJSONのスキーマ構造】
+- name: 料理名
+- servingsBase: 人数（通常2などの数値）
+- tag: タグ（例: "定番 #主菜", "時短" など）
+- note: 調理のコツや味変ポイント
+- ingredients: 材料配列 [{ name: "食材名", baseAmount: 数値, unit: "単位(g,ml,大さじ,小さじ,個等)", note: "備考" }]
+- steps: 調理手順配列 [{ title: "見出し(例:下味,炒める)", instruction: "手順説明", timerSeconds: タイマー秒数またはnull }]
+
+まだレシピが確定しておらず雑談や提案中の段階では recipe は null または省略しても構いませんが、レシピがまとまった段階では必ず完結した recipe オブジェクトを返してください。`;
+
+    const config = {
+      systemInstruction,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          reply: { type: Type.STRING, description: 'ユーザーへの会話の返答（日本語）' },
+          recipe: {
+            type: Type.OBJECT,
+            description: 'レシピが確定している場合の構造化レシピデータ',
+            properties: {
+              name: { type: Type.STRING },
+              servingsBase: { type: Type.INTEGER },
+              tag: { type: Type.STRING },
+              note: { type: Type.STRING },
+              ingredients: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING },
+                    baseAmount: { type: Type.NUMBER },
+                    unit: { type: Type.STRING },
+                    note: { type: Type.STRING }
+                  },
+                  required: ['name', 'unit']
+                }
+              },
+              steps: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    instruction: { type: Type.STRING },
+                    timerSeconds: { type: Type.INTEGER }
+                  },
+                  required: ['instruction']
+                }
+              }
+            },
+            required: ['name', 'ingredients', 'steps']
+          }
+        },
+        required: ['reply']
+      }
+    };
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents,
+      config
+    });
+
+    let outputText = (response && response.text) ? response.text.trim() : '';
+    if (outputText.startsWith('```')) {
+      outputText = outputText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    }
+
+    let resultData;
+    try {
+      resultData = JSON.parse(outputText);
+    } catch (parseErr) {
+      resultData = {
+        reply: outputText || 'レシピについてお気軽にご相談ください！どのような料理を作りたいですか？',
+        recipe: null
+      };
+    }
+
+    return res.json({ ok: true, reply: resultData.reply, recipe: resultData.recipe || null });
+  } catch (err) {
+    console.error('Chat recipe AI error:', err);
+    return res.status(500).json({
+      ok: false,
+      error: err.message || 'AIチャット応答の生成中にエラーが発生しました。'
+    });
+  }
+});
+
 // Fallback to index.html for SPA/client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));

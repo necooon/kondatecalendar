@@ -332,16 +332,12 @@
           <div id="recipe-tag-chips" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-[11px]"></div>
         </div>
 
-        <div id="recipe-list" class="space-y-2.5"></div>
-        <div class="space-y-2 pt-1">
-          <button type="button" id="btn-open-image-scanner" onclick="openImageScannerModal()" class="active-scale w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold py-3.5 px-4 rounded-2xl shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2.5">
-            <i class="fa-solid fa-camera text-base"></i>
-            <span>画像からレシピを読み取る</span>
-            <span class="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AI自動解析</span>
-          </button>
-          <button type="button" id="btn-open-register-manual" onclick="openRegisterModal()" class="active-scale w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs font-bold py-3 rounded-2xl flex items-center justify-center gap-1.5 shadow-xs">
-            <i class="fa-solid fa-pen-to-square text-emerald-600 text-xs"></i>
-            <span>手動でレシピを入力</span>
+        <div id="recipe-list" class="space-y-2.5 pb-20"></div>
+
+        <!-- レシピ画面右下のFAB (Floating Action Button) -->
+        <div class="fixed bottom-24 right-5 z-40">
+          <button type="button" onclick="openRecipeAddSelectorModal()" class="active-scale w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-xl shadow-emerald-600/30 flex items-center justify-center transition-transform hover:scale-105" title="レシピを追加">
+            <i class="fa-solid fa-plus text-2xl"></i>
           </button>
         </div>
       </div>
@@ -1308,6 +1304,96 @@
     </button>
   </div>
 
+  <!-- ==================== レシピ追加方法の選択モーダル ==================== -->
+  <div id="recipe-add-selector-backdrop" onclick="closeRecipeAddSelectorModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden transition-opacity"></div>
+  <div id="recipe-add-selector-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-6 pb-safe shadow-2xl hidden transition-transform duration-200">
+    <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-4 shrink-0"></div>
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="text-lg font-bold text-slate-900">レシピを追加</h3>
+        <p class="text-xs text-slate-500">作成方法を選択してください</p>
+      </div>
+      <button type="button" onclick="closeRecipeAddSelectorModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 active-scale">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <div class="space-y-3 pb-4">
+      <button type="button" onclick="closeRecipeAddSelectorModal(); openChatRecipeModal();" class="active-scale w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-4 rounded-2xl shadow-md shadow-indigo-600/20 flex items-center gap-4 text-left transition-all">
+        <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-comments text-xl"></i>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm font-bold">チャットでAIレシピ作成</div>
+          <div class="text-[11px] text-indigo-100">AIと会話しながら、冷蔵庫の食材などでレシピを作ります</div>
+        </div>
+      </button>
+
+      <button type="button" onclick="closeRecipeAddSelectorModal(); openImageScannerModal();" class="active-scale w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-4 rounded-2xl shadow-md shadow-emerald-600/20 flex items-center gap-4 text-left transition-all">
+        <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-camera text-xl"></i>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm font-bold">画像からレシピを読み取る</div>
+          <div class="text-[11px] text-emerald-100">料理の写真やレシピ本を撮影して自動でテキスト化</div>
+        </div>
+      </button>
+
+      <button type="button" onclick="closeRecipeAddSelectorModal(); openRegisterModal();" class="active-scale w-full bg-slate-100 hover:bg-slate-200 text-slate-800 p-4 rounded-2xl border border-slate-200 flex items-center gap-4 text-left transition-all">
+        <div class="w-11 h-11 rounded-xl bg-slate-200 flex items-center justify-center shrink-0 text-slate-700">
+          <i class="fa-solid fa-pen-to-square text-xl"></i>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm font-bold">手動でレシピを入力</div>
+          <div class="text-[11px] text-slate-500">材料や手順をご自身で自由に入力・編集</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== チャット形式レシピ作成AIアシスタントモーダル ==================== -->
+  <div id="chat-recipe-backdrop" onclick="closeChatRecipeModal()" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs hidden transition-opacity"></div>
+  <div id="chat-recipe-modal" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[32px] max-w-md mx-auto p-5 pb-safe shadow-2xl hidden max-h-[92vh] flex flex-col transition-transform duration-200">
+    <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-2 shrink-0"></div>
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25">
+          <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900 leading-tight">AIチャットでレシピ作成</h3>
+          <p class="text-[10px] text-slate-400">会話しながらお好みのレシピを自動生成</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeChatRecipeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 active-scale">
+        <i class="fa-solid fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- チャットメッセージ一覧エリア -->
+    <div id="chat-messages-container" class="flex-1 overflow-y-auto space-y-3.5 py-3.5 px-1 min-h-[280px] max-h-[46vh]">
+      <!-- 動的メッセージ -->
+    </div>
+
+    <!-- クイックチップス -->
+    <div class="shrink-0 pt-2 pb-2 border-t border-slate-100">
+      <div class="flex gap-1.5 overflow-x-auto no-scrollbar text-[11px]" id="chat-quick-chips">
+        <button type="button" onclick="sendChatQuickPrompt('冷蔵庫の豚肉とキャベツで何か作って')" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-full border border-slate-200 active-scale">豚肉とキャベツで何か作って</button>
+        <button type="button" onclick="sendChatQuickPrompt('子供に大人気の甘口ハンバーグのレシピ')" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-full border border-slate-200 active-scale">子供に人気のハンバーグ</button>
+        <button type="button" onclick="sendChatQuickPrompt('10分でできる時短の主菜おかず')" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-full border border-slate-200 active-scale">10分時短おかず</button>
+        <button type="button" onclick="sendChatQuickPrompt('低糖質でヘルシーな鶏むね肉レシピ')" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-full border border-slate-200 active-scale">ヘルシー鶏むね肉</button>
+      </div>
+    </div>
+
+    <!-- 入力フォームエリア -->
+    <div class="shrink-0 pt-2 pb-1 flex items-center gap-2">
+      <input type="text" id="chat-input-field" onkeydown="if(event.key==='Enter'){sendChatMessage();}" placeholder="作りたい料理や材料を相談する (例: 鮭のホイル焼き)" class="flex-1 bg-slate-100 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none transition-colors">
+      <button type="button" id="chat-send-btn" onclick="sendChatMessage()" class="active-scale w-11 h-11 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-600/25 shrink-0">
+        <i class="fa-solid fa-paper-plane text-xs"></i>
+      </button>
+    </div>
+  </div>
+
   <!-- ==================== アプリ状態とJavaScriptロジック ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
@@ -1324,6 +1410,7 @@
   <script src="js/shopping.js"></script>
   <script src="js/vendor/heic2any.min.js"></script>
   <script src="js/image-scanner.js"></script>
+  <script src="js/chat-recipe.js"></script>
   <script src="js/recipe-images.js"></script>
   <script>
     const appState = {
@@ -2910,6 +2997,46 @@
           }
         });
       }
+
+      // Initialize ChatRecipe
+      if (window.KitchenGit && KitchenGit.ChatRecipe) {
+        KitchenGit.ChatRecipe.init(appState, {
+          showToast,
+          onRecipeAdded: (recipe) => {
+            renderRecipeList();
+            refreshShoppingList();
+            refreshMealEditorLists();
+          }
+        });
+      }
+
+      window.openRecipeAddSelectorModal = function () {
+        const backdrop = document.getElementById('recipe-add-selector-backdrop');
+        const modal = document.getElementById('recipe-add-selector-modal');
+        if (backdrop) backdrop.classList.remove('hidden');
+        if (modal) modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      };
+      window.closeRecipeAddSelectorModal = function () {
+        const backdrop = document.getElementById('recipe-add-selector-backdrop');
+        const modal = document.getElementById('recipe-add-selector-modal');
+        if (backdrop) backdrop.classList.add('hidden');
+        if (modal) modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      };
+
+      window.openChatRecipeModal = function () {
+        if (window.KitchenGit && KitchenGit.ChatRecipe) KitchenGit.ChatRecipe.open();
+      };
+      window.closeChatRecipeModal = function () {
+        if (window.KitchenGit && KitchenGit.ChatRecipe) KitchenGit.ChatRecipe.close();
+      };
+      window.sendChatQuickPrompt = function (text) {
+        if (window.KitchenGit && KitchenGit.ChatRecipe) KitchenGit.ChatRecipe.sendMessage(text);
+      };
+      window.sendChatMessage = function () {
+        if (window.KitchenGit && KitchenGit.ChatRecipe) KitchenGit.ChatRecipe.sendMessage();
+      };
 
       // Expose globally for onclick handlers & cross-module calls
       window.openImageScannerModal = function (options) {
