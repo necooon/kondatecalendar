@@ -292,18 +292,6 @@ KitchenGit.Calendar = (function () {
     return list;
   }
 
-  function pfcBlockHtml(state, dayData) {
-    const M = Meals();
-    const computed = M.computeDayPfc(dayData, recipesOf(state));
-    const pfc = computed || dayData.pfc || { p: 35, f: 15, c: 38 };
-    return `
-      <span class="inline-flex items-center gap-2 text-[9px] sm:text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 sm:px-2 py-0.5 rounded-lg border border-slate-200/60 shrink-0">
-        <span>P: <strong class="text-slate-800 font-bold">${pfc.p}g</strong></span>
-        <span>F: <strong class="text-slate-700 font-bold">${pfc.f}g</strong></span>
-        <span>C: <strong class="text-slate-700 font-bold">${pfc.c}g</strong></span>
-      </span>
-    `;
-  }
 
   function isDayExpanded(state, dateStr) {
     if (state.expandedDays && state.expandedDays[dateStr] !== undefined) {
@@ -368,12 +356,10 @@ KitchenGit.Calendar = (function () {
       ? ''
       : `<span class="flex items-center gap-1.5">${Meals().MEAL_SLOTS.map((meta) => mealSlotIndicatorHtml(dayData, meta)).join('')}</span>`;
     const chevron = expanded ? 'fa-chevron-down' : 'fa-chevron-right';
-    const pfcHtml = pfcBlockHtml(state, dayData);
     return `
       <button type="button" onclick="toggleDayAccordion('${escapeHtml(dateStr)}')" aria-expanded="${expanded ? 'true' : 'false'}" class="active-scale w-full flex items-center justify-between gap-2 text-left -mx-0.5 px-0.5 py-0.5 rounded-xl">
         <div class="flex items-center gap-2.5 min-w-0">
           <span class="text-xs font-bold text-slate-900 shrink-0">${escapeHtml(displayDateOf(dayData))} (${escapeHtml(dayData.day)})</span>
-          ${pfcHtml}
         </div>
         <span class="flex items-center gap-2 shrink-0">
           ${indicators}
@@ -409,9 +395,8 @@ KitchenGit.Calendar = (function () {
             <p class="text-xs font-bold text-slate-700 truncate mt-1">${M.escapeHtml(label)}</p>
           </div>
           <div class="flex items-center gap-1 shrink-0 mt-0.5">
-            <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1.5 rounded-xl bg-white border border-slate-700 text-slate-700 text-[10px] font-bold flex items-center gap-1 hover:bg-slate-700 shadow-2xs" title="献立を編集">
-              <i class="fa-solid fa-pen text-[9px]"></i>
-              <span>編集</span>
+            <button type="button" onclick="${openFn}" class="active-scale p-1.5 rounded-xl bg-white border border-slate-700 text-slate-700 hover:bg-slate-700 shadow-2xs" title="献立を編集">
+              <i class="fa-solid fa-pen text-[10px]"></i>
             </button>
           </div>
         </div>
@@ -425,9 +410,8 @@ KitchenGit.Calendar = (function () {
             ${badgeHtml}
             <span class="text-xs text-slate-400 font-medium pl-0.5">未設定</span>
           </div>
-          <button type="button" onclick="${openFn}" class="active-scale px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs shrink-0 transition-colors" title="献立を登録">
+          <button type="button" onclick="${openFn}" class="active-scale p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-900 shadow-2xs shrink-0 transition-colors" title="献立を登録">
             <i class="fa-solid fa-plus text-xs"></i>
-            <span>登録</span>
           </button>
         </div>
       `;
@@ -437,14 +421,9 @@ KitchenGit.Calendar = (function () {
     const itemsHtml = items.map((item) => {
       const recipe = M.findRecipeForItem(recipes, item);
       const recipeId = recipe ? recipe.id : (item.recipeId || '');
-      const imgUrl = M.recipeImageUrl(recipe);
-      const imgHtml = imgUrl
-        ? `<img src="${M.escapeHtml(imgUrl)}" alt="${M.escapeHtml(item.title)}" class="w-10 h-10 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80 shadow-2xs group-hover:scale-105 transition-transform">`
-        : `<div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-900 border border-slate-100/80 flex items-center justify-center shrink-0 shadow-2xs"><i class="fa-solid fa-utensils text-xs"></i></div>`;
       const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
       return `
         <div ${clickAction} class="flex items-center gap-2.5 group cursor-pointer py-1" title="レシピを開く">
-          ${imgHtml}
           <div class="min-w-0 flex-1">
             <p class="text-xs font-bold text-slate-900 truncate group-hover:text-slate-900 group-hover:underline">${M.escapeHtml(item.title)}</p>
             ${recipe && recipe.tag ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">${M.escapeHtml(recipe.tag)}</span>` : ''}
@@ -462,9 +441,8 @@ KitchenGit.Calendar = (function () {
         <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
           ${prepChip}
           ${slotServingsButtonHtml(dateStr, meta, slot)}
-          <button type="button" onclick="${openFn}" class="active-scale px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-1 hover:bg-slate-100 shadow-2xs" title="献立を編集" aria-label="献立を編集">
-            <i class="fa-solid fa-pen text-[9px] text-slate-900"></i>
-            <span>編集</span>
+          <button type="button" onclick="${openFn}" class="active-scale p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 shadow-2xs" title="献立を編集" aria-label="献立を編集">
+            <i class="fa-solid fa-pen text-[10px] text-slate-900"></i>
           </button>
         </div>
       </div>
@@ -718,7 +696,6 @@ KitchenGit.Calendar = (function () {
 
       let filledCount = 0;
       let dinnerTitle = '';
-      let dinnerImgUrl = '';
       if (dayData && dayData.meals) {
         M.MEAL_SLOTS.forEach(meta => {
           if (M.isMealFilled(M.slotOf(dayData, meta.key))) filledCount++;
@@ -728,9 +705,6 @@ KitchenGit.Calendar = (function () {
           const items = M.mealItems(dinnerSlot);
           if (items.length > 0) {
             dinnerTitle = items[0].title;
-            const recipes = recipesOf(state);
-            const recipe = M.findRecipeForItem(recipes, items[0]);
-            dinnerImgUrl = M.recipeImageUrl(recipe);
           }
         }
       }
@@ -758,12 +732,7 @@ KitchenGit.Calendar = (function () {
            </div>`
         : `<span class="text-[9px] text-slate-300">—</span>`;
 
-      const titleHtml = dinnerImgUrl
-        ? `<div class="mt-1 flex items-center gap-1 bg-slate-50 rounded-lg p-0.5 border border-slate-200/60 overflow-hidden" title="${M.escapeHtml(dinnerTitle)}">
-             <img src="${M.escapeHtml(dinnerImgUrl)}" alt="" class="w-4 h-4 rounded object-cover shrink-0">
-             <span class="text-[8.5px] font-bold text-slate-700 truncate">${M.escapeHtml(dinnerTitle)}</span>
-           </div>`
-        : (dinnerTitle ? `<p class="text-[9px] font-bold text-slate-700 truncate mt-0.5" title="${M.escapeHtml(dinnerTitle)}">${M.escapeHtml(dinnerTitle)}</p>` : '');
+      const titleHtml = dinnerTitle ? `<p class="text-[9px] font-bold text-slate-700 truncate mt-0.5" title="${M.escapeHtml(dinnerTitle)}">${M.escapeHtml(dinnerTitle)}</p>` : '';
 
       return `
         <div data-date="${cell.date}" onclick="jumpToDateFromMonthly('${cell.date}')" class="${cellClass}">
@@ -828,22 +797,15 @@ KitchenGit.Calendar = (function () {
         <div id="agenda-day-${dateStr}" class="flex gap-3 items-start bg-white rounded-3xl p-4 border ${cardRing} transition-all">
           <!-- Googleカレンダー風の日付ブロック (左側) -->
           <div class="w-14 shrink-0 text-center pt-1">
-            <span class="text-2xl font-bold font-mono ${numColor} leading-none block">${dayNum}</span>
-            <span class="text-[11px] font-bold text-slate-500 uppercase mt-0.5 block">${wdayName}</span>
+            <span class="text-[18px] font-bold font-mono ${numColor} leading-none block" style="margin-left: -7px; margin-right: 17px;">${dayNum}</span>
+            <span class="text-[11px] font-bold text-slate-500 uppercase mt-0.5 block" style="margin-top: 0px; margin-left: -7px; margin-right: 17px;">${wdayName}</span>
             ${isToday ? '<span class="inline-block px-1.5 py-0.5 mt-1 rounded-full bg-slate-700 text-white text-[9px] font-bold">今日</span>' : ''}
           </div>
 
           <!-- 右側の献立内容エリア -->
-          <div class="flex-1 min-w-0 space-y-3">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-slate-700 font-mono">${W.formatMd(dateStr, true)}</span>
-              </div>
-            </div>
-
+          <div class="flex-1 min-w-0 space-y-3" style="margin-left: -17px;">
             <div class="space-y-2.5">
               ${renderMealSlots(state, dayData, { date: dateStr })}
-              ${pfcBlockHtml(state, dayData)}
             </div>
           </div>
         </div>
