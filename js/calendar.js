@@ -476,11 +476,14 @@ KitchenGit.Calendar = (function () {
     const itemsHtml = items.map((item) => {
       const recipe = M.findRecipeForItem(recipes, item);
       const recipeId = recipe ? recipe.id : (item.recipeId || '');
-      const imgUrl = (recipe && recipe.imageUrl) || M.recipeImageUrl(recipe);
+      const imgUrl = M.recipeImageUrl(recipe);
+      const imgHtml = imgUrl
+        ? `<img src="${M.escapeHtml(imgUrl)}" alt="${M.escapeHtml(item.title)}" class="w-10 h-10 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80 shadow-2xs group-hover:scale-105 transition-transform">`
+        : `<div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center shrink-0 shadow-2xs"><i class="fa-solid fa-utensils text-xs"></i></div>`;
       const clickAction = `onclick="event.stopPropagation(); openRecipeByCalendarClick('${M.escapeHtml(recipeId)}', '${M.escapeHtml(item.title)}')"`;
       return `
         <div ${clickAction} class="flex items-center gap-2.5 group cursor-pointer py-1" title="レシピを開く">
-          <img src="${M.escapeHtml(imgUrl)}" alt="${M.escapeHtml(item.title)}" class="w-10 h-10 rounded-xl object-cover shrink-0 bg-slate-100 border border-slate-200/80 shadow-2xs group-hover:scale-105 transition-transform">
+          ${imgHtml}
           <div class="min-w-0 flex-1">
             <p class="text-xs font-bold text-slate-900 truncate group-hover:text-emerald-700 group-hover:underline">${M.escapeHtml(item.title)}</p>
             ${recipe && recipe.tag ? `<span class="text-[9px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded inline-block mt-0.5">${M.escapeHtml(recipe.tag)}</span>` : ''}
@@ -792,7 +795,7 @@ KitchenGit.Calendar = (function () {
             dinnerTitle = items[0].title;
             const recipes = recipesOf(state);
             const recipe = M.findRecipeForItem(recipes, items[0]);
-            dinnerImgUrl = (recipe && recipe.imageUrl) || M.recipeImageUrl(recipe);
+            dinnerImgUrl = M.recipeImageUrl(recipe);
           }
         }
       }
